@@ -2,10 +2,10 @@ export default function Loading() {
   return (
     <div className="min-h-dvh bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
       <div className="relative flex items-center justify-center mb-8">
-        <div className="h-20 w-20 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 animate-pulse flex items-center justify-center">
-           <span className="text-3xl font-black text-emerald-500 opacity-50">F</span>
+        <div className="h-24 w-24 rounded-3xl overflow-hidden shadow-[0_0_40px_rgba(16,185,129,0.3)] animate-pulse">
+           <img src="/icon.png" alt="FRS Logo" className="w-full h-full object-cover" />
         </div>
-        <div className="absolute inset-0 h-20 w-20 rounded-2xl border-t-2 border-emerald-500 animate-spin" />
+        <div className="absolute -inset-4 rounded-[40px] border border-emerald-500/20 animate-ping opacity-20" />
       </div>
       
       <div className="space-y-3 w-full max-w-xs">
