@@ -17,12 +17,17 @@ function isStandaloneMode() {
   );
 }
 
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 export function PwaInstallPrompt() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (isStandaloneMode()) {
+    // Jangan muncul kalau sudah mode standalone (sudah diinstall) atau BUKAN perangkat mobile
+    if (isStandaloneMode() || !isMobileDevice()) {
       return;
     }
 

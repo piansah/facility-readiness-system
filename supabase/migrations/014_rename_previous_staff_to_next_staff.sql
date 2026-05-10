@@ -24,3 +24,8 @@ END $$;
 
 ALTER TABLE public.daily_reports
 ADD COLUMN IF NOT EXISTS next_shift_staff jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+-- Jalankan di Supabase SQL Editor
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('incident-photos', 'incident-photos', true)
+ON CONFLICT (id) DO UPDATE SET public = true;

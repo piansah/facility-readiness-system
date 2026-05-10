@@ -161,13 +161,20 @@ export function PdfExport({ report }: PdfExportProps) {
               }
 
               const image = await fetchImageData(photo.signedUrl);
-              doc.addImage(image.dataUrl, image.format, 20, currentY, 80, 50);
-              currentY += 55;
+              
+              // Hitung dimensi agar tidak gepeng (lebar max 100mm)
+              const maxWidth = 100;
+              const maxHeight = 80;
+              let imgWidth = maxWidth;
+              let imgHeight = (image.height * imgWidth) / image.width;
 
-              if (photo.caption) {
-                doc.text(photo.caption, 20, currentY);
-                currentY += 8;
+              if (imgHeight > maxHeight) {
+                imgHeight = maxHeight;
+                imgWidth = (image.width * imgHeight) / image.height;
               }
+
+              doc.addImage(image.dataUrl, image.format, 20, currentY, imgWidth, imgHeight);
+              currentY += imgHeight + 10;
             } catch (error) {
               console.error("Failed to add image to PDF", error);
               doc.text("Foto gagal dimuat ke PDF.", 20, currentY);
@@ -227,9 +234,18 @@ async function fetchImageData(url: string) {
     reader.readAsDataURL(blob);
   });
 
+  // Ambil dimensi asli gambar
+  const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.src = dataUrl;
+  });
+
   return {
     dataUrl,
     format: blob.type.includes("png") ? "PNG" : "JPEG",
+    width: dimensions.width,
+    height: dimensions.height,
   } as const;
 }
 

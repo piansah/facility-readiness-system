@@ -107,3 +107,74 @@ export async function createIncident(formData: FormData) {
 
   redirect("/dashboard");
 }
+
+export async function updateIncident(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const incidentId = String(formData.get("incident_id") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const actionTaken = String(formData.get("action_taken") ?? "").trim();
+  const status = String(formData.get("status") ?? "open");
+  const incidentTime = String(formData.get("incident_time") ?? "");
+  const facilityId = String(formData.get("facility_id") ?? "");
+
+  const { error: updateError } = await supabase
+    .from("incidents")
+    .update({
+      title,
+      description,
+      action_taken: actionTaken || null,
+      status,
+      incident_time: incidentTime,
+      facility_id: facilityId || null,
+    })
+    .eq("id", incidentId);
+
+  if (updateError) {
+    redirect(`/insiden/${incidentId}/edit?error=${encodeURIComponent(updateError.message)}`);
+  }
+
+  // Handle new photos if any
+  const photos = formData
+    .getAll("photos")
+    .filter((value): value is File => value instanceof File && value.size > 0);
+
+  if (photos.length > 0) {
+    const photoRows: { incident_id: string; storage_path: string; caption: string | null }[] = [];
+
+    for (const [index, photo] of photos.entries()) {
+      const extension = photo.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${incidentId}/${Date.now()}-${index}.${extension}`;
+      await supabase.storage.from("incident-photos").upload(path, photo);
+      
+      photoRows.push({
+        incident_id: incidentId,
+        storage_path: path,
+        caption: photo.name,
+      });
+    }
+
+    await supabase.from("incident_photos").insert(photoRows);
+  }
+
+  redirect(`/insiden/${incidentId}`);
+}
+
+export async function deleteIncident(formData: FormData) {
+  const supabase = await createClient();
+  const incidentId = String(formData.get("incident_id") ?? "");
+
+  const { error } = await supabase.from("incidents").delete().eq("id", incidentId);
+
+  if (error) {
+    redirect(`/insiden/${incidentId}/edit?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect("/dashboard");
+}
