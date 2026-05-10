@@ -1,0 +1,277 @@
+import Link from "next/link";
+import { ArrowLeft, Save, SendHorizonal } from "lucide-react";
+import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/auth/profile";
+import { canCreateReports, roleLabel } from "@/lib/auth/roles";
+import { saveDailyReport } from "./actions";
+import { DraftManager } from "@/components/draft-manager";
+import { ConfirmSubmitButtons } from "@/components/confirm-submit-buttons";
+import { StaffSelector } from "@/components/staff-selector";
+
+type FacilityRow = {
+// ... (rest of types)
+  id: string;
+  name: string;
+  location_detail: string | null;
+  facility_categories: {
+    name: string;
+    icon: string | null;
+    sort_order: number;
+  } | null;
+};
+
+type CategoryGroup = {
+  name: string;
+  icon: string | null;
+  facilities: FacilityRow[];
+};
+
+type StaffOption = {
+  id: string;
+  full_name: string;
+  role: string;
+};
+
+type CreateReportPageProps = {
+  searchParams: Promise<{ error?: string }>;
+};
+
+export default async function CreateReportPage({ searchParams }: CreateReportPageProps) {
+  const params = await searchParams;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?next=/laporan/buat");
+  }
+
+  const { profile } = await getProfile(supabase, user.id);
+
+  if (!profile?.is_active || !canCreateReports(profile.role)) {
+    redirect("/dashboard?error=forbidden");
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const [{ data: facilities, error }, { data: staffOptions }] = await Promise.all([
+    supabase
+      .from("facilities")
+      .select(
+        `
+        id,
+        name,
+        location_detail,
+        facility_categories (
+          name,
+          icon,
+          sort_order
+        )
+      `,
+      )
+      .eq("unit_id", profile.unit_id)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .returns<FacilityRow[]>(),
+    supabase
+      .from("users")
+      .select("id,full_name,role")
+      .eq("unit_id", profile.unit_id)
+      .eq("is_active", true)
+      .in("role", ["admin", "petugas"])
+      .order("role", { ascending: true })
+      .order("full_name", { ascending: true })
+      .returns<StaffOption[]>(),
+  ]);
+
+  const groups = groupFacilities(facilities ?? []);
+
+  return (
+    <main className="min-h-dvh bg-slate-950">
+      <header className="border-b border-slate-800 bg-slate-950">
+        <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-4">
+          <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex" aria-label="Kembali ke dashboard">
+            <Link href="/dashboard">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
+              Laporan Harian
+            </p>
+            <h1 className="text-xl font-semibold text-slate-100">Buat Laporan Kesiapan</h1>
+            <p className="mt-1 text-sm text-slate-400">
+              {profile.full_name} - {roleLabel(profile.role)}
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-4xl px-4 py-5">
+        <DraftManager formId="report-form" storageKey="daily-report-draft" />
+
+        <form id="report-form" action={saveDailyReport} className="grid gap-4">
+          <Card>
+          <CardHeader>
+            <CardTitle>Informasi Shift</CardTitle>
+            <CardDescription>Status fasilitas akan disimpan ke database sesuai unit dan role user.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="report_date">Tanggal</Label>
+              <Input id="report_date" name="report_date" type="date" defaultValue={today} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="shift">Shift</Label>
+              <select
+                id="shift"
+                name="shift"
+                className="h-11 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                defaultValue="pagi"
+              >
+                <option value="pagi">Pagi</option>
+                <option value="malam">Malam</option>
+              </select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Petugas Serah Terima Shift</CardTitle>
+            <CardDescription>
+              Centang admin/petugas yang bertugas agar muncul di detail dan export PDF.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <StaffSelector 
+              staff={staffOptions ?? []} 
+              initialCurrentIds={[user.id]}
+              currentDateLabel={formatDateShort(today)}
+            />
+          </CardContent>
+        </Card>
+
+        {params.error ? (
+          <Card className="border-red-900/70 bg-red-950/40">
+            <CardContent className="p-5 text-sm text-red-200">
+              Gagal menyimpan laporan: {params.error}
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {error ? (
+          <Card className="border-red-900/70 bg-red-950/40">
+            <CardContent className="p-5 text-sm text-red-200">
+              Gagal mengambil data fasilitas: {error.message}
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {groups.length ? (
+          groups.map((group, index) => (
+            <Card key={`${group.name}-${index}`}>
+              <CardHeader>
+                <CardTitle>
+                  {index + 1}. {group.icon ? `${group.icon} ` : ""}
+                  {group.name}
+                </CardTitle>
+                <CardDescription>{group.facilities.length} fasilitas aktif</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                {group.facilities.map((facility, facilityIndex) => (
+                  <div
+                    key={facility.id}
+                    className="grid gap-3 rounded-md border border-slate-800 bg-slate-900 p-3"
+                  >
+                    <div>
+                      <p className="font-medium text-slate-100">
+                        {facilityIndex + 1}. {facility.name}
+                      </p>
+                      {facility.location_detail ? (
+                        <p className="mt-1 text-sm text-slate-400">{facility.location_detail}</p>
+                      ) : null}
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <input type="hidden" name="facility_id" value={facility.id} />
+                      <StatusOption facilityId={facility.id} value="normal" label="Normal" />
+                      <StatusOption facilityId={facility.id} value="rusak" label="Rusak" />
+                      <StatusOption facilityId={facility.id} value="operasi_menurun" label="Menurun" />
+                    </div>
+                    <Input name={`note_${facility.id}`} placeholder="Catatan opsional" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <Card>
+            <CardContent className="p-5 text-sm text-slate-400">
+              Belum ada fasilitas aktif yang bisa ditampilkan.
+            </CardContent>
+          </Card>
+        )}
+
+        <ConfirmSubmitButtons isEdit={false} />
+      </form>
+    </div>
+  </main>
+  );
+}
+
+function groupFacilities(facilities: FacilityRow[]) {
+  const groups = new Map<string, CategoryGroup>();
+
+  for (const facility of facilities) {
+    const categoryName = facility.facility_categories?.name ?? "Lainnya";
+    const current = groups.get(categoryName);
+
+    if (current) {
+      current.facilities.push(facility);
+    } else {
+      groups.set(categoryName, {
+        name: categoryName,
+        icon: facility.facility_categories?.icon ?? null,
+        facilities: [facility],
+      });
+    }
+  }
+
+  return Array.from(groups.values());
+}
+
+function StatusOption({
+  facilityId,
+  value,
+  label,
+}: {
+  facilityId: string;
+  value: string;
+  label: string;
+}) {
+  return (
+    <label className="flex min-h-10 items-center justify-center rounded-md border border-slate-700 bg-slate-950 px-2 text-center text-xs font-medium text-slate-200 has-[:checked]:border-emerald-400 has-[:checked]:bg-emerald-500/15 has-[:checked]:text-emerald-200">
+      <input
+        type="radio"
+        name={`status_${facilityId}`}
+        value={value}
+        defaultChecked={value === "normal"}
+        className="sr-only"
+      />
+      {label}
+    </label>
+  );
+}
+
+function formatDateShort(value: string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${value}T00:00:00`));
+}

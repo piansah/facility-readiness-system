@@ -1,0 +1,179 @@
+import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/auth/profile";
+import { redirect } from "next/navigation";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Shield, Users, Building2, ToggleLeft, ToggleRight } from "lucide-react";
+import { toggleUserStatus } from "./actions";
+import { UserEditModal, UserFormModal } from "./UserForm";
+
+// Types for the page
+type UserWithAccess = {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  is_active: boolean;
+  unit_id: string | null;
+  units?: { code: string; name: string };
+  super_admin_unit_access?: { unit_id: string }[];
+};
+
+export default async function UserManagementPage() {
+  const supabase = await createClient();
+  const { user } = await (await supabase.auth.getUser()).data;
+  
+  if (!user) redirect("/login");
+
+  const { profile } = await getProfile(supabase, user.id);
+
+  // Gating: Only Super Admin can access this
+  if (profile?.role !== "super_admin") {
+    redirect("/dashboard");
+  }
+
+  // Fetch Users with their basic unit info and multi-unit access
+  const { data: usersData } = await supabase
+    .from("users")
+    .select(`
+      *,
+      units (code, name),
+      super_admin_unit_access (unit_id)
+    `)
+    .order("created_at", { ascending: false });
+
+  const users = (usersData ?? []) as UserWithAccess[];
+
+  // Fetch All Units for the form/mapping
+  const { data: allUnits } = await supabase
+    .from("units")
+    .select("id, code, name")
+    .eq("is_active", true)
+    .order("code");
+
+  return (
+    <main className="min-h-dvh bg-slate-950 px-4 py-8">
+      <div className="mx-auto max-w-6xl space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-emerald-500 mb-1">
+              <Shield className="h-4 w-4" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Administrator</span>
+            </div>
+            <h1 className="text-2xl font-bold text-slate-100">Manajemen Pengguna</h1>
+            <p className="text-sm text-slate-400">Kelola akses, role, dan pembagian unit operasional.</p>
+          </div>
+          <UserFormModal units={allUnits || []} />
+        </div>
+
+        {/* User Stats */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Card className="border-slate-800 bg-slate-900/40">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-[10px] uppercase tracking-wider">Total Pengguna</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Users className="h-5 w-5 text-emerald-500" />
+                {users.length}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="border-slate-800 bg-slate-900/40">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-[10px] uppercase tracking-wider">Super Admin</CardDescription>
+              <CardTitle className="text-xl">
+                {users.filter(u => u.role === 'super_admin').length}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="border-slate-800 bg-slate-900/40">
+            <CardHeader className="p-4 pb-2">
+              <CardDescription className="text-[10px] uppercase tracking-wider">Unit Aktif</CardDescription>
+              <CardTitle className="text-xl">
+                {allUnits?.length || 0}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+
+        {/* User Table */}
+        <Card className="border-slate-800 bg-slate-900/40 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-900/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4">Nama & Email</th>
+                  <th className="px-6 py-4">Role</th>
+                  <th className="px-6 py-4">Akses Unit</th>
+                  <th className="px-6 py-4 text-center">Status</th>
+                  <th className="px-6 py-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {users.map((u) => (
+                  <tr key={u.id} className="hover:bg-slate-900/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-slate-100">{u.full_name}</p>
+                      <p className="text-xs text-slate-500">{u.email}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        u.role === 'super_admin' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
+                        u.role === 'admin' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                        'bg-slate-800 text-slate-400'
+                      }`}>
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {u.role === 'super_admin' ? (
+                        <div className="flex flex-wrap gap-1">
+                          {(u.super_admin_unit_access ?? []).length > 0 ? (
+                            (u.super_admin_unit_access ?? []).map((acc) => {
+                              const unitInfo = allUnits?.find(au => au.id === acc.unit_id);
+                              return (
+                                <span key={acc.unit_id} className="bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded text-[10px] font-bold border border-emerald-500/10">
+                                  {unitInfo?.code || '??'}
+                                </span>
+                              );
+                            })
+                          ) : (
+                            <span className="text-slate-500 text-[10px] italic">Global Access</span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-slate-300">
+                          <Building2 className="h-3 w-3 text-slate-500" />
+                          <span className="text-xs font-medium">{u.units?.code || 'Lintas Unit'}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <form action={async () => { "use server"; await toggleUserStatus(u.id, u.is_active); }}>
+                        <button type="submit" className="focus:outline-none">
+                          {u.is_active ? (
+                            <div className="flex items-center justify-center gap-1 text-emerald-400">
+                              <ToggleRight className="h-6 w-6" />
+                              <span className="text-[10px] font-bold uppercase">Aktif</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center gap-1 text-slate-600">
+                              <ToggleLeft className="h-6 w-6" />
+                              <span className="text-[10px] font-bold uppercase">Mati</span>
+                            </div>
+                          )}
+                        </button>
+                      </form>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <UserEditModal user={u} units={allUnits || []} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+    </main>
+  );
+}
