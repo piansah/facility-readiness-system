@@ -1,15 +1,21 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Camera, ImagePlus } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import { Button } from "@/components/ui/button";
 
 export function ImageCompressorInput({ name }: { name: string; required?: boolean }) {
   const [isCompressing, setIsCompressing] = useState(false);
-  const [fileCount, setFileCount] = useState(0);
+  const [previews, setPreviews] = useState<{ name: string; url: string }[]>([]);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      previews.forEach((preview) => URL.revokeObjectURL(preview.url));
+    };
+  }, [previews]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -40,7 +46,7 @@ export function ImageCompressorInput({ name }: { name: string; required?: boolea
       
       // Update the input's files with the compressed ones
       event.target.files = dataTransfer.files;
-      setFileCount(countSelectedFiles());
+      updatePreviews();
     } catch (error) {
       console.error("Compression error:", error);
       alert("Gagal mengompresi foto. Pastikan format gambar didukung.");
@@ -49,10 +55,20 @@ export function ImageCompressorInput({ name }: { name: string; required?: boolea
     }
   };
 
-  const countSelectedFiles = () => {
-    const cameraFiles = cameraInputRef.current?.files?.length ?? 0;
-    const galleryFiles = galleryInputRef.current?.files?.length ?? 0;
-    return cameraFiles + galleryFiles;
+  const updatePreviews = () => {
+    setPreviews((current) => {
+      current.forEach((preview) => URL.revokeObjectURL(preview.url));
+
+      const files = [
+        ...Array.from(cameraInputRef.current?.files ?? []),
+        ...Array.from(galleryInputRef.current?.files ?? []),
+      ];
+
+      return files.map((file) => ({
+        name: file.name,
+        url: URL.createObjectURL(file),
+      }));
+    });
   };
 
   return (
@@ -87,9 +103,19 @@ export function ImageCompressorInput({ name }: { name: string; required?: boolea
         onChange={handleFileChange}
         className="sr-only"
       />
-      <p className="text-xs text-slate-400">
-        {fileCount > 0 ? `${fileCount} foto siap diunggah.` : "Belum ada foto dipilih."}
-      </p>
+      {previews.length > 0 ? (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {previews.map((preview) => (
+            <figure key={preview.url} className="overflow-hidden rounded-md border border-slate-800 bg-slate-950">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={preview.url} alt={preview.name} className="h-28 w-full object-cover" />
+              <figcaption className="truncate px-2 py-1 text-[11px] text-slate-400">{preview.name}</figcaption>
+            </figure>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-400">Belum ada foto dipilih.</p>
+      )}
       {isCompressing && (
         <p className="text-xs font-medium text-amber-500 animate-pulse">
           Mengompresi ukuran foto untuk menghemat kuota...

@@ -12,6 +12,7 @@ import { createIncident } from "./actions";
 import { IncidentTimeInput } from "./incident-time-input";
 import { DraftManager } from "@/components/draft-manager";
 import { ImageCompressorInput } from "@/components/image-compressor-input";
+import { SubmitButton } from "@/components/submit-button";
 
 type PageProps = {
   searchParams: Promise<{ error?: string; saved?: string }>;
@@ -179,10 +180,10 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
           </CardContent>
         </Card>
 
-        <Button type="submit" size="lg">
+        <SubmitButton pendingText="Menyimpan..." size="lg">
           <SendHorizonal className="h-4 w-4" aria-hidden="true" />
           Simpan Laporan Non-Rutin
-        </Button>
+        </SubmitButton>
         </form>
       </div>
     </main>
