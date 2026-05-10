@@ -81,31 +81,31 @@ export function DraftManager({ formId, storageKey }: DraftManagerProps) {
   }
 
   return (
-    <Card className="mb-4 border-blue-900/50 bg-blue-950/20 backdrop-blur-sm">
-      <CardContent className="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
-        <div className="flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 text-blue-400" aria-hidden="true" />
-          <p className="text-sm text-blue-100">
+    <Card className="mb-3 border-blue-900/50 bg-blue-950/20 backdrop-blur-sm">
+      <CardContent className="flex items-center justify-between gap-3 p-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0 text-blue-400" aria-hidden="true" />
+          <p className="min-w-0 text-xs leading-5 text-blue-100">
             {showBanner
               ? "Draft lokal ditemukan dari sesi sebelumnya."
               : "Koneksi offline. Perubahan akan tersimpan sebagai draft lokal di perangkat ini."}
           </p>
         </div>
         {showBanner ? (
-          <div className="flex w-full gap-2 sm:w-auto">
-            <Button type="button" variant="outline" size="sm" onClick={restoreDraft} className="flex-1 sm:flex-none">
-              <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
-              Pulihkan
+          <div className="flex shrink-0 items-center gap-1">
+            <Button type="button" variant="outline" size="sm" onClick={restoreDraft} className="h-8 px-2 text-xs">
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+              <span className="hidden sm:inline">Pulihkan</span>
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={clearDraft}
-              className="flex-1 text-blue-400 hover:text-red-400 sm:flex-none"
+              className="h-8 px-2 text-xs text-blue-400 hover:text-red-400"
             >
-              <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
-              Abaikan
+              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+              <span className="hidden sm:inline">Abaikan</span>
             </Button>
           </div>
         ) : null}

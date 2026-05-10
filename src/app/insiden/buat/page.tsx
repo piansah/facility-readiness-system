@@ -66,9 +66,9 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
   ]);
 
   return (
-    <main className="min-h-dvh bg-slate-950">
+    <main className="min-h-dvh overflow-x-hidden bg-slate-950">
       <header className="border-b border-slate-800 bg-slate-950">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-4">
+        <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 py-4">
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex" aria-label="Kembali ke dashboard">
             <Link href="/dashboard">
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -84,10 +84,10 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
         </div>
       </header>
 
-      <div className="mx-auto max-w-3xl px-4 py-5">
-      <DraftManager formId="incident-form" storageKey="incident-draft" />
+      <div className="mx-auto w-full max-w-3xl px-3 py-4 sm:px-4 sm:py-5">
+        <DraftManager formId="incident-form" storageKey="incident-draft" />
 
-      <form id="incident-form" action={createIncident} className="grid gap-4">
+        <form id="incident-form" action={createIncident} className="grid min-w-0 gap-4">
         {params.error ? (
           <Card className="border-red-900/70 bg-red-950/40">
             <CardContent className="p-5 text-sm text-red-200">
@@ -101,14 +101,14 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
             <CardTitle>Data Kegiatan</CardTitle>
             <CardDescription>Foto wajib diunggah sebagai dokumentasi non-rutin.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid gap-2">
+          <CardContent className="grid min-w-0 gap-4">
+            <div className="grid min-w-0 gap-2">
               <Label htmlFor="daily_report_id">Laporan harian terkait</Label>
               <select
                 id="daily_report_id"
                 name="daily_report_id"
                 required
-                className="h-11 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                className="h-11 w-full min-w-0 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               >
                 <option value="">Pilih laporan</option>
                 {(reports ?? []).map((report) => (
@@ -119,12 +119,12 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
               </select>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 gap-2">
               <Label htmlFor="facility_id">Fasilitas terkait</Label>
               <select
                 id="facility_id"
                 name="facility_id"
-                className="h-11 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                className="h-11 w-full min-w-0 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               >
                 <option value="">Tidak spesifik</option>
                 {(facilities ?? []).map((facility) => (
@@ -136,40 +136,40 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
               </select>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 gap-2">
               <Label htmlFor="incident_time">Waktu kejadian</Label>
               <IncidentTimeInput />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 gap-2">
               <Label htmlFor="title">Judul</Label>
               <Input id="title" name="title" placeholder="Contoh: Pengecekan baterai UPS" required />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 gap-2">
               <Label htmlFor="description">Deskripsi</Label>
               <textarea
                 id="description"
                 name="description"
                 rows={4}
                 required
-                className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full min-w-0 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                 placeholder="Tuliskan kronologi atau kegiatan yang dilakukan."
               />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 gap-2">
               <Label htmlFor="action_taken">Tindakan awal</Label>
               <textarea
                 id="action_taken"
                 name="action_taken"
                 rows={3}
-                className="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full min-w-0 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                 placeholder="Contoh: dilakukan pengecekan tegangan dan dokumentasi."
               />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 gap-2">
               <Label htmlFor="photos">Foto dokumentasi</Label>
               <ImageCompressorInput name="photos" required />
               <p className="text-sm text-slate-400">
@@ -183,7 +183,7 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
           <SendHorizonal className="h-4 w-4" aria-hidden="true" />
           Simpan Laporan Non-Rutin
         </Button>
-      </form>
+        </form>
       </div>
     </main>
   );
