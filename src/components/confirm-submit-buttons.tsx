@@ -1,19 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Save, SendHorizonal } from "lucide-react";
+import { Loader2, Save, SendHorizonal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "./confirm-dialog";
 
 export function ConfirmSubmitButtons({ 
   isEdit = false,
-  formId = "report-form"
 }: { 
   isEdit?: boolean;
-  formId?: string;
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingIntent, setPendingIntent] = useState<"draft" | "submitted" | null>(null);
 
   const getFormAndIntentInput = (btn: HTMLElement) => {
     const form = btn.closest("form") as HTMLFormElement;
@@ -32,7 +30,12 @@ export function ConfirmSubmitButtons({
   const handleDraftClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     const { form, intentInput } = getFormAndIntentInput(e.currentTarget);
     if (form && intentInput) {
+      if (!form.reportValidity()) {
+        return;
+      }
+
       intentInput.value = "draft";
+      setPendingIntent("draft");
       form.requestSubmit();
     }
   };
@@ -45,9 +48,14 @@ export function ConfirmSubmitButtons({
 
     const { form, intentInput } = getFormAndIntentInput(stickyFooter as HTMLElement);
     if (form && intentInput) {
+      if (!form.reportValidity()) {
+        setShowConfirm(false);
+        return;
+      }
+
       intentInput.value = "submitted";
       setShowConfirm(false);
-      setIsSubmitting(true);
+      setPendingIntent("submitted");
       form.requestSubmit();
     }
   };
@@ -60,21 +68,29 @@ export function ConfirmSubmitButtons({
             type="button" 
             onClick={handleDraftClick}
             variant="outline"
-            disabled={isSubmitting}
+            disabled={pendingIntent !== null}
             className="border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800"
           >
-            <Save className="mr-2 h-4 w-4" aria-hidden="true" />
-            {isEdit ? "Update Draft" : "Simpan Draft"}
+            {pendingIntent === "draft" ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" aria-hidden="true" />
+            )}
+            {pendingIntent === "draft" ? "Menyimpan..." : isEdit ? "Update Draft" : "Simpan Draft"}
           </Button>
           
           <Button 
             type="button" 
-            disabled={isSubmitting}
+            disabled={pendingIntent !== null}
             onClick={() => setShowConfirm(true)}
             className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20"
           >
-            <SendHorizonal className="mr-2 h-4 w-4" aria-hidden="true" />
-            Submit Laporan
+            {pendingIntent === "submitted" ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <SendHorizonal className="mr-2 h-4 w-4" aria-hidden="true" />
+            )}
+            {pendingIntent === "submitted" ? "Mengirim..." : "Submit Laporan"}
           </Button>
         </div>
       </div>
@@ -83,7 +99,7 @@ export function ConfirmSubmitButtons({
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={handleFinalConfirm}
-        isPending={isSubmitting}
+        isPending={pendingIntent === "submitted"}
         title="Kirim Laporan?"
         description="Laporan yang sudah dikirim tidak dapat diubah kembali. Pastikan semua data sudah benar."
         confirmText="Ya, Kirim Sekarang"

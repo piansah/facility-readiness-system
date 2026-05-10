@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, ImagePlus } from "lucide-react";
+import { Camera, ImagePlus, X } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import { Button } from "@/components/ui/button";
 
 export function ImageCompressorInput({ name }: { name: string; required?: boolean }) {
   const [isCompressing, setIsCompressing] = useState(false);
   const [previews, setPreviews] = useState<{ name: string; url: string }[]>([]);
+  const submitInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -25,6 +26,10 @@ export function ImageCompressorInput({ name }: { name: string; required?: boolea
     
     try {
       const dataTransfer = new DataTransfer();
+
+      for (const existingFile of Array.from(submitInputRef.current?.files ?? [])) {
+        dataTransfer.items.add(existingFile);
+      }
       
       const options = {
         maxSizeMB: 0.5, // Compress to max 500KB
@@ -44,8 +49,11 @@ export function ImageCompressorInput({ name }: { name: string; required?: boolea
         }
       }
       
-      // Update the input's files with the compressed ones
-      event.target.files = dataTransfer.files;
+      if (submitInputRef.current) {
+        submitInputRef.current.files = dataTransfer.files;
+      }
+
+      event.target.value = "";
       updatePreviews();
     } catch (error) {
       console.error("Compression error:", error);
@@ -59,16 +67,29 @@ export function ImageCompressorInput({ name }: { name: string; required?: boolea
     setPreviews((current) => {
       current.forEach((preview) => URL.revokeObjectURL(preview.url));
 
-      const files = [
-        ...Array.from(cameraInputRef.current?.files ?? []),
-        ...Array.from(galleryInputRef.current?.files ?? []),
-      ];
+      const files = Array.from(submitInputRef.current?.files ?? []);
 
       return files.map((file) => ({
         name: file.name,
         url: URL.createObjectURL(file),
       }));
     });
+  };
+
+  const removePhoto = (indexToRemove: number) => {
+    const dataTransfer = new DataTransfer();
+
+    Array.from(submitInputRef.current?.files ?? []).forEach((file, index) => {
+      if (index !== indexToRemove) {
+        dataTransfer.items.add(file);
+      }
+    });
+
+    if (submitInputRef.current) {
+      submitInputRef.current.files = dataTransfer.files;
+    }
+
+    updatePreviews();
   };
 
   return (
@@ -83,10 +104,10 @@ export function ImageCompressorInput({ name }: { name: string; required?: boolea
           Galeri
         </Button>
       </div>
+      <input ref={submitInputRef} name={name} type="file" multiple className="sr-only" />
       <input
         ref={cameraInputRef}
         id={`${name}-camera`}
-        name={name}
         type="file"
         accept="image/*"
         capture="environment"
@@ -96,7 +117,6 @@ export function ImageCompressorInput({ name }: { name: string; required?: boolea
       <input
         ref={galleryInputRef}
         id={`${name}-gallery`}
-        name={name}
         type="file"
         accept="image/*"
         multiple
@@ -105,8 +125,16 @@ export function ImageCompressorInput({ name }: { name: string; required?: boolea
       />
       {previews.length > 0 ? (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {previews.map((preview) => (
-            <figure key={preview.url} className="overflow-hidden rounded-md border border-slate-800 bg-slate-950">
+          {previews.map((preview, index) => (
+            <figure key={preview.url} className="relative overflow-hidden rounded-md border border-slate-800 bg-slate-950">
+              <button
+                type="button"
+                onClick={() => removePhoto(index)}
+                className="absolute right-1 top-1 rounded-full bg-slate-950/80 p-1 text-slate-200 shadow hover:bg-red-950 hover:text-red-200"
+                aria-label={`Hapus ${preview.name}`}
+              >
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={preview.url} alt={preview.name} className="h-28 w-full object-cover" />
               <figcaption className="truncate px-2 py-1 text-[11px] text-slate-400">{preview.name}</figcaption>
