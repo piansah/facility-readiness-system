@@ -33,7 +33,7 @@ export async function saveDailyReport(formData: FormData) {
   const facilityIds = formData.getAll("facility_id").map(String);
   const unitId = profile.unit_id;
   const currentStaffIds = formData.getAll("current_staff_id").map(String).filter(Boolean);
-  const previousStaffIds = formData.getAll("previous_staff_id").map(String).filter(Boolean);
+  const nextStaffIds = formData.getAll("next_staff_id").map(String).filter(Boolean);
 
   if (!unitId || !reportDate || !facilityIds.length) {
     redirect("/laporan/buat?error=incomplete");
@@ -56,9 +56,9 @@ export async function saveDailyReport(formData: FormData) {
     redirect("/laporan/buat?error=invalid_facility");
   }
 
-  const selectedStaffIds = Array.from(new Set([...currentStaffIds, ...previousStaffIds]));
+  const selectedStaffIds = Array.from(new Set([...currentStaffIds, ...nextStaffIds]));
   let currentShiftStaff: StaffSnapshot[] = [];
-  let previousShiftStaff: StaffSnapshot[] = [];
+  let nextShiftStaff: StaffSnapshot[] = [];
 
   if (selectedStaffIds.length > 0) {
     const { data: staffUsers, error: staffError } = await supabase
@@ -85,7 +85,7 @@ export async function saveDailyReport(formData: FormData) {
     }
 
     currentShiftStaff = currentStaffIds.map((id) => staffById.get(id)).filter((s): s is StaffSnapshot => Boolean(s));
-    previousShiftStaff = previousStaffIds.map((id) => staffById.get(id)).filter((s): s is StaffSnapshot => Boolean(s));
+    nextShiftStaff = nextStaffIds.map((id) => staffById.get(id)).filter((s): s is StaffSnapshot => Boolean(s));
   }
 
   const { data: report, error: reportError } = await supabase
@@ -98,7 +98,7 @@ export async function saveDailyReport(formData: FormData) {
         shift,
         status: intent,
         current_shift_staff: currentShiftStaff,
-        previous_shift_staff: previousShiftStaff,
+        next_shift_staff: nextShiftStaff,
       },
       {
         onConflict: "unit_id,report_date,shift",

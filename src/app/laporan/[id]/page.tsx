@@ -22,7 +22,7 @@ type ReportDetail = {
   status: string;
   submitted_at: string | null;
   current_shift_staff: StaffSnapshot[];
-  previous_shift_staff: StaffSnapshot[];
+  next_shift_staff: StaffSnapshot[];
   users: {
     full_name: string;
   } | null;
@@ -111,7 +111,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
       status,
       submitted_at,
       current_shift_staff,
-      previous_shift_staff,
+      next_shift_staff,
       users!daily_reports_created_by_fkey (
         full_name
       ),
@@ -332,7 +332,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
             />
             <StaffList
               title="Petugas shift berikutnya"
-              staff={report.previous_shift_staff ?? []}
+              staff={report.next_shift_staff ?? []}
             />
           </CardContent>
         </Card>

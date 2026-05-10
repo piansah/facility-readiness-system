@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Save, SendHorizonal } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +37,17 @@ type StaffOption = {
   role: string;
 };
 
+type LatestReportSnapshot = {
+  id: string;
+  report_date: string;
+  shift: string;
+  facility_status_logs: {
+    facility_id: string;
+    status: string;
+    notes: string | null;
+  }[];
+};
+
 type CreateReportPageProps = {
   searchParams: Promise<{ error?: string }>;
 };
@@ -59,7 +70,7 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const [{ data: facilities, error }, { data: staffOptions }] = await Promise.all([
+  const [{ data: facilities, error }, { data: staffOptions }, { data: latestReports }] = await Promise.all([
     supabase
       .from("facilities")
       .select(
@@ -87,9 +98,39 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
       .order("role", { ascending: true })
       .order("full_name", { ascending: true })
       .returns<StaffOption[]>(),
+    supabase
+      .from("daily_reports")
+      .select(
+        `
+        id,
+        report_date,
+        shift,
+        facility_status_logs (
+          facility_id,
+          status,
+          notes
+        )
+      `,
+      )
+      .eq("unit_id", profile.unit_id)
+      .in("status", ["submitted", "reviewed"])
+      .order("report_date", { ascending: false })
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .returns<LatestReportSnapshot[]>(),
   ]);
 
   const groups = groupFacilities(facilities ?? []);
+  const latestReport = latestReports?.[0] ?? null;
+  const latestStatusByFacility = new Map(
+    latestReport?.facility_status_logs.map((log) => [
+      log.facility_id,
+      {
+        status: log.status,
+        notes: log.notes,
+      },
+    ]) ?? [],
+  );
 
   return (
     <main className="min-h-dvh bg-slate-950">
@@ -157,6 +198,15 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
           </CardContent>
         </Card>
 
+        {latestReport ? (
+          <Card className="border-emerald-900/40 bg-emerald-950/10">
+            <CardContent className="p-4 text-sm text-emerald-100">
+              Status fasilitas otomatis mengikuti laporan terakhir: {formatDateShort(latestReport.report_date)} - shift{" "}
+              {latestReport.shift}. Ubah hanya bagian yang kondisinya berubah.
+            </CardContent>
+          </Card>
+        ) : null}
+
         {params.error ? (
           <Card className="border-red-900/70 bg-red-950/40">
             <CardContent className="p-5 text-sm text-red-200">
@@ -199,11 +249,30 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
                     </div>
                     <div className="grid gap-2 sm:grid-cols-3">
                       <input type="hidden" name="facility_id" value={facility.id} />
-                      <StatusOption facilityId={facility.id} value="normal" label="Normal" />
-                      <StatusOption facilityId={facility.id} value="rusak" label="Rusak" />
-                      <StatusOption facilityId={facility.id} value="operasi_menurun" label="Menurun" />
+                      <StatusOption
+                        facilityId={facility.id}
+                        value="normal"
+                        label="Normal"
+                        current={latestStatusByFacility.get(facility.id)?.status}
+                      />
+                      <StatusOption
+                        facilityId={facility.id}
+                        value="rusak"
+                        label="Rusak"
+                        current={latestStatusByFacility.get(facility.id)?.status}
+                      />
+                      <StatusOption
+                        facilityId={facility.id}
+                        value="operasi_menurun"
+                        label="Menurun"
+                        current={latestStatusByFacility.get(facility.id)?.status}
+                      />
                     </div>
-                    <Input name={`note_${facility.id}`} placeholder="Catatan opsional" />
+                    <Input
+                      name={`note_${facility.id}`}
+                      placeholder="Catatan opsional"
+                      defaultValue={latestStatusByFacility.get(facility.id)?.notes ?? ""}
+                    />
                   </div>
                 ))}
               </CardContent>
@@ -249,18 +318,22 @@ function StatusOption({
   facilityId,
   value,
   label,
+  current,
 }: {
   facilityId: string;
   value: string;
   label: string;
+  current?: string;
 }) {
+  const selectedValue = current ?? "normal";
+
   return (
     <label className="flex min-h-10 items-center justify-center rounded-md border border-slate-700 bg-slate-950 px-2 text-center text-xs font-medium text-slate-200 has-[:checked]:border-emerald-400 has-[:checked]:bg-emerald-500/15 has-[:checked]:text-emerald-200">
       <input
         type="radio"
         name={`status_${facilityId}`}
         value={value}
-        defaultChecked={value === "normal"}
+        defaultChecked={value === selectedValue}
         className="sr-only"
       />
       {label}

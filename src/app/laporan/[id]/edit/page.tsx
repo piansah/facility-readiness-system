@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Save, SendHorizonal } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth/profile";
-import { canCreateReports, roleLabel } from "@/lib/auth/roles";
+import { canCreateReports } from "@/lib/auth/roles";
 import { saveDailyReport } from "@/app/laporan/buat/actions";
 import { DraftManager } from "@/components/draft-manager";
 import { ConfirmSubmitButtons } from "@/components/confirm-submit-buttons";
@@ -26,6 +26,16 @@ type FacilityRow = {
     status: string;
     notes: string | null;
   };
+};
+
+type FacilityLog = {
+  facility_id: string;
+  status: string;
+  notes: string | null;
+};
+
+type StaffSnapshot = {
+  id?: string;
 };
 
 type CategoryGroup = {
@@ -115,14 +125,18 @@ export default async function EditReportPage({
 
   // 4. Merge logs into facilities
   const facilities = facilitiesData?.map(f => {
-    const log = report.facility_status_logs?.find((l: any) => l.facility_id === f.id);
+    const log = (report.facility_status_logs as FacilityLog[] | undefined)?.find((l) => l.facility_id === f.id);
     return { ...f, log };
   }) ?? [];
 
   const groups = groupFacilities(facilities);
 
-  const currentStaffIds = report.current_shift_staff?.map((s: any) => s.id) || [];
-  const previousStaffIds = report.previous_shift_staff?.map((s: any) => s.id) || [];
+  const currentStaffIds = ((report.current_shift_staff as StaffSnapshot[] | undefined) ?? [])
+    .map((s) => s.id)
+    .filter((id): id is string => Boolean(id));
+  const nextStaffIds = ((report.next_shift_staff as StaffSnapshot[] | undefined) ?? [])
+    .map((s) => s.id)
+    .filter((id): id is string => Boolean(id));
 
   return (
     <main className="min-h-dvh bg-slate-950">
@@ -191,7 +205,7 @@ export default async function EditReportPage({
               <StaffSelector 
                 staff={staffOptions ?? []} 
                 initialCurrentIds={currentStaffIds}
-                initialNextIds={previousStaffIds}
+                initialNextIds={nextStaffIds}
                 currentDateLabel={formatDateShort(report.report_date)}
               />
             </CardContent>

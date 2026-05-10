@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { Camera, ImagePlus } from "lucide-react";
 import imageCompression from "browser-image-compression";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-export function ImageCompressorInput({ name, required }: { name: string; required?: boolean }) {
+export function ImageCompressorInput({ name }: { name: string; required?: boolean }) {
   const [isCompressing, setIsCompressing] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [fileCount, setFileCount] = useState(0);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -36,9 +39,8 @@ export function ImageCompressorInput({ name, required }: { name: string; require
       }
       
       // Update the input's files with the compressed ones
-      if (inputRef.current) {
-        inputRef.current.files = dataTransfer.files;
-      }
+      event.target.files = dataTransfer.files;
+      setFileCount(countSelectedFiles());
     } catch (error) {
       console.error("Compression error:", error);
       alert("Gagal mengompresi foto. Pastikan format gambar didukung.");
@@ -47,18 +49,47 @@ export function ImageCompressorInput({ name, required }: { name: string; require
     }
   };
 
+  const countSelectedFiles = () => {
+    const cameraFiles = cameraInputRef.current?.files?.length ?? 0;
+    const galleryFiles = galleryInputRef.current?.files?.length ?? 0;
+    return cameraFiles + galleryFiles;
+  };
+
   return (
     <div className="grid gap-2">
-      <Input 
-        ref={inputRef}
-        id={name} 
-        name={name} 
-        type="file" 
-        accept="image/*" 
-        multiple 
-        required={required} 
+      <div className="grid grid-cols-2 gap-2">
+        <Button type="button" variant="outline" onClick={() => cameraInputRef.current?.click()}>
+          <Camera className="h-4 w-4" aria-hidden="true" />
+          Ambil Foto
+        </Button>
+        <Button type="button" variant="outline" onClick={() => galleryInputRef.current?.click()}>
+          <ImagePlus className="h-4 w-4" aria-hidden="true" />
+          Galeri
+        </Button>
+      </div>
+      <input
+        ref={cameraInputRef}
+        id={`${name}-camera`}
+        name={name}
+        type="file"
+        accept="image/*"
+        capture="environment"
         onChange={handleFileChange}
+        className="sr-only"
       />
+      <input
+        ref={galleryInputRef}
+        id={`${name}-gallery`}
+        name={name}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFileChange}
+        className="sr-only"
+      />
+      <p className="text-xs text-slate-400">
+        {fileCount > 0 ? `${fileCount} foto siap diunggah.` : "Belum ada foto dipilih."}
+      </p>
       {isCompressing && (
         <p className="text-xs font-medium text-amber-500 animate-pulse">
           Mengompresi ukuran foto untuk menghemat kuota...

@@ -41,11 +41,10 @@ export function StaffSelector({
   };
 
   return (
-    <div className="max-w-2xl">
-      {/* Section 1: Diserahkan Oleh */}
+    <div className="grid max-w-2xl gap-3">
       <section className="grid gap-2 rounded-md border border-slate-800 bg-slate-900 p-2.5 sm:p-3">
         <div>
-          <h2 className="text-sm font-semibold text-slate-100">Diserahkan Oleh (Shift Ini)</h2>
+          <h2 className="text-sm font-semibold text-slate-100">Petugas Shift Ini</h2>
           <p className="mt-0.5 text-[11px] sm:text-xs text-slate-400">{currentDateLabel} - pilih sesuai shift</p>
         </div>
         <div className="grid gap-1.5">
@@ -79,6 +78,41 @@ export function StaffSelector({
         </div>
       </section>
 
+      <section className="grid gap-2 rounded-md border border-slate-800 bg-slate-900 p-2.5 sm:p-3">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-100">Petugas Shift Berikutnya</h2>
+          <p className="mt-0.5 text-[11px] sm:text-xs text-slate-400">Pilih petugas/admin yang akan menerima shift berikutnya</p>
+        </div>
+        <div className="grid gap-1.5">
+          {staff.map((person) => {
+            const isChecked = nextSelected.includes(person.id);
+
+            return (
+              <label
+                key={`next-${person.id}`}
+                className={`flex cursor-pointer items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors sm:px-3 sm:py-2 sm:text-sm ${
+                  isChecked
+                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                    : "border-slate-800 bg-slate-950 text-slate-200 hover:border-slate-700"
+                }`}
+              >
+                <span>
+                  {person.full_name}
+                  <span className="ml-2 text-[10px] uppercase text-slate-500">{person.role}</span>
+                </span>
+                <input
+                  type="checkbox"
+                  name="next_staff_id"
+                  value={person.id}
+                  checked={isChecked}
+                  onChange={() => toggleNext(person.id)}
+                  className="h-4 w-4 cursor-pointer accent-emerald-500"
+                />
+              </label>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }

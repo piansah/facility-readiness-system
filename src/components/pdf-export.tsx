@@ -11,7 +11,7 @@ type ReportForPdf = {
   shift: string;
   status: string;
   current_shift_staff?: StaffSnapshot[];
-  previous_shift_staff?: StaffSnapshot[];
+  next_shift_staff?: StaffSnapshot[];
   users: {
     full_name: string;
   } | null;
@@ -90,9 +90,9 @@ export function PdfExport({ report }: PdfExportProps) {
       doc.text("Petugas Serah Terima Shift", 15, 62);
       doc.setFontSize(9);
       const currentStaff = formatStaffList(report.current_shift_staff);
-      const previousStaff = formatStaffList(report.previous_shift_staff);
+      const nextStaff = formatStaffList(report.next_shift_staff);
       doc.text(`Shift ${report.shift}: ${currentStaff}`, 15, 68);
-      doc.text(`Shift sebelumnya: ${previousStaff}`, 15, 74);
+      doc.text(`Shift berikutnya: ${nextStaff}`, 15, 74);
 
       doc.setFontSize(12);
       doc.text("1. Checklist Kesiapan Fasilitas", 15, 86);
