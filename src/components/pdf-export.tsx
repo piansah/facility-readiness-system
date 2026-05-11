@@ -149,40 +149,61 @@ export function PdfExport({ report }: PdfExportProps) {
             currentY += splitAction.length * 4 + 5;
           }
 
+          let photoX = 20;
+          let maxRowHeight = 0;
+
           for (const photo of incident.photos ?? []) {
-            if (!photo.signedUrl) {
-              continue;
-            }
+            if (!photo.signedUrl) continue;
 
             try {
-              if (currentY > 220) {
-                doc.addPage();
-                currentY = 20;
-              }
-
               const image = await fetchImageData(photo.signedUrl);
+              const isPortrait = image.height > image.width;
               
-              // Hitung dimensi agar tidak gepeng (lebar max 100mm)
-              const maxWidth = 100;
-              const maxHeight = 80;
-              let imgWidth = maxWidth;
+              // Tentukan lebar target
+              // Portrait: ~55mm (muat 3 per baris), Landscape: 100mm (1 per baris)
+              let targetWidth = isPortrait ? 55 : 100;
+              let imgWidth = targetWidth;
               let imgHeight = (image.height * imgWidth) / image.width;
 
+              // Batasi tinggi max agar tidak makan satu halaman sendiri
+              const maxHeight = 80;
               if (imgHeight > maxHeight) {
                 imgHeight = maxHeight;
                 imgWidth = (image.width * imgHeight) / image.height;
               }
 
-              doc.addImage(image.dataUrl, image.format, 20, currentY, imgWidth, imgHeight);
-              currentY += imgHeight + 10;
+              // Cek apakah harus ganti baris (untuk portrait) atau memang landscape
+              if (!isPortrait || (photoX + imgWidth > pageWidth - 15)) {
+                currentY += maxRowHeight + (maxRowHeight > 0 ? 5 : 0);
+                photoX = 20;
+                maxRowHeight = 0;
+              }
+
+              // Cek apakah harus ganti halaman
+              if (currentY + imgHeight > 270) {
+                doc.addPage();
+                currentY = 20;
+                photoX = 20;
+              }
+
+              doc.addImage(image.dataUrl, image.format, photoX, currentY, imgWidth, imgHeight);
+              
+              if (isPortrait) {
+                photoX += imgWidth + 5;
+                maxRowHeight = Math.max(maxRowHeight, imgHeight);
+              } else {
+                currentY += imgHeight + 10;
+                photoX = 20;
+                maxRowHeight = 0;
+              }
             } catch (error) {
               console.error("Failed to add image to PDF", error);
-              doc.text("Foto gagal dimuat ke PDF.", 20, currentY);
+              doc.text("Foto gagal dimuat.", 20, currentY);
               currentY += 8;
             }
           }
 
-          currentY += 5;
+          currentY += maxRowHeight + (maxRowHeight > 0 ? 10 : 5);
         }
       }
 
