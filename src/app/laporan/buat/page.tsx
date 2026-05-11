@@ -69,7 +69,8 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
     redirect("/dashboard?error=forbidden");
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Gunakan tanggal lokal (WIB/sesuai device) bukan UTC
+  const today = new Date().toLocaleDateString('en-CA');
   const [{ data: facilities, error }, { data: staffOptions }, { data: latestReports }] = await Promise.all([
     supabase
       .from("facilities")
@@ -165,7 +166,13 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="report_date">Tanggal</Label>
-              <Input id="report_date" name="report_date" type="date" defaultValue={today} />
+              <Input 
+                id="report_date" 
+                name="report_date" 
+                type="date" 
+                defaultValue={today} 
+                data-no-draft="true"
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="shift">Shift</Label>

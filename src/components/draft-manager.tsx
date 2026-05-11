@@ -123,6 +123,19 @@ function readFormData(form: HTMLFormElement) {
       return;
     }
 
+    // Skip fields marked with data-no-draft
+    const element = form.elements.namedItem(key);
+    if (element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) {
+      if (element.getAttribute('data-no-draft') === 'true') {
+        return;
+      }
+    } else if (element instanceof RadioNodeList) {
+      const first = element[0];
+      if (first instanceof HTMLElement && first.getAttribute('data-no-draft') === 'true') {
+        return;
+      }
+    }
+
     const currentValue = data[key];
 
     if (currentValue === undefined) {

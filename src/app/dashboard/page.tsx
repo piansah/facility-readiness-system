@@ -55,7 +55,8 @@ export default async function DashboardPage() {
   const canReview = canReviewReports(profile?.role);
   const isSuperAdmin = profile?.role === "super_admin";
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Gunakan tanggal lokal (WIB/sesuai device) bukan UTC
+  const today = new Date().toLocaleDateString('en-CA');
   
   // 1. Determine accessible Unit IDs
   let accessibleUnitIds: string[] = [];
@@ -78,6 +79,13 @@ export default async function DashboardPage() {
   }
 
   // 2. Base queries
+  // Ambil data laporan dasar untuk cek status (Shift Pagi/Malam)
+  let reportsQuery = supabase
+    .from("daily_reports")
+    .select("id, report_date, shift, status")
+    .eq("report_date", today);
+    
+  // Tetap ambil summary untuk angka KPI (Normal/Rusak/Menurun)
   let summariesQuery = supabase
     .from("vw_report_summary")
     .select("*")
@@ -90,6 +98,7 @@ export default async function DashboardPage() {
 
   // 3. Apply Filters
   if (accessibleUnitIds.length > 0) {
+    reportsQuery = reportsQuery.in("unit_id", accessibleUnitIds);
     summariesQuery = summariesQuery.in("unit_id", accessibleUnitIds);
     openIssuesQuery = openIssuesQuery.in("unit_id", accessibleUnitIds);
   }
@@ -113,11 +122,13 @@ export default async function DashboardPage() {
   }
 
   const [
+    { data: dailyReports },
     { data: summaries }, 
     { data: openIssues }, 
     unitsResult,
     pendingReviewsResult
   ] = await Promise.all([
+    reportsQuery,
     summariesQuery.returns<ReportSummary[]>(),
     openIssuesQuery.limit(isSuperAdmin ? 20 : 5).returns<OpenIssue[]>(),
     unitsQuery ? unitsQuery.returns<UnitInfo[]>() : Promise.resolve({ data: null }),
@@ -144,7 +155,7 @@ export default async function DashboardPage() {
   
   const shiftSummaries = ["pagi", "malam"].map((shift) => ({
     shift,
-    report: (summaries ?? []).find((report) => report.shift === shift),
+    report: (dailyReports ?? []).find((report) => report.shift === shift),
   }));
 
   const dashboardSubTitle = isSuperAdmin
