@@ -58,11 +58,17 @@ export default async function FacilityManagementPage({
   const isSuperAdmin = canManageUnits(profile?.role);
 
   // Fetch all units for sidebar/filter
-  const { data: units } = await supabase
+  let unitsQuery = supabase
     .from("units")
     .select("*")
-    .order("code")
-    .returns<Unit[]>();
+    .order("code");
+
+  // Admin hanya boleh lihat unitnya sendiri di kueri
+  if (profile?.role === "admin" && profile.unit_id) {
+    unitsQuery = unitsQuery.eq("id", profile.unit_id);
+  }
+
+  const { data: units } = await unitsQuery.returns<Unit[]>();
 
   // Fetch categories
   const { data: categories } = await supabase
