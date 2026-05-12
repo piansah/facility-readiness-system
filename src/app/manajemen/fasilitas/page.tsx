@@ -113,7 +113,7 @@ export default async function FacilityManagementPage({
 
         <div className={`grid grid-cols-1 gap-6 ${isSuperAdmin ? 'lg:grid-cols-4' : ''}`}>
           {/* Sidebar: Unit List - HANYA untuk Super Admin */}
-          {isSuperAdmin && (
+          {isSuperAdmin ? (
             <div className="space-y-4 lg:col-span-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
@@ -156,7 +156,7 @@ export default async function FacilityManagementPage({
                 </CardContent>
               </Card>
             </div>
-          )}
+          ) : null}
 
           {/* Main Content */}
           <div className={isSuperAdmin ? 'lg:col-span-3' : 'lg:col-span-4'}>
