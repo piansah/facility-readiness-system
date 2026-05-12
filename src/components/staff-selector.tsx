@@ -41,7 +41,7 @@ export function StaffSelector({
   };
 
   return (
-    <div className="grid max-w-2xl gap-3">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <section className="grid gap-2 rounded-md border border-slate-800 bg-slate-900 p-2.5 sm:p-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-100">Petugas Shift Ini</h2>
