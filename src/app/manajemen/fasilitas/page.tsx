@@ -73,8 +73,15 @@ export default async function FacilityManagementPage({
 
   // Admin Unit: paksa ke unit sendiri. Super Admin: gunakan query param atau unit pertama.
   const selectedUnitId = profile?.role === "admin"
-    ? profile.unit_id ?? units?.[0]?.id
+    ? profile.unit_id
     : params.unit || units?.[0]?.id;
+
+  console.log("FACILITY DEBUG:", { 
+    role: profile?.role, 
+    profileUnitId: profile?.unit_id, 
+    selectedUnitId, 
+    totalUnits: units?.length || 0 
+  });
 
   // Fetch facilities for selected unit
   const { data: facilities } = await supabase
@@ -104,42 +111,56 @@ export default async function FacilityManagementPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-          {/* Sidebar: Unit List */}
-          <div className="space-y-4 lg:col-span-1">
-            {/* Sidebar: Unit List - semua role bisa lihat, tapi Admin dipaksa ke unitnya */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <Input className="pl-9 bg-slate-900/50 border-slate-800 h-9 text-xs" placeholder="Cari unit..." />
-            </div>
-            <div className="space-y-1">
-              {units?.map((u) => (
-                <Link
-                  key={u.id}
-                  href={isSuperAdmin ? `/manajemen/fasilitas?unit=${u.id}` : `/manajemen/fasilitas`}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
-                    selectedUnitId === u.id 
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border border-transparent'
-                  }`}
-                >
-                  <span className="font-medium">{u.code}</span>
-                  <span className="text-[10px] opacity-50">{u.name}</span>
-                </Link>
-              ))}
-            </div>
-            {/* Panel Kelola Unit: HANYA untuk Super Admin */}
-            {isSuperAdmin && (
+        <div className={`grid grid-cols-1 gap-6 ${isSuperAdmin ? 'lg:grid-cols-4' : ''}`}>
+          {/* Sidebar: Unit List - HANYA untuk Super Admin */}
+          {isSuperAdmin && (
+            <div className="space-y-4 lg:col-span-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <Input className="pl-9 bg-slate-900/50 border-slate-800 h-9 text-xs" placeholder="Cari unit..." />
+              </div>
+              <div className="space-y-1">
+                {units?.map((u) => (
+                  <Link
+                    key={u.id}
+                    href={`/manajemen/fasilitas?unit=${u.id}`}
+                    className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
+                      selectedUnitId === u.id 
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                      : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border border-transparent'
+                    }`}
+                  >
+                    <span className="font-medium">{u.code}</span>
+                    <span className="text-[10px] opacity-50">{u.name}</span>
+                  </Link>
+                ))}
+              </div>
+              
+              {/* Panel Kelola Unit */}
               <Card className="border-slate-800 bg-slate-900/40">
-                <CardHeader className="px-4 py-4">
-                  <CardTitle className="text-base">Unit</CardTitle>
+                <CardHeader className="p-4 pb-2">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Kelola Unit</h3>
                 </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <UnitManagementPanel units={units ?? []} />
+                <CardContent className="p-4 pt-0 space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] text-slate-500 uppercase">Kode Unit</Label>
+                    <Input className="bg-slate-950/50 border-slate-800 h-8 text-xs" placeholder="Misal: ELBAN" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] text-slate-500 uppercase">Nama Unit</Label>
+                    <Input className="bg-slate-950/50 border-slate-800 h-8 text-xs" placeholder="Nama lengkap unit" />
+                  </div>
+                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-xs h-8">
+                    + Tambah Unit
+                  </Button>
                 </CardContent>
               </Card>
-            )}
-            <Card className="border-slate-800 bg-slate-900/40">
+            </div>
+          )}
+
+          {/* Main Content */}
+          <div className={isSuperAdmin ? 'lg:col-span-3' : 'lg:col-span-4'}>
+            <Card className="border-slate-800 bg-slate-900/40 mb-6">
               <CardHeader className="px-4 py-4">
                 <CardTitle className="text-base">Fasilitas & Kategori</CardTitle>
               </CardHeader>
