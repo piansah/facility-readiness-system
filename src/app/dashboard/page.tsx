@@ -11,6 +11,7 @@ import { canCreateReports, canManageUnit, canReviewReports, canAccessManagement,
 type ReportSummary = {
   id?: string;
   report_date?: string;
+  submitted_at?: string;
   shift?: string;
   status?: string;
   unit_id?: string;
@@ -82,7 +83,7 @@ export default async function DashboardPage() {
   // Ambil data laporan dasar untuk cek status (Shift Pagi/Malam)
   let reportsQuery = supabase
     .from("daily_reports")
-    .select("id, report_date, shift, status")
+    .select("id, report_date, submitted_at, shift, status")
     .eq("report_date", today);
     
   // Tetap ambil summary untuk angka KPI (Normal/Rusak/Menurun)
@@ -115,7 +116,7 @@ export default async function DashboardPage() {
   // Pending reviews for Admin
   let pendingReviewsQuery = null;
   if (canReview) {
-    pendingReviewsQuery = supabase.from("daily_reports").select("id, report_date, shift, status").eq("status", "submitted").order("submitted_at", { ascending: false }).limit(5);
+    pendingReviewsQuery = supabase.from("daily_reports").select("id, report_date, submitted_at, shift, status").eq("status", "submitted").order("submitted_at", { ascending: false }).limit(5);
     if (accessibleUnitIds.length > 0) {
       pendingReviewsQuery = pendingReviewsQuery.in("unit_id", accessibleUnitIds);
     }
@@ -299,7 +300,7 @@ export default async function DashboardPage() {
                           <div>
                             <p className="font-bold capitalize text-slate-100">Shift {shift}</p>
                             <p className="text-xs text-slate-500">
-                              {report ? `Terakhir update: ${formatDateTime(report.report_date!)}` : "Belum ada laporan"}
+                              {report ? `Terakhir update: ${formatDateTime(report.submitted_at || report.report_date!)}` : "Belum ada laporan"}
                             </p>
                           </div>
                         </div>
