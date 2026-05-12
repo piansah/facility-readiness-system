@@ -154,56 +154,64 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
         </div>
       </header>
 
-      <div className="mx-auto max-w-4xl px-4 py-5">
+      <div className="mx-auto max-w-6xl px-4 py-5">
         <DraftManager formId="report-form" storageKey="daily-report-draft" />
 
-        <form id="report-form" action={saveDailyReport} className="grid gap-4">
-          <Card>
-          <CardHeader>
-            <CardTitle>Informasi Shift</CardTitle>
-            <CardDescription>Status fasilitas akan disimpan ke database sesuai unit dan role user.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="report_date">Tanggal</Label>
-              <Input 
-                id="report_date" 
-                name="report_date" 
-                type="date" 
-                defaultValue={today} 
-                data-no-draft="true"
-              />
+        <form id="report-form" action={saveDailyReport} className="grid gap-6">
+          {/* Top Section: Shift Info & Handover Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-4">
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>Informasi Shift</CardTitle>
+                  <CardDescription>Status fasilitas sesuai unit dan role.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="report_date">Tanggal</Label>
+                    <Input 
+                      id="report_date" 
+                      name="report_date" 
+                      type="date" 
+                      defaultValue={today} 
+                      data-no-draft="true"
+                      className="bg-slate-900/50"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="shift">Shift</Label>
+                    <select
+                      id="shift"
+                      name="shift"
+                      className="h-11 rounded-md border border-slate-800 bg-slate-900/50 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                      defaultValue="pagi"
+                    >
+                      <option value="pagi">Pagi</option>
+                      <option value="malam">Malam</option>
+                    </select>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="shift">Shift</Label>
-              <select
-                id="shift"
-                name="shift"
-                className="h-11 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                defaultValue="pagi"
-              >
-                <option value="pagi">Pagi</option>
-                <option value="malam">Malam</option>
-              </select>
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Petugas Serah Terima Shift</CardTitle>
-            <CardDescription>
-              Centang admin/petugas yang bertugas agar muncul di detail dan export PDF.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <StaffSelector 
-              staff={staffOptions ?? []} 
-              initialCurrentIds={[user.id]}
-              currentDateLabel={formatDateShort(today)}
-            />
-          </CardContent>
-        </Card>
+            <div className="lg:col-span-8">
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>Petugas Serah Terima Shift</CardTitle>
+                  <CardDescription>
+                    Centang admin/petugas yang bertugas shift ini dan berikutnya.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <StaffSelector 
+                    staff={staffOptions ?? []} 
+                    initialCurrentIds={[user.id]}
+                    currentDateLabel={formatDateShort(today)}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
         {latestReport ? (
           <Card className="border-emerald-900/40 bg-emerald-950/10">
