@@ -9,21 +9,21 @@ import { Label } from "@/components/ui/label";
 import { createFacility, createFacilityCategory, deleteFacilityCategory } from "./actions";
 
 const iconOptions = [
-  { value: "EL", label: "Listrik" },
-  { value: "LT", label: "Lampu" },
-  { value: "AC", label: "AC" },
-  { value: "WR", label: "Air" },
-  { value: "FR", label: "Proteksi kebakaran" },
-  { value: "AP", label: "APAR" },
-  { value: "CV", label: "CCTV" },
-  { value: "NW", label: "Jaringan" },
-  { value: "PC", label: "Komputer" },
-  { value: "DR", label: "Akses" },
-  { value: "CL", label: "Kebersihan" },
-  { value: "LF", label: "Lift" },
-  { value: "TL", label: "Peralatan" },
-  { value: "BD", label: "Gedung" },
-  { value: "OT", label: "Lainnya" },
+  { value: "⚡", label: "Listrik" },
+  { value: "💡", label: "Lampu" },
+  { value: "❄️", label: "AC" },
+  { value: "💧", label: "Air" },
+  { value: "🔥", label: "Proteksi kebakaran" },
+  { value: "🧯", label: "APAR" },
+  { value: "📷", label: "CCTV" },
+  { value: "🌐", label: "Jaringan" },
+  { value: "🖥️", label: "Komputer" },
+  { value: "🚪", label: "Akses" },
+  { value: "🧹", label: "Kebersihan" },
+  { value: "🛗", label: "Lift" },
+  { value: "🛠️", label: "Peralatan" },
+  { value: "🏢", label: "Gedung" },
+  { value: "📌", label: "Lainnya" },
 ];
 
 type Unit = {
@@ -174,8 +174,9 @@ export function FacilityCreatePanel({
                 id="category_icon"
                 name="category_icon"
                 value={categoryIcon}
-                onChange={(event) => setCategoryIcon(event.target.value.toUpperCase())}
-                maxLength={4}
+                onChange={(event) => setCategoryIcon(event.target.value)}
+                maxLength={8}
+                placeholder="Misal: 📡"
               />
             </div>
           </div>

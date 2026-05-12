@@ -49,8 +49,8 @@ export default async function FacilityManagementPage({
 
   const { profile } = await getProfile(supabase, user.id);
 
-  // Only Super Admin can manage facilities globally
-  if (profile?.role !== "super_admin") {
+  // Allow Super Admin and Unit Admin to manage facilities
+  if (profile?.role !== "super_admin" && profile?.role !== "admin") {
     redirect("/dashboard");
   }
 

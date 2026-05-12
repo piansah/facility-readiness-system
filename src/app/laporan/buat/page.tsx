@@ -234,9 +234,9 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
           groups.map((group, index) => (
             <Card key={`${group.name}-${index}`}>
               <CardHeader>
-                <CardTitle>
-                  {index + 1}. {group.icon ? `${group.icon} ` : ""}
-                  {group.name}
+                <CardTitle className="flex items-center gap-2">
+                  {group.icon ? <span>{group.icon}</span> : null}
+                  <span>{group.name}</span>
                 </CardTitle>
                 <CardDescription>{group.facilities.length} fasilitas aktif</CardDescription>
               </CardHeader>
@@ -247,8 +247,9 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
                     className="grid gap-3 rounded-md border border-slate-800 bg-slate-900 p-3"
                   >
                     <div>
-                      <p className="font-medium text-slate-100">
-                        {facilityIndex + 1}. {facility.name}
+                      <p className="font-medium text-slate-100 flex items-center gap-2">
+                        {group.icon ? <span className="text-slate-400">{group.icon}</span> : null}
+                        <span>{facility.name}</span>
                       </p>
                       {facility.location_detail ? (
                         <p className="mt-1 text-sm text-slate-400">{facility.location_detail}</p>
