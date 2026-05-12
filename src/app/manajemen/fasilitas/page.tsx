@@ -113,41 +113,57 @@ export default async function FacilityManagementPage({
           <div>
             <div className="flex items-center gap-2 text-emerald-500 mb-1">
               <Building2 className="h-4 w-4" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">
-                Infrastruktur | ROLE: {profile?.role} | UNIT_ID: {profile?.unit_id}
-              </span>
+              <span className="text-[10px] font-bold uppercase tracking-widest">Infrastruktur</span>
             </div>
             <h1 className="text-2xl font-bold text-slate-100">Manajemen Fasilitas</h1>
             <p className="text-sm text-slate-400">Konfigurasi unit, kategori, dan daftar aset operasional.</p>
           </div>
         </div>
 
-        <div className={`grid grid-cols-1 gap-6 ${isSuperAdmin ? 'lg:grid-cols-4' : ''}`}>
-          {/* Sidebar: Unit List - HANYA untuk Super Admin */}
-          {isSuperAdmin ? (
-            <div className="space-y-4 lg:col-span-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                <Input className="pl-9 bg-slate-900/50 border-slate-800 h-9 text-xs" placeholder="Cari unit..." />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+          {/* Sisi Kiri (1 Kolom): Sidebar Unit (SA) atau Form Fasilitas (Admin) */}
+          <div className="space-y-6 lg:col-span-1">
+            {isSuperAdmin && (
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  <Input className="pl-9 bg-slate-900/50 border-slate-800 h-9 text-xs" placeholder="Cari unit..." />
+                </div>
+                <div className="space-y-1">
+                  {units?.map((u) => (
+                    <Link
+                      key={u.id}
+                      href={`/manajemen/fasilitas?unit=${u.id}`}
+                      className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
+                        selectedUnitId === u.id 
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                        : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border border-transparent'
+                      }`}
+                    >
+                      <span className="font-medium">{u.code}</span>
+                      <span className="text-[10px] opacity-50">{u.name}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-1">
-                {units?.map((u) => (
-                  <Link
-                    key={u.id}
-                    href={`/manajemen/fasilitas?unit=${u.id}`}
-                    className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
-                      selectedUnitId === u.id 
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                      : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border border-transparent'
-                    }`}
-                  >
-                    <span className="font-medium">{u.code}</span>
-                    <span className="text-[10px] opacity-50">{u.name}</span>
-                  </Link>
-                ))}
-              </div>
-              
-              {/* Panel Kelola Unit */}
+            )}
+
+            {/* Form Fasilitas & Kategori - Selalu di kiri agar layout rapi */}
+            <Card className="border-slate-800 bg-slate-900/40">
+              <CardHeader className="px-4 py-4">
+                <CardTitle className="text-base">Fasilitas & Kategori</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <FacilityCreatePanel
+                  units={isSuperAdmin ? (units ?? []) : (units ?? []).filter(u => u.id === selectedUnitId)}
+                  categories={categories ?? []}
+                  defaultUnitId={selectedUnitId ?? ""}
+                  canChooseUnit={isSuperAdmin}
+                />
+              </CardContent>
+            </Card>
+
+            {isSuperAdmin && (
               <Card className="border-slate-800 bg-slate-900/40">
                 <CardHeader className="p-4 pb-2">
                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Kelola Unit</h3>
@@ -166,28 +182,11 @@ export default async function FacilityManagementPage({
                   </Button>
                 </CardContent>
               </Card>
-            </div>
-          ) : null}
-
-          {/* Main Content */}
-          <div className={isSuperAdmin ? 'lg:col-span-3' : 'lg:col-span-4'}>
-            <Card className="border-slate-800 bg-slate-900/40 mb-6">
-              <CardHeader className="px-4 py-4">
-                <CardTitle className="text-base">Fasilitas & Kategori</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <FacilityCreatePanel
-                  units={isSuperAdmin ? (units ?? []) : (units ?? []).filter(u => u.id === selectedUnitId)}
-                  categories={categories ?? []}
-                  defaultUnitId={selectedUnitId ?? ""}
-                  canChooseUnit={isSuperAdmin}
-                />
-              </CardContent>
-            </Card>
+            )}
           </div>
 
-          {/* Main Content: Facility List */}
-          <div className={`space-y-4 ${isSuperAdmin ? 'lg:col-span-3' : 'lg:col-span-4'}`}>
+          {/* Sisi Kanan (3 Kolom): Daftar Fasilitas */}
+          <div className="space-y-4 lg:col-span-3">
             <Card className="border-slate-800 bg-slate-900/40 overflow-hidden">
               <CardHeader className="border-b border-slate-800/50 bg-slate-900/20 px-6 py-4">
                 <div className="flex items-center justify-between">
