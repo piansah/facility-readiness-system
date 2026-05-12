@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Box, Search } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { FacilityCreatePanel } from "./facility-create-panel";
 import { FacilityRowActions } from "./facility-row-actions";
 import { UnitManagementPanel } from "./unit-management-panel";
@@ -110,7 +113,9 @@ export default async function FacilityManagementPage({
           <div>
             <div className="flex items-center gap-2 text-emerald-500 mb-1">
               <Building2 className="h-4 w-4" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Infrastruktur</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest">
+                Infrastruktur | ROLE: {profile?.role} | UNIT_ID: {profile?.unit_id}
+              </span>
             </div>
             <h1 className="text-2xl font-bold text-slate-100">Manajemen Fasilitas</h1>
             <p className="text-sm text-slate-400">Konfigurasi unit, kategori, dan daftar aset operasional.</p>
@@ -182,7 +187,7 @@ export default async function FacilityManagementPage({
           </div>
 
           {/* Main Content: Facility List */}
-          <div className="space-y-4 lg:col-span-3">
+          <div className={`space-y-4 ${isSuperAdmin ? 'lg:col-span-3' : 'lg:col-span-4'}`}>
             <Card className="border-slate-800 bg-slate-900/40 overflow-hidden">
               <CardHeader className="border-b border-slate-800/50 bg-slate-900/20 px-6 py-4">
                 <div className="flex items-center justify-between">
@@ -241,13 +246,5 @@ export default async function FacilityManagementPage({
         </div>
       </div>
     </main>
-  );
-}
-
-function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium ${className}`}>
-      {children}
-    </span>
   );
 }
