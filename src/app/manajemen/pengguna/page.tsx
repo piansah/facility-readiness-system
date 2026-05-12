@@ -5,6 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Shield, Users, Building2, ToggleLeft, ToggleRight } from "lucide-react";
 import { toggleUserStatus } from "./actions";
 import { UserEditModal, UserFormModal } from "./UserForm";
+import { canManageUsers } from "@/lib/auth/roles";
 
 // Types for the page
 type UserWithAccess = {
@@ -26,21 +27,35 @@ export default async function UserManagementPage() {
 
   const { profile } = await getProfile(supabase, user.id);
 
-  // Gating: Only Super Admin can access this
-  if (profile?.role !== "super_admin") {
+  // Gating: hanya super_admin dan admin yang bisa akses
+  if (!canManageUsers(profile?.role)) {
     redirect("/dashboard");
   }
 
-  // Fetch Users with their basic unit info and multi-unit access
-  const { data: usersData } = await supabase
+  const isSuperAdmin = profile?.role === "super_admin";
+
+  // Super Admin: lihat semua user kecuali super_admin lain
+  // Admin Unit: hanya lihat user di unit sendiri (tidak tampilkan super_admin)
+  let usersQuery = supabase
     .from("users")
     .select(`
       *,
-      units (code, name),
+      units!users_unit_id_fkey (code, name),
       super_admin_unit_access (unit_id)
     `)
     .order("created_at", { ascending: false });
 
+  if (isSuperAdmin) {
+    // Super Admin melihat semua user
+    // (tidak ada filter tambahan)
+  } else {
+    // Admin hanya melihat user di unitnya, exclude super_admin
+    usersQuery = usersQuery
+      .eq("unit_id", profile!.unit_id!)
+      .neq("role", "super_admin");
+  }
+
+  const { data: usersData } = await usersQuery;
   const users = (usersData ?? []) as UserWithAccess[];
 
   // Fetch All Units for the form/mapping
@@ -66,30 +81,48 @@ export default async function UserManagementPage() {
           <UserFormModal units={allUnits || []} />
         </div>
 
-        {/* User Stats */}
+        {/* User Stats — berbeda untuk Super Admin vs Admin */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Card className="border-slate-800 bg-slate-900/40">
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-[10px] uppercase tracking-wider">Total Pengguna</CardDescription>
+              <CardDescription className="text-[10px] uppercase tracking-wider">
+                {isSuperAdmin ? "Total Pengguna" : "Pengguna Unit"}
+              </CardDescription>
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Users className="h-5 w-5 text-emerald-500" />
                 {users.length}
               </CardTitle>
             </CardHeader>
           </Card>
+          {isSuperAdmin ? (
+            <Card className="border-slate-800 bg-slate-900/40">
+              <CardHeader className="p-4 pb-2">
+                <CardDescription className="text-[10px] uppercase tracking-wider">Super Admin</CardDescription>
+                <CardTitle className="text-xl">
+                  {users.filter(u => u.role === 'super_admin').length}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          ) : (
+            <Card className="border-slate-800 bg-slate-900/40">
+              <CardHeader className="p-4 pb-2">
+                <CardDescription className="text-[10px] uppercase tracking-wider">Admin</CardDescription>
+                <CardTitle className="text-xl">
+                  {users.filter(u => u.role === 'admin').length}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          )}
           <Card className="border-slate-800 bg-slate-900/40">
             <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-[10px] uppercase tracking-wider">Super Admin</CardDescription>
+              <CardDescription className="text-[10px] uppercase tracking-wider">
+                {isSuperAdmin ? "Unit Aktif" : "Petugas"}
+              </CardDescription>
               <CardTitle className="text-xl">
-                {users.filter(u => u.role === 'super_admin').length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card className="border-slate-800 bg-slate-900/40">
-            <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-[10px] uppercase tracking-wider">Unit Aktif</CardDescription>
-              <CardTitle className="text-xl">
-                {allUnits?.length || 0}
+                {isSuperAdmin
+                  ? (allUnits?.length || 0)
+                  : users.filter(u => u.role === 'petugas').length
+                }
               </CardTitle>
             </CardHeader>
           </Card>
@@ -143,7 +176,9 @@ export default async function UserManagementPage() {
                       ) : (
                         <div className="flex items-center gap-2 text-slate-300">
                           <Building2 className="h-3 w-3 text-slate-500" />
-                          <span className="text-xs font-medium">{u.units?.code || 'Lintas Unit'}</span>
+                          <span className="text-xs font-medium">
+                            {u.units?.code || 'ELBAN'}
+                          </span>
                         </div>
                       )}
                     </td>

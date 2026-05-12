@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/login/actions";
 import { getProfile } from "@/lib/auth/profile";
-import { canCreateReports, canManageUnit, canReviewReports, roleLabel } from "@/lib/auth/roles";
+import { canCreateReports, canManageUnit, canReviewReports, canAccessManagement, roleLabel } from "@/lib/auth/roles";
 
 type ReportSummary = {
   id?: string;
@@ -51,8 +51,8 @@ export default async function DashboardPage() {
   }
 
   const { profile } = await getProfile(supabase, user.id);
-  const isAdmin = canManageUnit(profile?.role);
-  const canReview = canReviewReports(profile?.role);
+  const isAdmin = canAccessManagement(profile?.role); // true untuk super_admin dan admin
+  const canReview = canReviewReports(profile?.role);  // true hanya untuk admin
   const isSuperAdmin = profile?.role === "super_admin";
 
   // Gunakan tanggal lokal (WIB/sesuai device) bukan UTC

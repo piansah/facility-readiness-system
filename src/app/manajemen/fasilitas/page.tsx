@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { FacilityCreatePanel } from "./facility-create-panel";
 import { FacilityRowActions } from "./facility-row-actions";
 import { UnitManagementPanel } from "./unit-management-panel";
+import { canManageFacilities, canManageUnits } from "@/lib/auth/roles";
 
 type Unit = {
   id: string;
@@ -49,10 +50,12 @@ export default async function FacilityManagementPage({
 
   const { profile } = await getProfile(supabase, user.id);
 
-  // Allow Super Admin and Unit Admin to manage facilities
-  if (profile?.role !== "super_admin" && profile?.role !== "admin") {
+  // Allow Super Admin and Unit Admin — but with different access levels
+  if (!canManageFacilities(profile?.role)) {
     redirect("/dashboard");
   }
+
+  const isSuperAdmin = canManageUnits(profile?.role);
 
   // Fetch all units for sidebar/filter
   const { data: units } = await supabase
@@ -68,7 +71,10 @@ export default async function FacilityManagementPage({
     .order("sort_order")
     .returns<Category[]>();
 
-  const selectedUnitId = params.unit || units?.[0]?.id;
+  // Admin Unit: paksa ke unit sendiri. Super Admin: gunakan query param atau unit pertama.
+  const selectedUnitId = profile?.role === "admin"
+    ? profile.unit_id ?? units?.[0]?.id
+    : params.unit || units?.[0]?.id;
 
   // Fetch facilities for selected unit
   const { data: facilities } = await supabase
@@ -101,6 +107,7 @@ export default async function FacilityManagementPage({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
           {/* Sidebar: Unit List */}
           <div className="space-y-4 lg:col-span-1">
+            {/* Sidebar: Unit List - semua role bisa lihat, tapi Admin dipaksa ke unitnya */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <Input className="pl-9 bg-slate-900/50 border-slate-800 h-9 text-xs" placeholder="Cari unit..." />
@@ -109,7 +116,7 @@ export default async function FacilityManagementPage({
               {units?.map((u) => (
                 <Link
                   key={u.id}
-                  href={`/manajemen/fasilitas?unit=${u.id}`}
+                  href={isSuperAdmin ? `/manajemen/fasilitas?unit=${u.id}` : `/manajemen/fasilitas`}
                   className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
                     selectedUnitId === u.id 
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
@@ -121,24 +128,27 @@ export default async function FacilityManagementPage({
                 </Link>
               ))}
             </div>
-            <Card className="border-slate-800 bg-slate-900/40">
-              <CardHeader className="px-4 py-4">
-                <CardTitle className="text-base">Unit</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <UnitManagementPanel units={units ?? []} />
-              </CardContent>
-            </Card>
+            {/* Panel Kelola Unit: HANYA untuk Super Admin */}
+            {isSuperAdmin && (
+              <Card className="border-slate-800 bg-slate-900/40">
+                <CardHeader className="px-4 py-4">
+                  <CardTitle className="text-base">Unit</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <UnitManagementPanel units={units ?? []} />
+                </CardContent>
+              </Card>
+            )}
             <Card className="border-slate-800 bg-slate-900/40">
               <CardHeader className="px-4 py-4">
                 <CardTitle className="text-base">Fasilitas & Kategori</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <FacilityCreatePanel
-                  units={units ?? []}
+                  units={isSuperAdmin ? (units ?? []) : (units ?? []).filter(u => u.id === selectedUnitId)}
                   categories={categories ?? []}
                   defaultUnitId={selectedUnitId ?? ""}
-                  canChooseUnit={profile.role === "super_admin"}
+                  canChooseUnit={isSuperAdmin}
                 />
               </CardContent>
             </Card>

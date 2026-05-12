@@ -9,7 +9,8 @@ export async function getProfile(supabase: SupabaseClient, userId: string) {
     .single<AppProfile>();
 
   if (error) {
-    return { profile: null, error };
+    console.error("GET PROFILE ERROR:", error);
+    throw new Error(`Gagal mengambil profil dari Supabase: ${error.message}`);
   }
 
   return { profile: data, error: null };
