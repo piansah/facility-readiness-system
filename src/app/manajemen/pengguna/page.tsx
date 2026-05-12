@@ -59,11 +59,16 @@ export default async function UserManagementPage() {
   const users = (usersData ?? []) as UserWithAccess[];
 
   // Fetch All Units for the form/mapping
-  const { data: allUnits } = await supabase
+  let unitsQueryMapping = supabase
     .from("units")
     .select("id, code, name")
-    .eq("is_active", true)
-    .order("code");
+    .eq("is_active", true);
+
+  if (profile?.role === "admin" && profile.unit_id) {
+    unitsQueryMapping = unitsQueryMapping.eq("id", profile.unit_id);
+  }
+
+  const { data: allUnits } = await unitsQueryMapping.order("code");
 
   return (
     <main className="min-h-dvh bg-slate-950 px-4 py-8">
