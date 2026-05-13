@@ -127,11 +127,15 @@ export function PdfExport({ report }: PdfExportProps) {
         styles: { fontSize: 9 },
       });
 
-      let currentY = ((doc as PdfWithAutoTable).lastAutoTable?.finalY ?? 70) + 15;
+      // Selalu mulai Laporan Non-Rutin di halaman baru agar rapi
+      doc.addPage();
+      let currentY = 20;
 
       doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
       doc.text("2. Laporan Non-Rutin / Insiden", 15, currentY);
-      currentY += 5;
+      doc.setFont("helvetica", "normal");
+      currentY += 10;
 
       if (report.incidents.length === 0) {
         doc.setFontSize(10);
