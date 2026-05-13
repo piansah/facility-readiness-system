@@ -445,7 +445,11 @@ export default async function DashboardPage() {
                                 <div>
                                   <p className="text-sm sm:text-base font-bold text-slate-100 uppercase tracking-tight">Shift {item.label}</p>
                                   <p className="text-[10px] text-slate-500 font-medium">
-                                    {item.report ? `Update: ${formatDateTime(item.report.submitted_at || item.report.report_date!)}` : `Batas Submit: ${item.deadline}`}
+                                    {item.report
+                                      ? item.report.submitted_at
+                                        ? `Update: ${formatDateTime(item.report.submitted_at)}`
+                                        : `Tanggal: ${formatDate(item.report.report_date!)}`
+                                      : `Batas Submit: ${item.deadline}`}
                                   </p>
                                 </div>
                               </div>
