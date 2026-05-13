@@ -210,38 +210,34 @@ export default async function ReportDetailPage({ params }: PageProps) {
     .eq("id", id)
     .maybeSingle<ReviewMetadata>();
 
-  // Fetch signed URLs for all incident photos in this report
-  const incidentsWithPhotos = await Promise.all(
-    report.incidents.map(async (incident) => {
-      // Filter only photos that belong to the main incident (no follow_up_id)
-      const mainIncidentPhotos = incident.incident_photos.filter(p => !p.follow_up_id);
-      
-      const photosWithUrls = await Promise.all(
-        mainIncidentPhotos.map(async (photo) => {
-          const { data } = await supabase.storage
-            .from("incident-photos")
-            .createSignedUrl(photo.storage_path, 60 * 60); // 1 hour
-          return { ...photo, signedUrl: data?.signedUrl ?? null };
-        }),
-      );
-      return { ...incident, photos: photosWithUrls };
-    }),
-  );
+  // Generate public URLs for incident photos and follow-ups
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-  // Fetch signed URLs for follow-up photos
-  const followUpsWithPhotos = await Promise.all(
-    report.incident_follow_ups.map(async (fu) => {
-      const photosWithUrls = await Promise.all(
-        fu.incident_photos.map(async (photo) => {
-          const { data } = await supabase.storage
-            .from("incident-photos")
-            .createSignedUrl(photo.storage_path, 60 * 60);
-          return { ...photo, signedUrl: data?.signedUrl ?? null };
-        }),
-      );
-      return { ...fu, photos: photosWithUrls };
-    }),
-  );
+  const incidentsWithPhotos = report.incidents.map((incident) => {
+    // Filter only photos that belong to the main incident (no follow_up_id)
+    const mainIncidentPhotos = incident.incident_photos.filter(p => !p.follow_up_id);
+    
+    const photosWithUrls = mainIncidentPhotos.map((photo) => {
+      const cleanPath = photo.storage_path.replace(/^\/+/, "");
+      return {
+        ...photo,
+        signedUrl: `${supabaseUrl}/storage/v1/object/public/incident-photos/${cleanPath}`
+      };
+    });
+    return { ...incident, photos: photosWithUrls };
+  });
+
+  const followUpsWithPhotos = report.incident_follow_ups.map((fu) => {
+    // Collect photos for this specific follow-up from its join
+    const photosWithUrls = (fu.incident_photos || []).map((photo) => {
+      const cleanPath = photo.storage_path.replace(/^\/+/, "");
+      return {
+        ...photo,
+        signedUrl: `${supabaseUrl}/storage/v1/object/public/incident-photos/${cleanPath}`
+      };
+    });
+    return { ...fu, photos: photosWithUrls };
+  });
 
   const reportWithFullIncidents = { 
     ...report, 
@@ -273,8 +269,6 @@ export default async function ReportDetailPage({ params }: PageProps) {
           <PdfExport report={reportWithFullIncidents} />
         </div>
       </header>
-
-
 
       <div className="mx-auto grid max-w-4xl gap-6 px-4 py-6">
         {/* --- Draft Actions --- */}
