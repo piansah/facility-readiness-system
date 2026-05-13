@@ -190,11 +190,8 @@ export default async function DashboardPage() {
     facilityCount: allFacilities.filter((f: any) => f.unit_id === u.id).length
   }));
 
-  const unitQuery = profile?.unit_id && !isSuperAdmin
-    ? supabase.from("units").select("code,name").eq("id", profile.unit_id).single<UnitInfo>()
-    : null;
-  const unitResult = unitQuery ? await unitQuery : null;
-  const unit = unitResult?.data ?? null;
+  // Unit info is now available directly from profile via joined query
+  const unit = profile?.units ?? null;
 
   const totals = (summaries ?? []).reduce(
     (acc, report) => ({
@@ -219,8 +216,8 @@ export default async function DashboardPage() {
   const dashboardSubTitle = isSuperAdmin
     ? "Monitoring Overview Seluruh Unit"
     : profile?.role === "admin"
-      ? `Management Dashboard - ${unit?.code ?? "Unit"}`
-      : `Operational Dashboard - ${unit?.code ?? "Unit"}`;
+      ? `Management Dashboard - ${profile?.units?.code ?? "Unit"}`
+      : `Operational Dashboard - ${profile?.units?.code ?? "Unit"}`;
 
   return (
     <main className="min-h-dvh bg-slate-950">
