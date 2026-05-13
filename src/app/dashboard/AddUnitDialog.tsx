@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,7 @@ export function AddUnitDialog() {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-106.25">
           <form onSubmit={handleSubmit}>
             <DialogHeader>
               <DialogTitle>Tambah Unit Baru</DialogTitle>
