@@ -8,7 +8,19 @@ import { getProfile } from "@/lib/auth/profile";
 import { canReviewReports } from "@/lib/auth/roles";
 import { canAccessUnit } from "@/lib/auth/unit-access";
 
+/**
+ * Server Action to review a daily report (approve or reject)
+ */
 export async function reviewDailyReport(formData: FormData) {
+  const reportId = formData.get("report_id") as string;
+  const status = formData.get("status") as string;
+  const reviewNotes = formData.get("review_notes") as string;
+
+  if (!reportId || !status) {
+    throw new Error("ID Laporan dan Status wajib diisi.");
+  }
+
+  // 1. Authenticate user
   const supabase = await createClient();
   const {
     data: { user },
@@ -18,57 +30,56 @@ export async function reviewDailyReport(formData: FormData) {
     redirect("/login");
   }
 
+  // 2. Check authorization
   const { profile } = await getProfile(supabase, user.id);
 
   if (!profile?.is_active || !canReviewReports(profile.role)) {
-    throw new Error("Forbidden: hanya admin unit yang bisa review laporan");
-  }
-
-  const reportId = formData.get("report_id") as string;
-  const status = formData.get("status") as string;
-  const reviewNotes = formData.get("review_notes") as string;
-
-  if (!reportId || !["reviewed", "rejected"].includes(status)) {
-    throw new Error("Missing required fields");
+    throw new Error("Unauthorized: Hanya admin yang dapat melakukan review laporan.");
   }
 
   const admin = createAdminClient();
+
+  // 3. Verify unit access
   const { data: report, error: reportError } = await admin
     .from("daily_reports")
-    .select("id,unit_id,status")
+    .select("id, unit_id")
     .eq("id", reportId)
-    .single<{ id: string; unit_id: string; status: string }>();
+    .single();
 
   if (reportError || !report) {
-    throw new Error("Report not found");
+    throw new Error("Laporan tidak ditemukan.");
   }
 
   if (!(await canAccessUnit(supabase, profile, report.unit_id))) {
-    throw new Error("Forbidden: laporan milik unit lain");
+    throw new Error("Unauthorized: Anda tidak memiliki akses ke unit ini.");
   }
 
-  const reviewPayload = {
-    status,
-    review_notes: reviewNotes,
-    reviewed_by: user.id,
-    reviewed_at: new Date().toISOString(),
-  };
-
+  // 4. Update report status
   const { error } = await admin
     .from("daily_reports")
-    .update(reviewPayload)
+    .update({
+      status,
+      review_notes: reviewNotes || null,
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+    })
     .eq("id", reportId);
 
   if (error) {
-    console.error("Error reviewing report:", error);
-    throw new Error(error.message);
+    throw new Error(`Gagal memperbarui laporan: ${error.message}`);
   }
 
+  // 5. Revalidate and redirect
   revalidatePath(`/laporan/${reportId}`);
-  revalidatePath("/dashboard");
+  revalidatePath("/laporan/review");
+  revalidatePath("/laporan");
+  
   redirect(`/laporan/${reportId}`);
 }
 
+/**
+ * Logic to delete a draft report and its associated data
+ */
 export async function deleteDraft(reportId: string) {
   const supabase = await createClient();
   const {
@@ -82,20 +93,20 @@ export async function deleteDraft(reportId: string) {
   const { profile } = await getProfile(supabase, user.id);
 
   if (!profile?.is_active) {
-    throw new Error("Forbidden: akun tidak aktif");
+    throw new Error("Akun tidak aktif.");
   }
 
   const admin = createAdminClient();
   
-  // Verifikasi laporan
+  // Verify report existence and status
   const { data: report, error: reportError } = await admin
     .from("daily_reports")
-    .select("id,unit_id,status")
+    .select("id, unit_id, status")
     .eq("id", reportId)
-    .single<{ id: string; unit_id: string; status: string }>();
+    .single();
 
   if (reportError || !report) {
-    throw new Error("Report not found");
+    throw new Error("Laporan tidak ditemukan.");
   }
 
   if (report.status !== "draft") {
@@ -103,28 +114,40 @@ export async function deleteDraft(reportId: string) {
   }
 
   if (!(await canAccessUnit(supabase, profile, report.unit_id))) {
-    throw new Error("Forbidden: laporan milik unit lain");
+    throw new Error("Unauthorized: Anda tidak memiliki akses ke unit ini.");
   }
 
   try {
-    // 1. Ambil insiden terkait untuk menghapus fotonya
-    const { data: incidents } = await admin.from("incidents").select("id").eq("daily_report_id", reportId);
+    // 1. Get associated incidents to delete photos
+    const { data: incidents } = await admin
+      .from("incidents")
+      .select("id")
+      .eq("daily_report_id", reportId);
+    
     const incidentIds = incidents?.map(i => i.id) || [];
     
     if (incidentIds.length > 0) {
-      const { data: photos } = await admin.from("incident_photos").select("storage_path").in("incident_id", incidentIds);
+      const { data: photos } = await admin
+        .from("incident_photos")
+        .select("storage_path")
+        .in("incident_id", incidentIds);
+      
       if (photos && photos.length > 0) {
         await admin.storage.from("incident-photos").remove(photos.map(p => p.storage_path));
       }
+      
       await admin.from("incident_photos").delete().in("incident_id", incidentIds);
       await admin.from("incidents").delete().eq("daily_report_id", reportId);
     }
     
-    // 2. Hapus facility logs
+    // 2. Delete facility logs
     await admin.from("facility_status_logs").delete().eq("daily_report_id", reportId);
     
-    // 3. Hapus report
-    const { error: deleteError } = await admin.from("daily_reports").delete().eq("id", reportId);
+    // 3. Delete report
+    const { error: deleteError } = await admin
+      .from("daily_reports")
+      .delete()
+      .eq("id", reportId);
     
     if (deleteError) throw deleteError;
     
@@ -138,12 +161,15 @@ export async function deleteDraft(reportId: string) {
   return { success: true };
 }
 
+/**
+ * Server Action for DeleteDraftButton
+ */
 export async function deleteDraftAction(formData: FormData) {
   const reportId = formData.get("report_id") as string;
   if (!reportId) throw new Error("Missing report ID");
+  
   const result = await deleteDraft(reportId);
   if (result.success) {
     redirect("/laporan?tab=draft");
   }
 }
-
