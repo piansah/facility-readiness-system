@@ -12,6 +12,7 @@ import { createFollowUp } from "./actions";
 import { IncidentTimeInput } from "@/app/insiden/buat/incident-time-input";
 import { ImageCompressorInput } from "@/components/image-compressor-input";
 import { SubmitButton } from "@/components/submit-button";
+import { FormSelect } from "@/components/form-select";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -102,34 +103,20 @@ export default async function CreateFollowUpPage({ params, searchParams }: PageP
             <CardContent className="grid gap-6">
               <div className="grid gap-3">
                 <Label htmlFor="daily_report_id">Laporan harian terkait</Label>
-                <div className="relative">
-                  <select
-                    id="daily_report_id"
-                    name="daily_report_id"
-                    className="flex h-10 w-full appearance-none rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                    defaultValue={reports?.[0]?.id}
-                  >
-                    <option value="" disabled>
-                      Pilih laporan shift Anda
-                    </option>
-                    {reports?.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {new Date(r.report_date).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}{" "}
-                        - Shift {r.shift} {r.status === "draft" ? "(Draft)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                    <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
+                <FormSelect
+                  name="daily_report_id"
+                  placeholder="Pilih laporan shift Anda"
+                  required
+                  defaultValue={reports?.[0]?.id}
+                  options={(reports ?? []).map((r) => ({
+                    value: r.id,
+                    label: `${new Date(r.report_date).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })} - Shift ${r.shift}${r.status === "draft" ? " (Draft)" : ""}`,
+                  }))}
+                />
               </div>
 
               <div className="grid gap-3">

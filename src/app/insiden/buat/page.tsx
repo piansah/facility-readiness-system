@@ -12,6 +12,7 @@ import { createIncident } from "./actions";
 import { IncidentTimeInput } from "./incident-time-input";
 import { DraftManager } from "@/components/draft-manager";
 import { ImageCompressorInput } from "@/components/image-compressor-input";
+import { FormSelect } from "@/components/form-select";
 import { SubmitButton } from "@/components/submit-button";
 
 type PageProps = {
@@ -105,36 +106,30 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
           <CardContent className="grid min-w-0 gap-4">
             <div className="grid min-w-0 gap-2">
               <Label htmlFor="daily_report_id">Laporan harian terkait</Label>
-              <select
-                id="daily_report_id"
+              <FormSelect
                 name="daily_report_id"
+                placeholder="Pilih laporan"
                 required
-                className="h-11 w-full min-w-0 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-              >
-                <option value="">Pilih laporan</option>
-                {(reports ?? []).map((report) => (
-                  <option key={report.id} value={report.id}>
-                    {report.report_date} - {report.shift} - {report.status}
-                  </option>
-                ))}
-              </select>
+                options={(reports ?? []).map((report) => ({
+                  value: report.id,
+                  label: `${report.report_date} - ${report.shift} - ${report.status}`,
+                }))}
+              />
             </div>
 
             <div className="grid min-w-0 gap-2">
               <Label htmlFor="facility_id">Fasilitas terkait</Label>
-              <select
-                id="facility_id"
+              <FormSelect
                 name="facility_id"
-                className="h-11 w-full min-w-0 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-              >
-                <option value="">Tidak spesifik</option>
-                {(facilities ?? []).map((facility) => (
-                  <option key={facility.id} value={facility.id}>
-                    {facility.name}
-                    {facility.location_detail ? ` - ${facility.location_detail}` : ""}
-                  </option>
-                ))}
-              </select>
+                placeholder="Tidak spesifik"
+                options={[
+                  { value: "__none__", label: "Tidak spesifik" },
+                  ...(facilities ?? []).map((facility) => ({
+                    value: facility.id,
+                    label: facility.name + (facility.location_detail ? ` - ${facility.location_detail}` : ""),
+                  })),
+                ]}
+              />
             </div>
 
             <div className="grid min-w-0 gap-2">

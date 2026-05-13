@@ -23,7 +23,8 @@ export async function createIncident(formData: FormData) {
   }
 
   const dailyReportId = String(formData.get("daily_report_id") ?? "");
-  const facilityId = String(formData.get("facility_id") ?? "");
+  const facilityIdRaw = String(formData.get("facility_id") ?? "");
+  const facilityId = facilityIdRaw === "__none__" ? "" : facilityIdRaw;
   const incidentTime = String(formData.get("incident_time") ?? "");
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -132,7 +133,8 @@ export async function updateIncident(formData: FormData) {
   const resultStatus = String(formData.get("result_status") ?? "pending");
   const handlerType = String(formData.get("handler_type") ?? "internal");
   const incidentTime = String(formData.get("incident_time") ?? "");
-  const facilityId = String(formData.get("facility_id") ?? "");
+  const facilityIdRaw = String(formData.get("facility_id") ?? "");
+  const facilityId = facilityIdRaw === "__none__" ? "" : facilityIdRaw;
 
   const { error: updateError } = await supabase
     .from("incidents")
