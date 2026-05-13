@@ -13,6 +13,7 @@ type IncidentDetail = {
   description: string;
   action_taken: string | null;
   incident_time: string;
+  resolved_at: string | null;
   status: string;
   result_status: string | null;
   handler_type: string | null;

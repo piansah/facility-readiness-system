@@ -26,6 +26,7 @@ export async function createIncident(formData: FormData) {
   const facilityIdRaw = String(formData.get("facility_id") ?? "");
   const facilityId = facilityIdRaw === "__none__" ? "" : facilityIdRaw;
   const incidentTime = String(formData.get("incident_time") ?? "");
+  const resolvedAt = String(formData.get("resolved_at") ?? "");
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const actionTaken = String(formData.get("action_taken") ?? "").trim();
@@ -72,6 +73,7 @@ export async function createIncident(formData: FormData) {
       facility_id: facilityId || null,
       reported_by: user.id,
       incident_time: incidentTime,
+      resolved_at: resolvedAt || null,
       title,
       description,
       action_taken: actionTaken || null,
@@ -133,6 +135,7 @@ export async function updateIncident(formData: FormData) {
   const resultStatus = String(formData.get("result_status") ?? "pending");
   const handlerType = String(formData.get("handler_type") ?? "internal");
   const incidentTime = String(formData.get("incident_time") ?? "");
+  const resolvedAt = String(formData.get("resolved_at") ?? "");
   const facilityIdRaw = String(formData.get("facility_id") ?? "");
   const facilityId = facilityIdRaw === "__none__" ? "" : facilityIdRaw;
 
@@ -146,6 +149,7 @@ export async function updateIncident(formData: FormData) {
       result_status: resultStatus,
       handler_type: handlerType,
       incident_time: incidentTime,
+      resolved_at: resolvedAt || null,
       facility_id: facilityId || null,
     })
     .eq("id", incidentId);

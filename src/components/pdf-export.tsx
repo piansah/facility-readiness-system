@@ -353,26 +353,46 @@ async function fetchImageData(url: string) {
   }
 
   const blob = await response.blob();
-  const dataUrl = await new Promise<string>((resolve, reject) => {
+  const originalDataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(blob);
   });
 
-  // Ambil dimensi asli gambar
-  const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.src = dataUrl;
+  // Load image to get dimensions and convert format if needed
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Failed to load image"));
+    image.src = originalDataUrl;
   });
 
-  return {
-    dataUrl,
-    format: blob.type.includes("png") ? "PNG" : "JPEG",
-    width: dimensions.width,
-    height: dimensions.height,
-  } as const;
+  const width = img.naturalWidth;
+  const height = img.naturalHeight;
+
+  // jsPDF only supports PNG and JPEG — WebP (common from browser-image-compression)
+  // must be converted via canvas to a supported format
+  const isPng = blob.type.includes("png");
+  const isSupported = isPng || blob.type.includes("jpeg") || blob.type.includes("jpg");
+
+  let dataUrl = originalDataUrl;
+  let format: "PNG" | "JPEG" = isPng ? "PNG" : "JPEG";
+
+  if (!isSupported) {
+    // Convert unsupported formats (e.g. WebP) to JPEG via canvas
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(img, 0, 0);
+      dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+      format = "JPEG";
+    }
+  }
+
+  return { dataUrl, format, width, height } as const;
 }
 
 function makePdfFilename(report: ReportForPdf) {

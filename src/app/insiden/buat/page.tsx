@@ -132,9 +132,15 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
               />
             </div>
 
-            <div className="grid min-w-0 gap-2">
-              <Label htmlFor="incident_time">Waktu kejadian</Label>
-              <IncidentTimeInput />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid min-w-0 gap-2">
+                <Label htmlFor="incident_time">Waktu Mulai (Otomatis)</Label>
+                <IncidentTimeInput name="incident_time" />
+              </div>
+              <div className="grid min-w-0 gap-2">
+                <Label htmlFor="resolved_at">Waktu Selesai (Manual)</Label>
+                <IncidentTimeInput name="resolved_at" noDefault />
+              </div>
             </div>
 
             <div className="grid min-w-0 gap-2">
