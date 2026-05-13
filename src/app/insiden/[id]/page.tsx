@@ -86,7 +86,7 @@ export default function IncidentDetailPage({
         
         // Group photos: ones without follow_up_id belong to the main incident
         const allPhotos = Array.isArray(raw.incident_photos) ? raw.incident_photos : [];
-        const mainPhotos = allPhotos.filter(p => !p.follow_up_id);
+        const mainPhotos = allPhotos.filter((p: any) => !p.follow_up_id);
         
         // Process follow-ups
         let parsedFollowUps = [];
@@ -95,8 +95,8 @@ export default function IncidentDetailPage({
             ...fu,
             reported_by_user: Array.isArray(fu.reported_by_user) ? fu.reported_by_user[0] : fu.reported_by_user,
             daily_reports: Array.isArray(fu.daily_reports) ? fu.daily_reports[0] : fu.daily_reports,
-            photos: allPhotos.filter(p => p.follow_up_id === fu.id)
-          })).sort((a, b) => new Date(a.follow_up_time).getTime() - new Date(b.follow_up_time).getTime());
+            photos: allPhotos.filter((p: any) => p.follow_up_id === fu.id)
+          })).sort((a: any, b: any) => new Date(a.follow_up_time).getTime() - new Date(b.follow_up_time).getTime());
         }
 
         const normalized: IncidentDetail = { 
