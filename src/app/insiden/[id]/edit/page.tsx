@@ -73,7 +73,7 @@ export default function EditIncidentPage({ params, searchParams }: PageProps) {
     <main className="min-h-dvh bg-slate-950">
       <header className="border-b border-slate-800 bg-slate-950 sticky top-0 z-10">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3 sm:py-4">
-          <Button asChild variant="ghost" size="sm" aria-label="Kembali ke detail">
+          <Button asChild variant="ghost" size="sm" aria-label="Kembali ke detail" className="hidden sm:inline-flex">
             <Link href={`/insiden/${id}`}>
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             </Link>

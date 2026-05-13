@@ -386,7 +386,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4 px-4 py-3 sm:py-4">
           <div className="flex items-center gap-4">
-            <Button asChild variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 hover:bg-slate-800">
+            <Button asChild variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 hover:bg-slate-800 hidden sm:inline-flex">
               <Link href="/dashboard">
                 <ArrowLeft className="h-5 w-5" />
               </Link>

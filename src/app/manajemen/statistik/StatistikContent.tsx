@@ -118,7 +118,7 @@ export default function StatistikContent({ initialData, unitName }: Props) {
     <>
       <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:py-4">
-          <Button asChild variant="ghost" size="sm" className="text-slate-400 hover:text-slate-100">
+          <Button asChild variant="ghost" size="sm" className="text-slate-400 hover:text-slate-100 hidden sm:inline-flex">
             <Link href="/dashboard">
               <ArrowLeft className="h-4 w-4" />
             </Link>
