@@ -155,7 +155,7 @@ export default async function EditReportPage({
       </header>
 
       <div className="mx-auto max-w-4xl p-4">
-        <DraftManager formId="edit-report-form" storageKey={`edit-report-${id}`} />
+        <DraftManager formId="edit-report-form" storageKey={`edit-report-${id}`} userId={user.id} />
 
         <form id="edit-report-form" action={saveDailyReport} className="grid gap-6 pb-20">
           <input type="hidden" name="report_id" value={report.id} />

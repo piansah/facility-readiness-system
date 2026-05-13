@@ -1,5 +1,6 @@
+import React from "react";
 import Link from "next/link";
-import { AlertTriangle, Camera, CheckCircle2, ClipboardList, Clock3, LogOut, Wrench, Server } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Wrench, AlertTriangle, LogOut, History, BarChart3, AlertOctagon, Settings, ClipboardList, Clock3, Camera, Server, Calendar, Users } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,8 @@ import { logout } from "@/app/login/actions";
 import { getProfile } from "@/lib/auth/profile";
 import { canCreateReports, canCreateIncidents, canManageUnit, canReviewReports, canAccessManagement, roleLabel } from "@/lib/auth/roles";
 import { RefreshOnDateChange } from "@/components/dashboard/refresh-on-date-change";
+import { AddUnitDialog } from "./AddUnitDialog";
+import { EditUnitDialog } from "./EditUnitDialog";
 
 type ReportSummary = {
   id?: string;
@@ -64,20 +67,32 @@ export default async function DashboardPage() {
   // Ambil tanggal lokal hari ini dan kemarin
   const today = now.toLocaleDateString('en-CA');
   const yesterday = new Date(now.getTime() - 86400000).toLocaleDateString('en-CA');
+  const tomorrow = new Date(now.getTime() + 86400000).toLocaleDateString('en-CA');
 
-  // Jika jam 00:00 - 10:00 pagi, tampilkan Malam (Kemarin) dan Pagi (Hari Ini)
-  // Jika lewat jam 10:00, tampilkan Pagi (Hari Ini) dan Malam (Hari Ini)
-  const isEarlyMorning = currentHour < 10;
+  // Jendela Operasional (Rolling Window 12 jam)
+  // 08:00 - 19:59: Shift Pagi sedang berjalan. Tampilkan: Malam Kemarin (DL: 08:00) & Pagi Hari Ini (DL: 20:00)
+  // 20:00 - 23:59: Shift Malam sedang berjalan. Tampilkan: Pagi Hari Ini (DL: 20:00) & Malam Hari Ini (DL: 08:00)
+  // 00:00 - 07:59: Shift Malam sedang berjalan. Tampilkan: Pagi Kemarin (DL: 20:00) & Malam Kemarin (DL: 08:00)
   
-  const activeShifts = isEarlyMorning 
-    ? [ 
-        { date: yesterday, shift: 'malam', label: 'Malam - Kemarin', deadline: '08:00' }, 
-        { date: today, shift: 'pagi', label: 'Pagi - Hari ini', deadline: '20:00' } 
-      ]
-    : [ 
-        { date: today, shift: 'pagi', label: 'Pagi - Hari ini', deadline: '20:00' }, 
-        { date: today, shift: 'malam', label: 'Malam - Hari ini', deadline: '08:00' } 
-      ];
+  let activeShifts: { date: string; shift: string; label: string; deadline: string; deadlineDate: string }[] = [];
+
+  if (currentHour >= 8 && currentHour < 20) {
+    activeShifts = [
+      { date: yesterday, shift: 'malam', label: 'Malam - Kemarin', deadline: '08:00', deadlineDate: `${today}T08:00:00` }, 
+      { date: today, shift: 'pagi', label: 'Pagi - Hari ini', deadline: '20:00', deadlineDate: `${today}T20:00:00` } 
+    ];
+  } else if (currentHour >= 20) {
+    activeShifts = [
+      { date: today, shift: 'pagi', label: 'Pagi - Hari ini', deadline: '20:00', deadlineDate: `${today}T20:00:00` }, 
+      { date: today, shift: 'malam', label: 'Malam - Hari ini', deadline: '08:00', deadlineDate: `${tomorrow}T08:00:00` } 
+    ];
+  } else {
+    // currentHour < 8
+    activeShifts = [
+      { date: yesterday, shift: 'pagi', label: 'Pagi - Kemarin', deadline: '20:00 kemarin', deadlineDate: `${yesterday}T20:00:00` }, 
+      { date: yesterday, shift: 'malam', label: 'Malam - Kemarin', deadline: '08:00 hari ini', deadlineDate: `${today}T08:00:00` } 
+    ];
+  }
 
   const targetDates = Array.from(new Set(activeShifts.map(s => s.date)));
   
@@ -147,17 +162,33 @@ export default async function DashboardPage() {
     { data: summaries }, 
     { data: openIssues }, 
     unitsResult,
-    pendingReviewsResult
+    pendingReviewsResult,
+    profilesResult,
+    facilitiesResult
   ] = await Promise.all([
     reportsQuery,
     summariesQuery.returns<ReportSummary[]>(),
     openIssuesQuery.limit(isSuperAdmin ? 20 : 5).returns<OpenIssue[]>(),
     unitsQuery ? unitsQuery.returns<UnitInfo[]>() : Promise.resolve({ data: null }),
-    pendingReviewsQuery ? pendingReviewsQuery.returns<PendingReview[]>() : Promise.resolve({ data: null })
+    pendingReviewsQuery ? pendingReviewsQuery.returns<PendingReview[]>() : Promise.resolve({ data: null }),
+    isSuperAdmin ? supabase.from("profiles").select("unit_id") : Promise.resolve({ data: [] }),
+    isSuperAdmin ? supabase.from("facilities").select("unit_id") : Promise.resolve({ data: [] })
   ]);
+
+  const allProfiles = isSuperAdmin ? (profilesResult?.data ?? []) : [];
+  const allFacilities = isSuperAdmin ? (facilitiesResult?.data ?? []) : [];
+
+  const totalUsers = allProfiles.length;
+  const totalFacilities = allFacilities.length;
 
   const units = unitsResult?.data ?? [];
   const pendingReviews = pendingReviewsResult?.data ?? [];
+
+  const unitStats = units.map(u => ({
+    ...u,
+    personnelCount: allProfiles.filter((p: any) => p.unit_id === u.id).length,
+    facilityCount: allFacilities.filter((f: any) => f.unit_id === u.id).length
+  }));
 
   const unitQuery = profile?.unit_id && !isSuperAdmin
     ? supabase.from("units").select("code,name").eq("id", profile.unit_id).single<UnitInfo>()
@@ -174,10 +205,16 @@ export default async function DashboardPage() {
     { normal: 0, broken: 0, degraded: 0 },
   );
   
-  const shiftSummaries = activeShifts.map((cfg) => ({
-    ...cfg,
-    report: (dailyReports ?? []).find((report) => report.report_date === cfg.date && report.shift === cfg.shift),
-  }));
+  const shiftSummaries = activeShifts.map((cfg) => {
+    const report = (dailyReports ?? []).find((r) => r.report_date === cfg.date && r.shift === cfg.shift);
+    const deadlineTime = new Date(cfg.deadlineDate).getTime();
+    const isOverdue = (!report || report.status === 'draft') && now.getTime() > deadlineTime;
+    return {
+      ...cfg,
+      report,
+      isOverdue
+    };
+  });
 
   const dashboardSubTitle = isSuperAdmin
     ? "Monitoring Overview Seluruh Unit"
@@ -210,27 +247,55 @@ export default async function DashboardPage() {
       </header>
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6">
+        {/* --- Super Admin Welcome Banner --- */}
+        {isSuperAdmin && (
+          <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-8 shadow-2xl">
+            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-[80px]" />
+            <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-blue-500/10 blur-[80px]" />
+            
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <h2 className="text-3xl font-bold text-slate-100">Selamat Datang, {profile?.full_name?.split(' ')[0]}</h2>
+                <p className="mt-2 text-slate-400 max-w-md">Panel kendali pusat untuk pengelolaan sumber daya personil dan fasilitas di seluruh unit operasional.</p>
+              </div>
+              <div className="flex gap-4">
+                <div className="rounded-2xl bg-slate-800/30 border border-slate-700/50 p-4 backdrop-blur-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Total Personil</p>
+                  <p className="text-2xl font-black text-emerald-400">{totalUsers}</p>
+                </div>
+                <div className="rounded-2xl bg-slate-800/30 border border-slate-700/50 p-4 backdrop-blur-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Total Fasilitas</p>
+                  <p className="text-2xl font-black text-blue-400">{totalFacilities}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* --- KPI Overview --- */}
-        <section className="grid gap-4 sm:grid-cols-3">
-          <StatusCard 
-            title="Sistem Normal" 
-            value={totals.normal} 
-            icon={<CheckCircle2 className="h-6 w-6" />} 
-            color="emerald"
-          />
-          <StatusCard 
-            title="Perlu Perbaikan" 
-            value={totals.broken} 
-            icon={<Wrench className="h-6 w-6" />} 
-            color="amber"
-          />
-          <StatusCard 
-            title="Operasi Menurun" 
-            value={totals.degraded} 
-            icon={<AlertTriangle className="h-6 w-6" />} 
-            color="red"
-          />
-        </section>
+        {!isSuperAdmin && (
+          <section className="grid grid-cols-3 gap-2 sm:gap-6">
+            <StatusCard 
+              title="Sistem Normal" 
+              value={totals.normal} 
+              icon={<CheckCircle2 className="h-6 w-6" />} 
+              color="emerald"
+            />
+            <StatusCard 
+              title="Perlu Perbaikan" 
+              value={totals.broken} 
+              icon={<Wrench className="h-6 w-6" />} 
+              color="amber"
+            />
+            <StatusCard 
+              title="Operasi Menurun" 
+              value={totals.degraded} 
+              icon={<AlertTriangle className="h-6 w-6" />} 
+              color="red"
+            />
+          </section>
+        )}
+
 
         {!profile?.is_active ? (
           <Card className="border-amber-900/70 bg-amber-950/20 backdrop-blur-sm">
@@ -242,8 +307,65 @@ export default async function DashboardPage() {
         ) : null}
 
         <div className="grid gap-6 lg:grid-cols-12">
-          {/* --- Main Content Area (8/12) - Second on mobile, First on desktop --- */}
-          <div className="lg:col-span-8 order-last lg:order-first grid gap-6">
+          <div className={`${isSuperAdmin ? "lg:col-span-8" : "lg:col-span-8"} order-last lg:order-first grid gap-6`}>
+
+            {isSuperAdmin && (
+              <section className="grid gap-6">
+                <Card className="border-slate-800 bg-slate-900/40 shadow-xl overflow-hidden">
+                  <div className="bg-slate-800/20 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">Ringkasan Sumber Daya Unit</CardTitle>
+                      <CardDescription>Distribusi personil dan fasilitas per unit kerja.</CardDescription>
+                    </div>
+                    <AddUnitDialog />
+                  </div>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                          <tr>
+                            <th className="px-6 py-4">Unit</th>
+                            <th className="px-6 py-4 text-center">Personil</th>
+                            <th className="px-6 py-4 text-center">Fasilitas</th>
+                            <th className="px-6 py-4 text-right pr-6">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/50">
+                          {unitStats.map((stat) => (
+                            <tr key={stat.id} className="hover:bg-slate-800/30 transition-colors group">
+                              <td className="px-6 py-4">
+                                <p className="font-bold text-slate-100">{stat.code}</p>
+                                <p className="text-[10px] text-slate-500 font-medium">{stat.name}</p>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="inline-flex items-center rounded-lg bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400 border border-emerald-500/20">
+                                  {stat.personnelCount} Orang
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="inline-flex items-center rounded-lg bg-blue-500/10 px-3 py-1 text-xs font-bold text-blue-400 border border-blue-500/20">
+                                  {stat.facilityCount} Aset
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-right pr-6">
+                                <div className="flex items-center justify-end gap-2">
+                                  <EditUnitDialog unit={{ id: stat.id, code: stat.code, name: stat.name }} />
+                                  <Button variant="ghost" size="sm" className="text-slate-500 group-hover:text-emerald-400 group-hover:bg-emerald-500/5 h-8" asChild>
+                                    <Link href={`/manajemen/fasilitas?unit=${stat.id}`}>Detail</Link>
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </section>
+            )}
+            {!isSuperAdmin && (
+              <div className="grid gap-6">
             
             {/* 1. Laporan Hari Ini Section */}
             <Card className="border-slate-800 bg-slate-900/40">
@@ -251,7 +373,7 @@ export default async function DashboardPage() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <CardTitle className="text-lg">
-                      {isSuperAdmin ? "Progres Laporan Unit" : "Status Laporan Hari Ini"}
+                      {isSuperAdmin ? "Progres Laporan Unit" : "Status Laporan"}
                     </CardTitle>
                     <CardDescription>{today}</CardDescription>
                   </div>
@@ -330,7 +452,7 @@ export default async function DashboardPage() {
                               </p>
                             </div>
                           </div>
-                          <ShiftBadge status={item.report?.status} />
+                          <ShiftBadge status={item.report?.status} isOverdue={item.isOverdue} />
                         </Link>
                       );
                     })}
@@ -419,9 +541,12 @@ export default async function DashboardPage() {
                 )}
               </CardContent>
             </Card>
-          </div>
+            </div>
+          )}
+        </div>
 
-          {/* --- Sidebar (4/12) - First on mobile, Second on desktop --- */}
+
+          {/* --- Sidebar (4/12) --- */}
           <div className="lg:col-span-4 order-first lg:order-last grid gap-6 content-start">
             
             {/* Quick Access Menu */}
@@ -430,21 +555,44 @@ export default async function DashboardPage() {
                 <CardTitle className="text-base">Akses Cepat</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-2">
-                <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                  <Link href="/laporan">
-                    <ClipboardList className="mr-3 h-4 w-4 text-emerald-400" /> History Laporan
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                  <Link href="/insiden">
-                    <Camera className="mr-3 h-4 w-4 text-amber-400" /> History Non-Rutin
-                  </Link>
-                </Button>
+                {!isSuperAdmin && (
+                  <>
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
+                      <Link href="/laporan">
+                        <ClipboardList className="mr-3 h-4 w-4 text-emerald-400" /> History Laporan
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
+                      <Link href="/insiden">
+                        <Camera className="mr-3 h-4 w-4 text-amber-400" /> History Non-Rutin
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
+                      <Link href="/manajemen/statistik">
+                        <BarChart3 className="mr-3 h-4 w-4 text-emerald-400" /> Analitik & Statistik
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
+                      <Link href="/manajemen/jadwal">
+                        <Calendar className="mr-3 h-4 w-4 text-amber-400" /> Jadwal Maintenance
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
+                      <Link href="/manajemen/dinas">
+                        <Users className="mr-3 h-4 w-4 text-blue-400" /> Jadwal Dinas
+                      </Link>
+                    </Button>
+                  </>
+                )}
                 
                 {isAdmin && (
                   <>
-                    <div className="my-2 border-t border-slate-800" />
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-1 mb-1">Manajemen Unit</p>
+                    {!isSuperAdmin && (
+                      <>
+                        <div className="my-2 border-t border-slate-800" />
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-1 mb-1">Manajemen Unit</p>
+                      </>
+                    )}
                     <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
                       <Link href="/manajemen/pengguna">
                         <LogOut className="mr-3 h-4 w-4 text-blue-400 rotate-180" /> Kelola Pengguna
@@ -474,27 +622,7 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Super Admin: Unit Health Grid */}
-            {isSuperAdmin && units.length > 0 && (
-              <Card className="border-slate-800 bg-slate-900/40">
-                <CardHeader>
-                  <CardTitle className="text-base">Kesehatan Unit</CardTitle>
-                  <CardDescription>Status real-time per unit.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-2">
-                  {units.map((u) => (
-                    <div key={u.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-950 border border-slate-800">
-                      <div className="text-xs">
-                        <p className="font-bold text-slate-100">{u.code}</p>
-                        <p className="text-slate-500">{u.name}</p>
-                      </div>
-                      <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
+            {/* Super Admin: Unit Health Grid - HIDDEN based on user request */}
           </div>
         </div>
       </div>
@@ -518,7 +646,7 @@ function ShiftStatusLink({ report }: { report?: ReportSummary }) {
   );
 }
 
-function ShiftBadge({ status }: { status?: string }) {
+function ShiftBadge({ status, isOverdue }: { status?: string, isOverdue?: boolean }) {
   if (status === "submitted" || status === "reviewed") {
     return (
       <span className="rounded-md bg-emerald-500/15 px-2 py-1 text-xs font-medium text-emerald-200">
@@ -529,8 +657,8 @@ function ShiftBadge({ status }: { status?: string }) {
 
   if (status === "draft") {
     return (
-      <span className="rounded-md bg-sky-500/15 px-2 py-1 text-xs font-medium text-sky-200">
-        Draft
+      <span className={`rounded-md px-2 py-1 text-xs font-medium ${isOverdue ? 'bg-red-500/15 text-red-400' : 'bg-sky-500/15 text-sky-200'}`}>
+        {isOverdue ? 'Draft (Terlambat)' : 'Draft'}
       </span>
     );
   }
@@ -544,8 +672,8 @@ function ShiftBadge({ status }: { status?: string }) {
   }
 
   return (
-    <span className="rounded-md bg-slate-700/60 px-2 py-1 text-xs font-medium text-slate-300">
-      Belum dibuat
+    <span className={`rounded-md px-2 py-1 text-xs font-medium ${isOverdue ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-slate-700/60 text-slate-300'}`}>
+      {isOverdue ? 'Terlambat' : 'Belum dibuat'}
     </span>
   );
 }
@@ -569,15 +697,17 @@ function StatusCard({
   };
 
   return (
-    <Card className={`border ${colorStyles[color]}`}>
-      <CardContent className="flex items-center justify-between p-5">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider opacity-70">{title}</p>
-          <p className="mt-1 text-3xl font-black">{value}</p>
+    <Card className={`border ${colorStyles[color]} overflow-hidden`}>
+      <CardContent className="p-2 sm:p-5 flex flex-col items-start">
+        <div className="flex items-center justify-between w-full mb-1 sm:mb-3">
+          <p className="text-xl sm:text-3xl font-black">{value}</p>
+          <div className={`flex h-7 w-7 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg sm:rounded-xl ${colorStyles[color]} border shadow-lg shadow-black/20`}>
+            {React.cloneElement(icon as React.ReactElement, { className: "h-3.5 w-3.5 sm:h-6 sm:w-6" })}
+          </div>
         </div>
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${colorStyles[color]} border shadow-lg shadow-black/20`}>
-          {icon}
-        </div>
+        <p className="text-[8px] sm:text-xs font-bold uppercase tracking-wider opacity-70 leading-tight text-left">
+          {title}
+        </p>
       </CardContent>
     </Card>
   );

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth/profile";
-import { canCreateReports, roleLabel } from "@/lib/auth/roles";
+import { canCreateIncidents, roleLabel } from "@/lib/auth/roles";
 import { createIncident } from "./actions";
 import { IncidentTimeInput } from "./incident-time-input";
 import { DraftManager } from "@/components/draft-manager";
@@ -44,7 +44,7 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
 
   const { profile } = await getProfile(supabase, user.id);
 
-  if (!profile?.is_active || !canCreateReports(profile.role)) {
+  if (!profile?.is_active || !canCreateIncidents(profile.role)) {
     redirect("/dashboard?error=forbidden");
   }
 
@@ -86,7 +86,7 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
       </header>
 
       <div className="mx-auto w-full max-w-3xl px-3 py-4 sm:px-4 sm:py-5">
-        <DraftManager formId="incident-form" storageKey="incident-draft" />
+        <DraftManager formId="incident-form" storageKey="incident-draft" userId={user.id} />
 
         <form id="incident-form" action={createIncident} className="grid min-w-0 gap-4">
         {params.error ? (

@@ -14,9 +14,9 @@ export function canCreateReports(role?: UserRole) {
   return role === "petugas";
 }
 
-/** Petugas, Admin, dan Super Admin bisa melaporkan insiden/non-rutin */
+/** Petugas dan Admin Unit bisa melaporkan insiden/non-rutin */
 export function canCreateIncidents(role?: UserRole) {
-  return role === "petugas" || role === "admin" || role === "super_admin";
+  return role === "petugas" || role === "admin";
 }
 
 /** Admin mereview laporan yang disubmit Petugas */

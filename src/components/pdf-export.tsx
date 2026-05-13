@@ -36,10 +36,19 @@ type ReportForPdf = {
     action_taken: string | null;
     incident_time: string;
     status: string;
+    result_status: string | null;
+    handler_type: string | null;
     photos?: {
       signedUrl: string | null;
       caption: string | null;
     }[];
+  }[];
+  incident_follow_ups?: {
+    action_taken: string;
+    follow_up_time: string;
+    status_update: string;
+    handler_type: string;
+    incident: { title: string } | null;
   }[];
 };
 
@@ -136,7 +145,15 @@ export function PdfExport({ report }: PdfExportProps) {
           doc.text(`- ${incident.title}`, 15, currentY + 5);
           doc.setFont("helvetica", "normal");
           doc.setFontSize(9);
-          doc.text(`Waktu: ${formatDateTime(incident.incident_time)} | Status: ${incident.status}`, 20, currentY + 10);
+          
+          let statusText = incident.status;
+          if (incident.result_status) {
+            const rs = incident.result_status === 'success' ? 'Berhasil' : incident.result_status === 'failed' ? 'Gagal' : 'Proses';
+            const ht = incident.handler_type === 'vendor' ? 'Vendor' : 'Internal';
+            statusText = `${rs} (Oleh ${ht})`;
+          }
+          
+          doc.text(`Waktu: ${formatDateTime(incident.incident_time)} | Status: ${statusText}`, 20, currentY + 10);
           doc.text(`Dilaporkan oleh: ${report.users?.full_name ?? "-"}`, 20, currentY + 15);
 
           const splitDescription = doc.splitTextToSize(`Deskripsi: ${incident.description}`, pageWidth - 35);
@@ -204,6 +221,39 @@ export function PdfExport({ report }: PdfExportProps) {
           }
 
           currentY += maxRowHeight + (maxRowHeight > 0 ? 10 : 5);
+        }
+      }
+
+      if (report.incident_follow_ups && report.incident_follow_ups.length > 0) {
+        if (currentY > 260) {
+          doc.addPage();
+          currentY = 20;
+        } else {
+          currentY += 10;
+        }
+
+        doc.setFontSize(12);
+        doc.text("3. Tindak Lanjut Laporan Non-Rutin", 15, currentY);
+        currentY += 5;
+
+        for (const fu of report.incident_follow_ups) {
+          if (currentY > 270) {
+            doc.addPage();
+            currentY = 20;
+          }
+
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "bold");
+          doc.text(`- Tindak Lanjut: ${fu.incident?.title}`, 15, currentY + 5);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          const rs = fu.status_update === 'success' ? 'Berhasil' : fu.status_update === 'failed' ? 'Gagal' : 'Proses';
+          const ht = fu.handler_type === 'vendor' ? 'Vendor' : 'Internal';
+          doc.text(`Waktu: ${formatDateTime(fu.follow_up_time)} | Status: ${rs} (Oleh ${ht})`, 20, currentY + 10);
+
+          const splitAction = doc.splitTextToSize(`Tindakan: ${fu.action_taken}`, pageWidth - 35);
+          doc.text(splitAction, 20, currentY + 17);
+          currentY += 17 + splitAction.length * 4;
         }
       }
 

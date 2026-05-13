@@ -161,7 +161,7 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
       </header>
 
       <div className="mx-auto max-w-6xl px-4 py-5">
-        <DraftManager formId="report-form" storageKey="daily-report-draft" />
+        <DraftManager formId="report-form" storageKey="daily-report-draft" userId={user.id} />
 
         <form id="report-form" action={saveDailyReport} className="grid gap-6">
           {/* Top Section: Shift Info & Handover Side by Side */}

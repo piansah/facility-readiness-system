@@ -155,6 +155,7 @@ export default async function FacilityManagementPage({
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <FacilityCreatePanel
+                  key={selectedUnitId}
                   units={isSuperAdmin ? (units ?? []) : (units ?? []).filter(u => u.id === selectedUnitId)}
                   categories={categories ?? []}
                   defaultUnitId={selectedUnitId ?? ""}
@@ -163,26 +164,7 @@ export default async function FacilityManagementPage({
               </CardContent>
             </Card>
 
-            {isSuperAdmin && (
-              <Card className="border-slate-800 bg-slate-900/40">
-                <CardHeader className="p-4 pb-2">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Kelola Unit</h3>
-                </CardHeader>
-                <CardContent className="p-4 pt-0 space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] text-slate-500 uppercase">Kode Unit</Label>
-                    <Input className="bg-slate-950/50 border-slate-800 h-8 text-xs" placeholder="Misal: ELBAN" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] text-slate-500 uppercase">Nama Unit</Label>
-                    <Input className="bg-slate-950/50 border-slate-800 h-8 text-xs" placeholder="Nama lengkap unit" />
-                  </div>
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-xs h-8">
-                    + Tambah Unit
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+
           </div>
 
           {/* Sisi Kanan (3 Kolom): Daftar Fasilitas */}

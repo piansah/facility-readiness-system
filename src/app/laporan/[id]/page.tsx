@@ -51,6 +51,8 @@ type ReportDetail = {
     action_taken: string | null;
     incident_time: string;
     status: string;
+    result_status: string | null;
+    handler_type: string | null;
     incident_photos: {
       id: string;
       storage_path: string;
@@ -61,6 +63,15 @@ type ReportDetail = {
       signedUrl: string | null;
       caption: string | null;
     }[];
+  }[];
+  incident_follow_ups: {
+    id: string;
+    incident_id: string;
+    action_taken: string;
+    follow_up_time: string;
+    status_update: string;
+    handler_type: string;
+    incident: { title: string } | null;
   }[];
 };
 
@@ -144,7 +155,18 @@ export default async function ReportDetailPage({ params }: PageProps) {
           id,
           storage_path,
           caption
-        )
+        ),
+        result_status,
+        handler_type
+      ),
+      incident_follow_ups (
+        id,
+        incident_id,
+        action_taken,
+        follow_up_time,
+        status_update,
+        handler_type,
+        incident:incidents!incident_id (title)
       )
     `,
     )
@@ -289,11 +311,15 @@ export default async function ReportDetailPage({ params }: PageProps) {
           </Card>
         ) : null}
 
-        {canReview && report.status === "submitted" ? (
+        {canReview && (report.status === "submitted" || report.status === "reviewed" || report.status === "rejected") ? (
           <Card className="border-emerald-900/30 bg-emerald-950/5">
             <CardHeader>
-              <CardTitle>Review Laporan</CardTitle>
-              <CardDescription>Berikan persetujuan atau penolakan untuk laporan ini.</CardDescription>
+              <CardTitle>{report.status === "submitted" ? "Review Laporan" : "Ubah Keputusan Review"}</CardTitle>
+              <CardDescription>
+                {report.status === "submitted" 
+                  ? "Berikan persetujuan atau penolakan untuk laporan ini." 
+                  : "Anda dapat mengubah keputusan review yang sudah dibuat sebelumnya."}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form action={reviewDailyReport} className="grid gap-4">
@@ -309,10 +335,10 @@ export default async function ReportDetailPage({ params }: PageProps) {
                 </div>
                 <div className="flex gap-3">
                   <Button type="submit" name="status" value="reviewed" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                    <CheckCircle2 className="mr-2 h-4 w-4" /> Setujui
+                    <CheckCircle2 className="mr-2 h-4 w-4" /> {report.status === "reviewed" ? "Tetap Setujui" : "Setujui Laporan"}
                   </Button>
                   <Button type="submit" name="status" value="rejected" variant="destructive" className="flex-1">
-                    <XCircle className="mr-2 h-4 w-4" /> Tolak
+                    <XCircle className="mr-2 h-4 w-4" /> {report.status === "rejected" ? "Tetap Tolak" : "Tolak Laporan"}
                   </Button>
                 </div>
               </form>
@@ -391,7 +417,20 @@ export default async function ReportDetailPage({ params }: PageProps) {
                   >
                     <p className="font-medium text-slate-100">{incident.title}</p>
                     <div className="mt-1 text-xs text-slate-400">
-                      <p>{formatDateTime(incident.incident_time)} - {incident.status}</p>
+                      <div className="flex flex-wrap gap-2 mb-1.5">
+                        <span className={`px-1.5 py-0.5 rounded border ${
+                          incident.result_status === 'success' ? 'border-emerald-900/50 bg-emerald-500/10 text-emerald-400' :
+                          incident.result_status === 'failed' ? 'border-red-900/50 bg-red-500/10 text-red-400' :
+                          'border-amber-900/50 bg-amber-500/10 text-amber-400'
+                        }`}>
+                          {incident.result_status === 'success' ? 'Berhasil' : 
+                           incident.result_status === 'failed' ? 'Gagal' : 'Proses'}
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded border border-slate-700 bg-slate-800 text-slate-300">
+                          {incident.handler_type === 'vendor' ? 'Vendor' : 'Internal'}
+                        </span>
+                      </div>
+                      <p>{formatDateTime(incident.incident_time)}</p>
                       <p className="mt-0.5 text-emerald-500/80">Dilaporkan oleh: {report.users?.full_name ?? "Tidak diketahui"}</p>
                     </div>
                   </Link>
@@ -404,6 +443,45 @@ export default async function ReportDetailPage({ params }: PageProps) {
             )}
           </CardContent>
         </Card>
+
+        {/* --- Incident Follow Ups Section --- */}
+        {reportWithFullIncidents.incident_follow_ups && reportWithFullIncidents.incident_follow_ups.length > 0 && (
+          <section className="space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+              Tindak Lanjut Laporan Non-Rutin
+            </h2>
+            <div className="grid gap-4">
+              {reportWithFullIncidents.incident_follow_ups.map((fu) => (
+                <Card key={fu.id} className="border-slate-800 bg-slate-900/40">
+                  <CardHeader className="p-4 pb-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-slate-400">Tindak Lanjut: {fu.incident?.title}</p>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        fu.status_update === "success"
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : fu.status_update === "failed"
+                            ? "bg-red-500/10 text-red-400"
+                            : "bg-amber-500/10 text-amber-400"
+                      }`}>
+                        {fu.status_update === "success" ? "Berhasil" : fu.status_update === "failed" ? "Gagal" : "Proses"}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <p className="text-sm text-slate-200 mb-2">{fu.action_taken}</p>
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <Clock3 className="h-3 w-3" />
+                      <span>Jam: {formatDateTime(fu.follow_up_time)}</span>
+                      <span className="mx-1">•</span>
+                      <span>Oleh: {fu.handler_type === 'vendor' ? 'Vendor' : 'Internal'}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
+
       </div>
     </main>
   );

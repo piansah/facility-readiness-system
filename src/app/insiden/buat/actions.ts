@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfile } from "@/lib/auth/profile";
 import { canCreateReports } from "@/lib/auth/roles";
 
@@ -59,9 +60,13 @@ export async function createIncident(formData: FormData) {
     }
   }
 
-  const { data: incident, error: incidentError } = await supabase
+  // Use admin client to bypass RLS — security is enforced above via manual checks
+  const admin = createAdminClient();
+
+  const { data: incident, error: incidentError } = await admin
     .from("incidents")
     .insert({
+      unit_id: dailyReport.unit_id,
       daily_report_id: dailyReportId,
       facility_id: facilityId || null,
       reported_by: user.id,
@@ -85,7 +90,7 @@ export async function createIncident(formData: FormData) {
   for (const [index, photo] of photos.entries()) {
     const extension = photo.name.split(".").pop()?.toLowerCase() || "jpg";
     const path = `${user.id}/${incident.id}/${Date.now()}-${index}.${extension}`;
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await admin.storage
       .from("incident-photos")
       .upload(path, photo, {
         contentType: photo.type || "image/jpeg",
@@ -103,7 +108,7 @@ export async function createIncident(formData: FormData) {
     });
   }
 
-  const { error: photoError } = await supabase.from("incident_photos").insert(photoRows);
+  const { error: photoError } = await admin.from("incident_photos").insert(photoRows);
 
   if (photoError) {
     redirect(`/insiden/buat?error=${encodeURIComponent(photoError.message)}`);

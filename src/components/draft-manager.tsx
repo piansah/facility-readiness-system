@@ -11,15 +11,19 @@ type DraftData = Record<string, DraftValue>;
 type DraftManagerProps = {
   formId: string;
   storageKey: string;
+  userId?: string;
 };
 
-export function DraftManager({ formId, storageKey }: DraftManagerProps) {
+export function DraftManager({ formId, storageKey, userId }: DraftManagerProps) {
   const [showBanner, setShowBanner] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
+  // User-specific storage key to prevent cross-account draft leakage
+  const finalKey = userId ? `${storageKey}_${userId}` : storageKey;
+
   useEffect(() => {
     queueMicrotask(() => {
-      setShowBanner(Boolean(localStorage.getItem(storageKey)));
+      setShowBanner(Boolean(localStorage.getItem(finalKey)));
       setIsOnline(navigator.onLine);
     });
 
@@ -29,12 +33,12 @@ export function DraftManager({ formId, storageKey }: DraftManagerProps) {
     }
 
     const saveDraft = () => {
-      localStorage.setItem(storageKey, JSON.stringify(readFormData(form)));
+      localStorage.setItem(finalKey, JSON.stringify(readFormData(form)));
       // Do not show banner when user is actively editing
     };
 
     const clearSavedDraft = () => {
-      localStorage.removeItem(storageKey);
+      localStorage.removeItem(finalKey);
       setShowBanner(false);
     };
 
@@ -53,10 +57,10 @@ export function DraftManager({ formId, storageKey }: DraftManagerProps) {
       window.removeEventListener("online", syncOnlineState);
       window.removeEventListener("offline", syncOnlineState);
     };
-  }, [formId, storageKey]);
+  }, [formId, finalKey]);
 
   const restoreDraft = () => {
-    const saved = localStorage.getItem(storageKey);
+    const saved = localStorage.getItem(finalKey);
     if (!saved) {
       return;
     }
@@ -72,7 +76,7 @@ export function DraftManager({ formId, storageKey }: DraftManagerProps) {
   };
 
   const clearDraft = () => {
-    localStorage.removeItem(storageKey);
+    localStorage.removeItem(finalKey);
     setShowBanner(false);
   };
 

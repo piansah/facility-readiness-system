@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 
-export function IncidentTimeInput({ defaultValue }: { defaultValue?: string }) {
+export function IncidentTimeInput({ defaultValue, name = "incident_time" }: { defaultValue?: string, name?: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -33,8 +33,8 @@ export function IncidentTimeInput({ defaultValue }: { defaultValue?: string }) {
   return (
     <Input
       ref={inputRef}
-      id="incident_time"
-      name="incident_time"
+      id={name}
+      name={name}
       type="datetime-local"
       required
     />
