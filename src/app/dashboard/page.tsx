@@ -63,7 +63,7 @@ export default async function DashboardPage() {
   // Jendela Operasional: Tentukan tanggal dan shift yang relevan
   const now = new Date();
   const currentHour = now.getHours();
-  
+
   // Ambil tanggal lokal hari ini dan kemarin
   const today = now.toLocaleDateString('en-CA');
   const yesterday = new Date(now.getTime() - 86400000).toLocaleDateString('en-CA');
@@ -73,39 +73,39 @@ export default async function DashboardPage() {
   // 08:00 - 19:59: Shift Pagi sedang berjalan. Tampilkan: Malam Kemarin (DL: 08:00) & Pagi Hari Ini (DL: 20:00)
   // 20:00 - 23:59: Shift Malam sedang berjalan. Tampilkan: Pagi Hari Ini (DL: 20:00) & Malam Hari Ini (DL: 08:00)
   // 00:00 - 07:59: Shift Malam sedang berjalan. Tampilkan: Pagi Kemarin (DL: 20:00) & Malam Kemarin (DL: 08:00)
-  
+
   let activeShifts: { date: string; shift: string; label: string; deadline: string; deadlineDate: string }[] = [];
 
   if (currentHour >= 8 && currentHour < 20) {
     activeShifts = [
-      { date: yesterday, shift: 'malam', label: 'Malam', deadline: '08:00', deadlineDate: `${today}T08:00:00` }, 
-      { date: today, shift: 'pagi', label: 'Pagi', deadline: '20:00', deadlineDate: `${today}T20:00:00` } 
+      { date: yesterday, shift: 'malam', label: 'Malam', deadline: '08:00', deadlineDate: `${today}T08:00:00` },
+      { date: today, shift: 'pagi', label: 'Pagi', deadline: '20:00', deadlineDate: `${today}T20:00:00` }
     ];
   } else if (currentHour >= 20) {
     activeShifts = [
-      { date: today, shift: 'pagi', label: 'Pagi', deadline: '20:00', deadlineDate: `${today}T20:00:00` }, 
-      { date: today, shift: 'malam', label: 'Malam', deadline: '08:00', deadlineDate: `${tomorrow}T08:00:00` } 
+      { date: today, shift: 'pagi', label: 'Pagi', deadline: '20:00', deadlineDate: `${today}T20:00:00` },
+      { date: today, shift: 'malam', label: 'Malam', deadline: '08:00', deadlineDate: `${tomorrow}T08:00:00` }
     ];
   } else {
     // currentHour < 8
     activeShifts = [
-      { date: yesterday, shift: 'pagi', label: 'Pagi', deadline: '20:00 kemarin', deadlineDate: `${yesterday}T20:00:00` }, 
-      { date: yesterday, shift: 'malam', label: 'Malam', deadline: '08:00 hari ini', deadlineDate: `${today}T08:00:00` } 
+      { date: yesterday, shift: 'pagi', label: 'Pagi', deadline: '20:00 kemarin', deadlineDate: `${yesterday}T20:00:00` },
+      { date: yesterday, shift: 'malam', label: 'Malam', deadline: '08:00 hari ini', deadlineDate: `${today}T08:00:00` }
     ];
   }
 
   const targetDates = Array.from(new Set(activeShifts.map(s => s.date)));
-  
+
   // 1. Determine accessible Unit IDs
   let accessibleUnitIds: string[] = [];
-  
+
   if (isSuperAdmin) {
     // Check if this Super Admin is assigned to specific units
     const { data: assignedUnits } = await supabase
       .from("super_admin_unit_access")
       .select("unit_id")
       .eq("user_id", user.id);
-      
+
     if (assignedUnits && assignedUnits.length > 0) {
       accessibleUnitIds = assignedUnits.map(a => a.unit_id);
     } else {
@@ -120,13 +120,13 @@ export default async function DashboardPage() {
     .from("daily_reports")
     .select("id, report_date, submitted_at, shift, status")
     .in("report_date", targetDates);
-    
+
   // Tetap ambil summary untuk angka KPI (Normal/Rusak/Menurun) untuk hari kalender (Today)
   let summariesQuery = supabase
     .from("vw_report_summary")
     .select("*")
     .eq("report_date", today);
-    
+
   let openIssuesQuery = supabase
     .from("vw_open_issues")
     .select("*")
@@ -147,7 +147,7 @@ export default async function DashboardPage() {
       unitsQuery = unitsQuery.in("id", accessibleUnitIds);
     }
   }
-    
+
   // Pending reviews for Admin
   let pendingReviewsQuery = null;
   if (canReview) {
@@ -159,8 +159,8 @@ export default async function DashboardPage() {
 
   const [
     { data: dailyReports },
-    { data: summaries }, 
-    { data: openIssues }, 
+    { data: summaries },
+    { data: openIssues },
     unitsResult,
     pendingReviewsResult,
     profilesResult,
@@ -204,7 +204,7 @@ export default async function DashboardPage() {
     }),
     { normal: 0, broken: 0, degraded: 0 },
   );
-  
+
   const shiftSummaries = activeShifts.map((cfg) => {
     const report = (dailyReports ?? []).find((r) => r.report_date === cfg.date && r.shift === cfg.shift);
     const deadlineTime = new Date(cfg.deadlineDate).getTime();
@@ -252,7 +252,7 @@ export default async function DashboardPage() {
           <section className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-8 shadow-2xl">
             <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-[80px]" />
             <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-blue-500/10 blur-[80px]" />
-            
+
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <h2 className="text-3xl font-bold text-slate-100">Selamat Datang, {profile?.full_name?.split(' ')[0]}</h2>
@@ -275,22 +275,22 @@ export default async function DashboardPage() {
         {/* --- KPI Overview --- */}
         {!isSuperAdmin && (
           <section className="grid grid-cols-3 gap-2 sm:gap-6">
-            <StatusCard 
-              title="Sistem Normal" 
-              value={totals.normal} 
-              icon={<CheckCircle2 className="h-6 w-6" />} 
+            <StatusCard
+              title="Sistem Normal"
+              value={totals.normal}
+              icon={<CheckCircle2 className="h-6 w-6" />}
               color="emerald"
             />
-            <StatusCard 
-              title="Perlu Perbaikan" 
-              value={totals.broken} 
-              icon={<Wrench className="h-6 w-6" />} 
+            <StatusCard
+              title="Perlu Perbaikan"
+              value={totals.broken}
+              icon={<Wrench className="h-6 w-6" />}
               color="amber"
             />
-            <StatusCard 
-              title="Operasi Menurun" 
-              value={totals.degraded} 
-              icon={<AlertTriangle className="h-6 w-6" />} 
+            <StatusCard
+              title="Operasi Menurun"
+              value={totals.degraded}
+              icon={<AlertTriangle className="h-6 w-6" />}
               color="red"
             />
           </section>
@@ -366,189 +366,188 @@ export default async function DashboardPage() {
             )}
             {!isSuperAdmin && (
               <div className="grid gap-6">
-            
-            {/* 1. Laporan Hari Ini Section */}
-            <Card className="border-slate-800 bg-slate-900/40">
-              <CardHeader className="pb-2">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <CardTitle className="text-lg">
-                      {isSuperAdmin ? "Progres Laporan Unit" : "Status Laporan"}
-                    </CardTitle>
-                    <CardDescription>{today}</CardDescription>
-                  </div>
-                  {canCreateReports(profile?.role) && (
-                    <div className="flex items-center gap-2">
-                      <Button asChild size="sm" variant="outline" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-950/50">
-                        <Link href="/laporan?tab=draft">
-                          <ClipboardList className="mr-1.5 h-4 w-4" /> Draft
-                        </Link>
-                      </Button>
-                      <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                        <Link href="/laporan/buat">
-                          <ClipboardList className="mr-1.5 h-4 w-4" /> <span className="hidden sm:inline">Buat </span>Laporan
-                        </Link>
-                      </Button>
+
+                {/* 1. Laporan Hari Ini Section */}
+                <Card className="border-slate-800 bg-slate-900/40">
+                  <CardHeader className="pb-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <CardTitle className="text-lg">
+                          {isSuperAdmin ? "Progres Laporan Unit" : "Status Laporan Hari Ini"}
+                        </CardTitle>
+                        <CardDescription>{today}</CardDescription>
+                      </div>
+                      {canCreateReports(profile?.role) && (
+                        <div className="flex items-center gap-2">
+                          <Button asChild size="sm" variant="outline" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-950/50">
+                            <Link href="/laporan?tab=draft">
+                              <ClipboardList className="mr-1.5 h-4 w-4" /> Draft
+                            </Link>
+                          </Button>
+                          <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                            <Link href="/laporan/buat">
+                              <ClipboardList className="mr-1.5 h-4 w-4" /> <span className="hidden sm:inline">Buat </span>Laporan
+                            </Link>
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                {isSuperAdmin ? (
-                  /* --- Super Admin: Unit Progress Table --- */
-                  <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                        <tr>
-                          <th className="px-4 py-3">Unit</th>
-                          <th className="px-4 py-3 text-center">Shift Pagi</th>
-                          <th className="px-4 py-3 text-center">Shift Malam</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800">
-                        {units.map((u) => {
-                          const pagi = summaries?.find(s => s.unit_id === u.id && s.shift === 'pagi');
-                          const malam = summaries?.find(s => s.unit_id === u.id && s.shift === 'malam');
-                          return (
-                            <tr key={u.id} className="hover:bg-slate-900/50 transition-colors">
-                              <td className="px-4 py-3">
-                                <p className="font-bold text-slate-100">{u.code}</p>
-                                <p className="text-[10px] text-slate-500">{u.name}</p>
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <ShiftStatusLink report={pagi} />
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <ShiftStatusLink report={malam} />
-                              </td>
+                  </CardHeader>
+                  <CardContent className="grid gap-4">
+                    {isSuperAdmin ? (
+                      /* --- Super Admin: Unit Progress Table --- */
+                      <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            <tr>
+                              <th className="px-4 py-3">Unit</th>
+                              <th className="px-4 py-3 text-center">Shift Pagi</th>
+                              <th className="px-4 py-3 text-center">Shift Malam</th>
                             </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-800">
+                            {units.map((u) => {
+                              const pagi = summaries?.find(s => s.unit_id === u.id && s.shift === 'pagi');
+                              const malam = summaries?.find(s => s.unit_id === u.id && s.shift === 'malam');
+                              return (
+                                <tr key={u.id} className="hover:bg-slate-900/50 transition-colors">
+                                  <td className="px-4 py-3">
+                                    <p className="font-bold text-slate-100">{u.code}</p>
+                                    <p className="text-[10px] text-slate-500">{u.name}</p>
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
+                                    <ShiftStatusLink report={pagi} />
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
+                                    <ShiftStatusLink report={malam} />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      /* --- Regular User: Shift Cards --- */
+                      <div className="grid gap-3">
+                        {shiftSummaries.map((item) => {
+                          const href = item.report?.id
+                            ? `/laporan/${item.report.id}`
+                            : (isAdmin ? "/laporan/belum-ada" : `/laporan/buat?date=${item.date}&shift=${item.shift}`);
+
+                          return (
+                            <Link
+                              key={`${item.date}-${item.shift}`}
+                              href={href}
+                              className="group flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:p-4 transition-all hover:border-emerald-500/50 hover:bg-slate-900"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg ${item.report ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                                  <Clock3 className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="text-sm sm:text-base font-bold text-slate-100 uppercase tracking-tight">Shift {item.label}</p>
+                                  <p className="text-[10px] text-slate-500 font-medium">
+                                    {item.report ? `Update: ${formatDateTime(item.report.submitted_at || item.report.report_date!)}` : `Batas Submit: ${item.deadline}`}
+                                  </p>
+                                </div>
+                              </div>
+                              <ShiftBadge status={item.report?.status} isOverdue={item.isOverdue} />
+                            </Link>
                           );
                         })}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  /* --- Regular User: Shift Cards --- */
-                  <div className="grid gap-3">
-                    {shiftSummaries.map((item) => {
-                      const href = item.report?.id 
-                        ? `/laporan/${item.report.id}` 
-                        : (isAdmin ? "/laporan/belum-ada" : `/laporan/buat?date=${item.date}&shift=${item.shift}`);
-                      
-                      return (
-                        <Link
-                          key={`${item.date}-${item.shift}`}
-                          href={href}
-                          className="group flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:p-4 transition-all hover:border-emerald-500/50 hover:bg-slate-900"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${item.report ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
-                              <Clock3 className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <p className="text-sm sm:text-base font-bold text-slate-100 uppercase tracking-tight">Shift {item.label}</p>
-                              <p className="text-[10px] text-slate-500 font-medium">
-                                {item.report ? `Update: ${formatDateTime(item.report.submitted_at || item.report.report_date!)}` : `Batas Submit: ${item.deadline} • ${item.date}`}
-                              </p>
-                            </div>
-                          </div>
-                          <ShiftBadge status={item.report?.status} isOverdue={item.isOverdue} />
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* 2. Review Laporan (Admin Only) */}
-            {canReview && pendingReviews.length > 0 && (
-              <Card className="border-emerald-900/30 bg-emerald-950/5">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                    Menunggu Review
-                  </CardTitle>
-                  <CardDescription>Laporan yang perlu diverifikasi admin.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-3">
-                  {pendingReviews.map((rev) => (
-                    <Link 
-                      key={rev.id} 
-                      href={`/laporan/${rev.id}`}
-                      className="flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 transition-colors"
-                    >
-                      <div className="text-sm">
-                        <p className="font-semibold text-slate-100">{formatDate(rev.report_date)}</p>
-                        <p className="text-xs text-slate-500 capitalize">Shift {rev.shift}</p>
                       </div>
-                      <Button variant="ghost" size="sm" className="text-emerald-400">Review</Button>
-                    </Link>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
+                    )}
+                  </CardContent>
+                </Card>
 
-            {/* 3. Open Issues Section */}
-            <Card className="border-slate-800 bg-slate-900/40">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div>
-                  <CardTitle className="text-lg">Non-Rutin & Insiden</CardTitle>
-                  <CardDescription>Masalah yang masih memerlukan tindak lanjut.</CardDescription>
-                </div>
-                {canCreateIncidents(profile?.role) && (
-                  <Button asChild variant="outline" size="sm">
-                    <Link href="/insiden/buat">
-                      <Camera className="mr-2 h-4 w-4" /> Laporkan
-                    </Link>
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent>
-                {openIssues?.length ? (
-                  <div className="grid gap-3">
-                    {openIssues.map((issue) => (
-                      <Link
-                        key={issue.id}
-                        href={`/insiden/${issue.id}`}
-                        className="group relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-4 transition-all hover:border-amber-500/50 hover:bg-slate-900"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-bold text-slate-100 group-hover:text-amber-400 transition-colors">{issue.title}</p>
-                            <p className="mt-1 text-xs text-slate-500 flex items-center gap-2">
-                              <span className="font-semibold text-slate-400">{issue.facility_name ?? "Umum"}</span>
-                              {issue.occurred_at && `- ${formatDateTime(issue.occurred_at)}`}
-                            </p>
+                {/* 2. Review Laporan (Admin Only) */}
+                {canReview && pendingReviews.length > 0 && (
+                  <Card className="border-emerald-900/30 bg-emerald-950/5">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                        Menunggu Review
+                      </CardTitle>
+                      <CardDescription>Laporan yang perlu diverifikasi admin.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-3">
+                      {pendingReviews.map((rev) => (
+                        <Link
+                          key={rev.id}
+                          href={`/laporan/${rev.id}`}
+                          className="flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 transition-colors"
+                        >
+                          <div className="text-sm">
+                            <p className="font-semibold text-slate-100">{formatDate(rev.report_date)}</p>
+                            <p className="text-xs text-slate-500 capitalize">Shift {rev.shift}</p>
                           </div>
-                          <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                            issue.status === 'open' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          }`}>
-                            {issue.status}
-                          </span>
-                        </div>
-                      </Link>
-                    ))}
-                    <Button asChild variant="ghost" className="w-full text-slate-500 hover:text-slate-200">
-                      <Link href="/insiden">Lihat Semua History Non-Rutin</Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-10 text-center rounded-xl border border-dashed border-slate-800">
-                    <CheckCircle2 className="h-10 w-10 text-emerald-500/20 mb-3" />
-                    <p className="text-sm text-slate-500">Semua aman. Tidak ada insiden terbuka.</p>
-                  </div>
+                          <Button variant="ghost" size="sm" className="text-emerald-400">Review</Button>
+                        </Link>
+                      ))}
+                    </CardContent>
+                  </Card>
                 )}
-              </CardContent>
-            </Card>
-            </div>
-          )}
-        </div>
+
+                {/* 3. Open Issues Section */}
+                <Card className="border-slate-800 bg-slate-900/40">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                      <CardTitle className="text-lg">Non-Rutin & Insiden</CardTitle>
+                      <CardDescription>Masalah yang masih memerlukan tindak lanjut.</CardDescription>
+                    </div>
+                    {canCreateIncidents(profile?.role) && (
+                      <Button asChild variant="outline" size="sm">
+                        <Link href="/insiden/buat">
+                          <Camera className="mr-2 h-4 w-4" /> Laporkan
+                        </Link>
+                      </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    {openIssues?.length ? (
+                      <div className="grid gap-3">
+                        {openIssues.map((issue) => (
+                          <Link
+                            key={issue.id}
+                            href={`/insiden/${issue.id}`}
+                            className="group relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-4 transition-all hover:border-amber-500/50 hover:bg-slate-900"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="font-bold text-slate-100 group-hover:text-amber-400 transition-colors">{issue.title}</p>
+                                <p className="mt-1 text-xs text-slate-500 flex items-center gap-2">
+                                  <span className="font-semibold text-slate-400">{issue.facility_name ?? "Umum"}</span>
+                                  {issue.occurred_at && `- ${formatDateTime(issue.occurred_at)}`}
+                                </p>
+                              </div>
+                              <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${issue.status === 'open' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                }`}>
+                                {issue.status}
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
+                        <Button asChild variant="ghost" className="w-full text-slate-500 hover:text-slate-200">
+                          <Link href="/insiden">Lihat Semua History Non-Rutin</Link>
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-10 text-center rounded-xl border border-dashed border-slate-800">
+                        <CheckCircle2 className="h-10 w-10 text-emerald-500/20 mb-3" />
+                        <p className="text-sm text-slate-500">Semua aman. Tidak ada insiden terbuka.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
 
 
           {/* --- Sidebar (4/12) --- */}
           <div className="lg:col-span-4 order-first lg:order-last grid gap-6 content-start">
-            
+
             {/* Quick Access Menu */}
             <Card className="border-slate-800 bg-slate-900/40">
               <CardHeader>
@@ -584,7 +583,7 @@ export default async function DashboardPage() {
                     </Button>
                   </>
                 )}
-                
+
                 {isAdmin && (
                   <>
                     {!isSuperAdmin && (
