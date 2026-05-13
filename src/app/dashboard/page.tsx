@@ -698,16 +698,14 @@ function StatusCard({
 
   return (
     <Card className={`border ${colorStyles[color]} overflow-hidden`}>
-      <CardContent className="p-2 sm:p-5 flex flex-col items-start">
-        <div className="flex items-center justify-between w-full mb-1 sm:mb-3">
+      <CardContent className="flex items-center justify-between p-2 sm:p-5">
+        <div className="min-w-0">
+          <p className="hidden sm:block text-xs font-bold uppercase tracking-wider opacity-70 mb-1">{title}</p>
           <p className="text-xl sm:text-3xl font-black">{value}</p>
-          <div className={`flex h-7 w-7 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg sm:rounded-xl ${colorStyles[color]} border shadow-lg shadow-black/20`}>
-            {React.cloneElement(icon as React.ReactElement, { className: "h-3.5 w-3.5 sm:h-6 sm:w-6" })}
-          </div>
         </div>
-        <p className="text-[8px] sm:text-xs font-bold uppercase tracking-wider opacity-70 leading-tight text-left">
-          {title}
-        </p>
+        <div className={`flex h-7 w-7 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg sm:rounded-xl ${colorStyles[color]} border shadow-lg shadow-black/20`}>
+          {React.cloneElement(icon as React.ReactElement<any>, { className: "h-3.5 w-3.5 sm:h-6 sm:w-6" })}
+        </div>
       </CardContent>
     </Card>
   );
