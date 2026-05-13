@@ -49,6 +49,10 @@ type ReportForPdf = {
     status_update: string;
     handler_type: string;
     incident: { title: string } | null;
+    photos?: {
+      signedUrl: string | null;
+      caption: string | null;
+    }[];
   }[];
 };
 
@@ -254,6 +258,57 @@ export function PdfExport({ report }: PdfExportProps) {
           const splitAction = doc.splitTextToSize(`Tindakan: ${fu.action_taken}`, pageWidth - 35);
           doc.text(splitAction, 20, currentY + 17);
           currentY += 17 + splitAction.length * 4;
+
+          // Render photos for follow-ups
+          let photoX = 20;
+          let maxRowHeight = 0;
+
+          for (const photo of fu.photos ?? []) {
+            if (!photo.signedUrl) continue;
+
+            try {
+              const image = await fetchImageData(photo.signedUrl);
+              const isPortrait = image.height > image.width;
+              
+              let targetWidth = isPortrait ? 55 : 100;
+              let imgWidth = targetWidth;
+              let imgHeight = (image.height * imgWidth) / image.width;
+
+              const maxHeight = 80;
+              if (imgHeight > maxHeight) {
+                imgHeight = maxHeight;
+                imgWidth = (image.width * imgHeight) / image.height;
+              }
+
+              if (!isPortrait || (photoX + imgWidth > pageWidth - 15)) {
+                currentY += maxRowHeight + (maxRowHeight > 0 ? 5 : 0);
+                photoX = 20;
+                maxRowHeight = 0;
+              }
+
+              if (currentY + imgHeight > 270) {
+                doc.addPage();
+                currentY = 20;
+                photoX = 20;
+              }
+
+              doc.addImage(image.dataUrl, image.format, photoX, currentY, imgWidth, imgHeight);
+              
+              if (isPortrait) {
+                photoX += imgWidth + 5;
+                maxRowHeight = Math.max(maxRowHeight, imgHeight);
+              } else {
+                currentY += imgHeight + 10;
+                photoX = 20;
+                maxRowHeight = 0;
+              }
+            } catch (error) {
+              console.error("Failed to add follow-up image to PDF", error);
+              doc.text("Foto gagal dimuat.", 20, currentY);
+              currentY += 8;
+            }
+          }
+          currentY += maxRowHeight + (maxRowHeight > 0 ? 10 : 5);
         }
       }
 

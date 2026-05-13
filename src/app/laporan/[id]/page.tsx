@@ -11,6 +11,7 @@ import { getProfile } from "@/lib/auth/profile";
 import { canAccessUnit } from "@/lib/auth/unit-access";
 import { canReviewReports, canCreateReports } from "@/lib/auth/roles";
 import { reviewDailyReport } from "./actions";
+import { ReviewForm } from "./review-form";
 import { PdfExport } from "@/components/pdf-export";
 import { DeleteDraftButton } from "./delete-draft-button";
 
@@ -57,6 +58,7 @@ type ReportDetail = {
       id: string;
       storage_path: string;
       caption: string | null;
+      follow_up_id?: string | null;
     }[];
     photos?: {
       id: string;
@@ -72,6 +74,16 @@ type ReportDetail = {
     status_update: string;
     handler_type: string;
     incident: { title: string } | null;
+    incident_photos: {
+      id: string;
+      storage_path: string;
+      caption: string | null;
+    }[];
+    photos?: {
+      id: string;
+      signedUrl: string | null;
+      caption: string | null;
+    }[];
   }[];
 };
 
@@ -154,7 +166,8 @@ export default async function ReportDetailPage({ params }: PageProps) {
         incident_photos (
           id,
           storage_path,
-          caption
+          caption,
+          follow_up_id
         ),
         result_status,
         handler_type
@@ -166,7 +179,12 @@ export default async function ReportDetailPage({ params }: PageProps) {
         follow_up_time,
         status_update,
         handler_type,
-        incident:incidents!incident_id (title)
+        incident:incidents!incident_id (title),
+        incident_photos (
+          id,
+          storage_path,
+          caption
+        )
       )
     `,
     )
@@ -198,8 +216,11 @@ export default async function ReportDetailPage({ params }: PageProps) {
   // Fetch signed URLs for all incident photos in this report
   const incidentsWithPhotos = await Promise.all(
     report.incidents.map(async (incident) => {
+      // Filter only photos that belong to the main incident (no follow_up_id)
+      const mainIncidentPhotos = incident.incident_photos.filter(p => !p.follow_up_id);
+      
       const photosWithUrls = await Promise.all(
-        incident.incident_photos.map(async (photo) => {
+        mainIncidentPhotos.map(async (photo) => {
           const { data } = await supabase.storage
             .from("incident-photos")
             .createSignedUrl(photo.storage_path, 60 * 60); // 1 hour
@@ -210,7 +231,27 @@ export default async function ReportDetailPage({ params }: PageProps) {
     }),
   );
 
-  const reportWithFullIncidents = { ...report, ...reviewMetadata, incidents: incidentsWithPhotos };
+  // Fetch signed URLs for follow-up photos
+  const followUpsWithPhotos = await Promise.all(
+    report.incident_follow_ups.map(async (fu) => {
+      const photosWithUrls = await Promise.all(
+        fu.incident_photos.map(async (photo) => {
+          const { data } = await supabase.storage
+            .from("incident-photos")
+            .createSignedUrl(photo.storage_path, 60 * 60);
+          return { ...photo, signedUrl: data?.signedUrl ?? null };
+        }),
+      );
+      return { ...fu, photos: photosWithUrls };
+    }),
+  );
+
+  const reportWithFullIncidents = { 
+    ...report, 
+    ...reviewMetadata, 
+    incidents: incidentsWithPhotos,
+    incident_follow_ups: followUpsWithPhotos 
+  };
 
   const groups = groupLogs(report.facility_status_logs);
   const canReview = canReviewReports(profile.role);
@@ -322,26 +363,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form action={reviewDailyReport} className="grid gap-4">
-                <input type="hidden" name="report_id" value={report.id} />
-                <div className="grid gap-2">
-                  <Label htmlFor="review_notes">Catatan Review (Opsional)</Label>
-                  <Textarea
-                    id="review_notes"
-                    name="review_notes"
-                    placeholder="Contoh: Laporan sudah lengkap, atau Perbaiki bagian fasilitas X..."
-                    className="bg-slate-900"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <Button type="submit" name="status" value="reviewed" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                    <CheckCircle2 className="mr-2 h-4 w-4" /> {report.status === "reviewed" ? "Tetap Setujui" : "Setujui Laporan"}
-                  </Button>
-                  <Button type="submit" name="status" value="rejected" variant="destructive" className="flex-1">
-                    <XCircle className="mr-2 h-4 w-4" /> {report.status === "rejected" ? "Tetap Tolak" : "Tolak Laporan"}
-                  </Button>
-                </div>
-              </form>
+              <ReviewForm reportId={report.id} currentStatus={report.status} />
             </CardContent>
           </Card>
         ) : null}
