@@ -125,6 +125,13 @@ export default async function DinasPage({ searchParams }: { searchParams: { mont
     redirect(`/manajemen/dinas?month=${selectedMonthStr}`);
   }
 
+  // Fetch Unit Name separately
+  const { data: unitData } = await supabase
+    .from("units")
+    .select("name")
+    .eq("id", profile.unit_id)
+    .single();
+
   return (
     <div className="min-h-dvh bg-slate-950">
       <RosterContent 
@@ -133,7 +140,7 @@ export default async function DinasPage({ searchParams }: { searchParams: { mont
         rosters={rosters || []}
         selectedMonth={selectedMonth}
         unitId={profile.unit_id}
-        unitName={profile.units?.name || "Unit"}
+        unitName={unitData?.name || "Unit"}
         adminName={profile.full_name || "Admin"}
         isAdmin={profile.role === 'admin' || isSuperAdmin}
         currentUserId={user.id}

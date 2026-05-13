@@ -4,7 +4,7 @@ import type { AppProfile } from "./roles";
 export async function getProfile(supabase: SupabaseClient, userId: string) {
   const { data, error } = await supabase
     .from("users")
-    .select("id,email,full_name,role,unit_id,is_active, units(code, name)")
+    .select("id,email,full_name,role,unit_id,is_active")
     .eq("id", userId)
     .single<AppProfile>();
 

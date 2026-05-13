@@ -7,10 +7,6 @@ export type AppProfile = {
   role: UserRole;
   unit_id: string | null;
   is_active: boolean;
-  units?: {
-    code: string;
-    name: string;
-  } | null;
 };
 
 /** Hanya Petugas yang membuat laporan harian */
