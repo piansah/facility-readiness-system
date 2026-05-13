@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/login/actions";
 import { getProfile } from "@/lib/auth/profile";
-import { canCreateReports, canManageUnit, canReviewReports, canAccessManagement, roleLabel } from "@/lib/auth/roles";
+import { canCreateReports, canCreateIncidents, canManageUnit, canReviewReports, canAccessManagement, roleLabel } from "@/lib/auth/roles";
+import { RefreshOnDateChange } from "@/components/dashboard/refresh-on-date-change";
 
 type ReportSummary = {
   id?: string;
@@ -56,8 +57,29 @@ export default async function DashboardPage() {
   const canReview = canReviewReports(profile?.role);  // true hanya untuk admin
   const isSuperAdmin = profile?.role === "super_admin";
 
-  // Gunakan tanggal lokal (WIB/sesuai device) bukan UTC
-  const today = new Date().toLocaleDateString('en-CA');
+  // Jendela Operasional: Tentukan tanggal dan shift yang relevan
+  const now = new Date();
+  const currentHour = now.getHours();
+  
+  // Ambil tanggal lokal hari ini dan kemarin
+  const today = now.toLocaleDateString('en-CA');
+  const yesterday = new Date(now.getTime() - 86400000).toLocaleDateString('en-CA');
+
+  // Jika jam 00:00 - 10:00 pagi, tampilkan Malam (Kemarin) dan Pagi (Hari Ini)
+  // Jika lewat jam 10:00, tampilkan Pagi (Hari Ini) dan Malam (Hari Ini)
+  const isEarlyMorning = currentHour < 10;
+  
+  const activeShifts = isEarlyMorning 
+    ? [ 
+        { date: yesterday, shift: 'malam', label: 'Malam - Kemarin', deadline: '08:00' }, 
+        { date: today, shift: 'pagi', label: 'Pagi - Hari ini', deadline: '20:00' } 
+      ]
+    : [ 
+        { date: today, shift: 'pagi', label: 'Pagi - Hari ini', deadline: '20:00' }, 
+        { date: today, shift: 'malam', label: 'Malam - Hari ini', deadline: '08:00' } 
+      ];
+
+  const targetDates = Array.from(new Set(activeShifts.map(s => s.date)));
   
   // 1. Determine accessible Unit IDs
   let accessibleUnitIds: string[] = [];
@@ -79,14 +101,12 @@ export default async function DashboardPage() {
     accessibleUnitIds = [profile.unit_id];
   }
 
-  // 2. Base queries
-  // Ambil data laporan dasar untuk cek status (Shift Pagi/Malam)
   let reportsQuery = supabase
     .from("daily_reports")
     .select("id, report_date, submitted_at, shift, status")
-    .eq("report_date", today);
+    .in("report_date", targetDates);
     
-  // Tetap ambil summary untuk angka KPI (Normal/Rusak/Menurun)
+  // Tetap ambil summary untuk angka KPI (Normal/Rusak/Menurun) untuk hari kalender (Today)
   let summariesQuery = supabase
     .from("vw_report_summary")
     .select("*")
@@ -154,9 +174,9 @@ export default async function DashboardPage() {
     { normal: 0, broken: 0, degraded: 0 },
   );
   
-  const shiftSummaries = ["pagi", "malam"].map((shift) => ({
-    shift,
-    report: (dailyReports ?? []).find((report) => report.shift === shift),
+  const shiftSummaries = activeShifts.map((cfg) => ({
+    ...cfg,
+    report: (dailyReports ?? []).find((report) => report.report_date === cfg.date && report.shift === cfg.shift),
   }));
 
   const dashboardSubTitle = isSuperAdmin
@@ -167,6 +187,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-dvh bg-slate-950">
+      <RefreshOnDateChange />
       <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
           <div>
@@ -287,26 +308,32 @@ export default async function DashboardPage() {
                 ) : (
                   /* --- Regular User: Shift Cards --- */
                   <div className="grid gap-3">
-                    {shiftSummaries.map(({ shift, report }) => (
-                      <Link
-                        key={shift}
-                        href={report?.id ? `/laporan/${report.id}` : "/laporan/buat"}
-                        className="group flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:p-4 transition-all hover:border-emerald-500/50 hover:bg-slate-900"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${report ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
-                            <Clock3 className="h-5 w-5" />
+                    {shiftSummaries.map((item) => {
+                      const href = item.report?.id 
+                        ? `/laporan/${item.report.id}` 
+                        : (isAdmin ? "/laporan/belum-ada" : `/laporan/buat?date=${item.date}&shift=${item.shift}`);
+                      
+                      return (
+                        <Link
+                          key={`${item.date}-${item.shift}`}
+                          href={href}
+                          className="group flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:p-4 transition-all hover:border-emerald-500/50 hover:bg-slate-900"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg ${item.report ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                              <Clock3 className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-100 uppercase tracking-tight">Shift {item.label}</p>
+                              <p className="text-[10px] text-slate-500 font-medium">
+                                {item.report ? `Update: ${formatDateTime(item.report.submitted_at || item.report.report_date!)}` : `Batas Submit: ${item.deadline} • ${item.date}`}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-bold capitalize text-slate-100">Shift {shift}</p>
-                            <p className="text-xs text-slate-500">
-                              {report ? `Terakhir update: ${formatDateTime(report.submitted_at || report.report_date!)}` : "Belum ada laporan"}
-                            </p>
-                          </div>
-                        </div>
-                        <ShiftBadge status={report?.status} />
-                      </Link>
-                    ))}
+                          <ShiftBadge status={item.report?.status} />
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -347,7 +374,7 @@ export default async function DashboardPage() {
                   <CardTitle className="text-lg">Non-Rutin & Insiden</CardTitle>
                   <CardDescription>Masalah yang masih memerlukan tindak lanjut.</CardDescription>
                 </div>
-                {canCreateReports(profile?.role) && (
+                {canCreateIncidents(profile?.role) && (
                   <Button asChild variant="outline" size="sm">
                     <Link href="/insiden/buat">
                       <Camera className="mr-2 h-4 w-4" /> Laporkan

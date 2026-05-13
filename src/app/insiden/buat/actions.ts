@@ -27,6 +27,8 @@ export async function createIncident(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const actionTaken = String(formData.get("action_taken") ?? "").trim();
+  const resultStatus = String(formData.get("result_status") ?? "pending");
+  const handlerType = String(formData.get("handler_type") ?? "internal");
   const photos = formData
     .getAll("photos")
     .filter((value): value is File => value instanceof File && value.size > 0);
@@ -67,7 +69,9 @@ export async function createIncident(formData: FormData) {
       title,
       description,
       action_taken: actionTaken || null,
-      status: "open",
+      status: resultStatus === "success" ? "resolved" : "open",
+      result_status: resultStatus,
+      handler_type: handlerType,
     })
     .select("id")
     .single<{ id: string }>();
@@ -120,7 +124,8 @@ export async function updateIncident(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const actionTaken = String(formData.get("action_taken") ?? "").trim();
-  const status = String(formData.get("status") ?? "open");
+  const resultStatus = String(formData.get("result_status") ?? "pending");
+  const handlerType = String(formData.get("handler_type") ?? "internal");
   const incidentTime = String(formData.get("incident_time") ?? "");
   const facilityId = String(formData.get("facility_id") ?? "");
 
@@ -130,7 +135,9 @@ export async function updateIncident(formData: FormData) {
       title,
       description,
       action_taken: actionTaken || null,
-      status,
+      status: resultStatus === "success" ? "resolved" : "open",
+      result_status: resultStatus,
+      handler_type: handlerType,
       incident_time: incidentTime,
       facility_id: facilityId || null,
     })

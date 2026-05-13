@@ -49,7 +49,11 @@ type LatestReportSnapshot = {
 };
 
 type CreateReportPageProps = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ 
+    error?: string;
+    date?: string;
+    shift?: string;
+  }>;
 };
 
 export default async function CreateReportPage({ searchParams }: CreateReportPageProps) {
@@ -71,6 +75,8 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
 
   // Gunakan tanggal lokal (WIB/sesuai device) bukan UTC
   const today = new Date().toLocaleDateString('en-CA');
+  const initialDate = params.date || today;
+  const initialShift = params.shift || "pagi";
   const [{ data: facilities, error }, { data: staffOptions }, { data: latestReports }] = await Promise.all([
     supabase
       .from("facilities")
@@ -173,7 +179,7 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
                       id="report_date" 
                       name="report_date" 
                       type="date" 
-                      defaultValue={today} 
+                      defaultValue={initialDate} 
                       data-no-draft="true"
                       className="bg-slate-900/50"
                     />
@@ -184,7 +190,7 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
                       id="shift"
                       name="shift"
                       className="h-11 rounded-md border border-slate-800 bg-slate-900/50 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                      defaultValue="pagi"
+                      defaultValue={initialShift}
                     >
                       <option value="pagi">Pagi</option>
                       <option value="malam">Malam</option>
@@ -206,7 +212,7 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
                   <StaffSelector 
                     staff={staffOptions ?? []} 
                     initialCurrentIds={[user.id]}
-                    currentDateLabel={formatDateShort(today)}
+                    currentDateLabel={formatDateShort(initialDate)}
                   />
                 </CardContent>
               </Card>

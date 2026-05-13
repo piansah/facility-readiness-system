@@ -16,6 +16,7 @@ type IncidentDetail = {
   incident_time: string;
   status: string;
   created_at: string;
+  type?: 'incident' | 'facility';
   daily_reports: {
     report_date: string;
     shift: string;
@@ -27,7 +28,7 @@ type IncidentDetail = {
   reported_by_user: {
     full_name: string;
   };
-  incident_photos: {
+  incident_photos?: {
     id: string;
     storage_path: string;
     caption: string | null;
@@ -46,7 +47,8 @@ export default function IncidentDetailPage({
 
   useEffect(() => {
     async function loadData() {
-      const { data, error } = await supabase
+      // 1. Try to find in incidents
+      const { data: incidentData } = await supabase
         .from("incidents")
         .select(`
           *,
@@ -56,9 +58,58 @@ export default function IncidentDetailPage({
           incident_photos (id, storage_path, caption)
         `)
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
-      if (data) setIncident(data as IncidentDetail);
+      if (incidentData) {
+        const raw = incidentData as any;
+        setIncident({ 
+          ...raw, 
+          type: 'incident',
+          daily_reports: Array.isArray(raw.daily_reports) ? raw.daily_reports[0] : raw.daily_reports,
+          facilities: Array.isArray(raw.facilities) ? raw.facilities[0] : raw.facilities,
+          reported_by_user: Array.isArray(raw.reported_by_user) ? raw.reported_by_user[0] : raw.reported_by_user,
+        } as IncidentDetail);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fallback: Try to find in facility_status_logs (for "RUSAK" items)
+      const { data: logData } = await supabase
+        .from("facility_status_logs")
+        .select(`
+          id,
+          status,
+          notes,
+          checked_at,
+          daily_reports (report_date, shift),
+          facilities (name, location_detail),
+          reported_by_user:users!checked_by (full_name)
+        `)
+        .eq("id", id)
+        .maybeSingle();
+
+      if (logData) {
+        const rawLog = logData as any;
+        const dr = Array.isArray(rawLog.daily_reports) ? rawLog.daily_reports[0] : rawLog.daily_reports;
+        const fac = Array.isArray(rawLog.facilities) ? rawLog.facilities[0] : rawLog.facilities;
+        const reporter = Array.isArray(rawLog.reported_by_user) ? rawLog.reported_by_user[0] : rawLog.reported_by_user;
+
+        setIncident({
+          id: rawLog.id,
+          title: `Status Fasilitas: ${fac?.name}`,
+          description: rawLog.notes || "Tidak ada catatan tambahan.",
+          action_taken: null,
+          incident_time: rawLog.checked_at,
+          status: rawLog.status,
+          created_at: rawLog.checked_at,
+          type: 'facility',
+          daily_reports: dr,
+          facilities: fac,
+          reported_by_user: reporter,
+          incident_photos: []
+        } as IncidentDetail);
+      }
+      
       setLoading(false);
     }
     loadData();
@@ -80,7 +131,9 @@ export default function IncidentDetailPage({
           </Button>
           <div className="flex-1">
              <div className="flex items-center gap-2 mb-0.5">
-               <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 leading-none">Detail Laporan Non-Rutin</p>
+               <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 leading-none">
+                 {incident.type === 'facility' ? 'Detail Temuan Fasilitas' : 'Detail Laporan Non-Rutin'}
+               </p>
                <Badge variant="outline" className={`text-[9px] uppercase h-4 px-1.5 ${statusColor}`}>
                  {incident.status}
                </Badge>
@@ -165,7 +218,7 @@ export default function IncidentDetailPage({
             </section>
           )}
 
-          {incident.incident_photos.length > 0 && (
+          {incident.incident_photos && incident.incident_photos.length > 0 && (
             <section className="grid gap-3">
               <div className="flex items-center gap-2 px-1">
                 <Clock className="h-4 w-4 text-slate-500" />

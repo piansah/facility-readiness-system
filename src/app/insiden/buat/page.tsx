@@ -160,7 +160,7 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
             </div>
 
             <div className="grid min-w-0 gap-2">
-              <Label htmlFor="action_taken">Tindakan awal</Label>
+              <Label htmlFor="action_taken">Tindakan</Label>
               <textarea
                 id="action_taken"
                 name="action_taken"
@@ -168,6 +168,40 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
                 className="w-full min-w-0 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                 placeholder="Contoh: dilakukan pengecekan tegangan dan dokumentasi."
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid min-w-0 gap-2">
+                <Label>Status Hasil</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <label className="flex items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-900/50 p-3 text-[10px] font-medium text-slate-300 transition-all hover:bg-slate-900 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500/10 has-[:checked]:text-emerald-400 cursor-pointer">
+                    <input type="radio" name="result_status" value="success" className="sr-only" defaultChecked />
+                    Berhasil
+                  </label>
+                  <label className="flex items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-900/50 p-3 text-[10px] font-medium text-slate-300 transition-all hover:bg-slate-900 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-500/10 has-[:checked]:text-amber-400 cursor-pointer">
+                    <input type="radio" name="result_status" value="pending" className="sr-only" />
+                    Lanjut
+                  </label>
+                  <label className="flex items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-900/50 p-3 text-[10px] font-medium text-slate-300 transition-all hover:bg-slate-900 has-[:checked]:border-red-500 has-[:checked]:bg-red-500/10 has-[:checked]:text-red-400 cursor-pointer">
+                    <input type="radio" name="result_status" value="failed" className="sr-only" />
+                    Gagal
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid min-w-0 gap-2">
+                <Label>Penanggung Jawab</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-900/50 p-3 text-[10px] font-medium text-slate-300 transition-all hover:bg-slate-900 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-500/10 has-[:checked]:text-emerald-400 cursor-pointer">
+                    <input type="radio" name="handler_type" value="internal" className="sr-only" defaultChecked />
+                    Internal
+                  </label>
+                  <label className="flex items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-900/50 p-3 text-[10px] font-medium text-slate-300 transition-all hover:bg-slate-900 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-500/10 has-[:checked]:text-blue-400 cursor-pointer">
+                    <input type="radio" name="handler_type" value="vendor" className="sr-only" />
+                    Vendor
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div className="grid min-w-0 gap-2">
