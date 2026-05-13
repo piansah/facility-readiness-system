@@ -78,19 +78,19 @@ export default async function DashboardPage() {
 
   if (currentHour >= 8 && currentHour < 20) {
     activeShifts = [
-      { date: yesterday, shift: 'malam', label: 'Malam - Kemarin', deadline: '08:00', deadlineDate: `${today}T08:00:00` }, 
-      { date: today, shift: 'pagi', label: 'Pagi - Hari ini', deadline: '20:00', deadlineDate: `${today}T20:00:00` } 
+      { date: yesterday, shift: 'malam', label: 'Malam', deadline: '08:00', deadlineDate: `${today}T08:00:00` }, 
+      { date: today, shift: 'pagi', label: 'Pagi', deadline: '20:00', deadlineDate: `${today}T20:00:00` } 
     ];
   } else if (currentHour >= 20) {
     activeShifts = [
-      { date: today, shift: 'pagi', label: 'Pagi - Hari ini', deadline: '20:00', deadlineDate: `${today}T20:00:00` }, 
-      { date: today, shift: 'malam', label: 'Malam - Hari ini', deadline: '08:00', deadlineDate: `${tomorrow}T08:00:00` } 
+      { date: today, shift: 'pagi', label: 'Pagi', deadline: '20:00', deadlineDate: `${today}T20:00:00` }, 
+      { date: today, shift: 'malam', label: 'Malam', deadline: '08:00', deadlineDate: `${tomorrow}T08:00:00` } 
     ];
   } else {
     // currentHour < 8
     activeShifts = [
-      { date: yesterday, shift: 'pagi', label: 'Pagi - Kemarin', deadline: '20:00 kemarin', deadlineDate: `${yesterday}T20:00:00` }, 
-      { date: yesterday, shift: 'malam', label: 'Malam - Kemarin', deadline: '08:00 hari ini', deadlineDate: `${today}T08:00:00` } 
+      { date: yesterday, shift: 'pagi', label: 'Pagi', deadline: '20:00 kemarin', deadlineDate: `${yesterday}T20:00:00` }, 
+      { date: yesterday, shift: 'malam', label: 'Malam', deadline: '08:00 hari ini', deadlineDate: `${today}T08:00:00` } 
     ];
   }
 
@@ -446,7 +446,7 @@ export default async function DashboardPage() {
                               <Clock3 className="h-5 w-5" />
                             </div>
                             <div>
-                              <p className="font-bold text-slate-100 uppercase tracking-tight">Shift {item.label}</p>
+                              <p className="text-sm sm:text-base font-bold text-slate-100 uppercase tracking-tight">Shift {item.label}</p>
                               <p className="text-[10px] text-slate-500 font-medium">
                                 {item.report ? `Update: ${formatDateTime(item.report.submitted_at || item.report.report_date!)}` : `Batas Submit: ${item.deadline} • ${item.date}`}
                               </p>
@@ -649,15 +649,15 @@ function ShiftStatusLink({ report }: { report?: ReportSummary }) {
 function ShiftBadge({ status, isOverdue }: { status?: string, isOverdue?: boolean }) {
   if (status === "submitted" || status === "reviewed") {
     return (
-      <span className="rounded-md bg-emerald-500/15 px-2 py-1 text-xs font-medium text-emerald-200">
-        Submitted
+      <span className="rounded-md bg-emerald-500/15 px-2 py-1 text-[10px] sm:text-xs font-medium text-emerald-200">
+        Selesai
       </span>
     );
   }
 
   if (status === "draft") {
     return (
-      <span className={`rounded-md px-2 py-1 text-xs font-medium ${isOverdue ? 'bg-red-500/15 text-red-400' : 'bg-sky-500/15 text-sky-200'}`}>
+      <span className={`rounded-md px-2 py-1 text-[10px] sm:text-xs font-medium ${isOverdue ? 'bg-red-500/15 text-red-400' : 'bg-sky-500/15 text-sky-200'}`}>
         {isOverdue ? 'Draft (Terlambat)' : 'Draft'}
       </span>
     );
@@ -665,15 +665,15 @@ function ShiftBadge({ status, isOverdue }: { status?: string, isOverdue?: boolea
 
   if (status === "none") {
     return (
-      <span className="rounded-md bg-slate-800/40 px-2 py-1 text-[10px] font-medium text-slate-500">
-        Belum ada
+      <span className="rounded-md bg-slate-800/40 px-2 py-1 text-[9px] sm:text-[10px] font-medium text-slate-500">
+        Kosong
       </span>
     );
   }
 
   return (
-    <span className={`rounded-md px-2 py-1 text-xs font-medium ${isOverdue ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-slate-700/60 text-slate-300'}`}>
-      {isOverdue ? 'Terlambat' : 'Belum dibuat'}
+    <span className={`rounded-md px-2 py-1 text-[10px] sm:text-xs font-medium ${isOverdue ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-slate-700/60 text-slate-300'}`}>
+      {isOverdue ? 'Terlambat' : 'Belum'}
     </span>
   );
 }
