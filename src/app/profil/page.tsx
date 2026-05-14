@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Mail, Shield, Building2, ChevronRight } from "lucide-react";
+import { LogOut, User, Mail, Shield, Building2, ChevronRight, BookOpen } from "lucide-react";
 import { logout } from "@/app/login/actions";
 
 export default async function ProfilPage() {
@@ -92,6 +93,26 @@ export default async function ProfilPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Menu Section */}
+        <div className="mt-8 space-y-3">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Lainnya</p>
+          <Button 
+            asChild
+            variant="outline" 
+            className="w-full h-14 rounded-2xl justify-between px-5 border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold shadow-xl active:scale-95 transition-all"
+          >
+            <Link href="/panduan">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+                  <BookOpen className="h-5 w-5" />
+                </div>
+                <span>Panduan Sistem</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-600" />
+            </Link>
+          </Button>
+        </div>
 
         {/* Action Button */}
         <div className="mt-12">

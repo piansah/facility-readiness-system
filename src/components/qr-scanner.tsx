@@ -32,13 +32,19 @@ export function QRScanner({ customTrigger }: { customTrigger?: React.ReactNode }
         scanner.render(
           (decodedText) => {
             const baseUrl = window.location.origin;
-            if (decodedText.startsWith(baseUrl) || decodedText.includes("/fasilitas/")) {
-              scanner?.clear();
+            // Clean up the URL: if it's a full URL of our site, convert to relative path
+            let targetPath = decodedText;
+            if (decodedText.startsWith(baseUrl)) {
+              targetPath = decodedText.replace(baseUrl, "");
+            }
+
+            if (targetPath.includes("/fasilitas/")) {
+              scanner?.clear().catch(() => {});
               setOpen(false);
-              router.push(decodedText);
+              router.push(targetPath);
             } else {
               alert("QR Code tidak dikenali oleh sistem FRS.");
-              scanner?.clear();
+              scanner?.clear().catch(() => {});
               setOpen(false);
             }
           },
@@ -76,7 +82,7 @@ export function QRScanner({ customTrigger }: { customTrigger?: React.ReactNode }
         </DialogHeader>
         
         <div className="flex flex-col items-center justify-center space-y-4 py-4">
-          <div id="reader" className="w-full overflow-hidden rounded-xl border border-slate-800 bg-black"></div>
+          <div id="reader" className="w-full min-h-[300px] overflow-hidden rounded-xl border border-slate-800 bg-black"></div>
           <p className="text-xs text-slate-500 text-center italic">
             Arahkan kamera ke stiker QR Code pada fasilitas.
           </p>
