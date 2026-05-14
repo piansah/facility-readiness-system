@@ -16,23 +16,24 @@ export function MobileNav() {
   const scannerItem = NAVIGATION_ITEMS.find(item => item.isScanner);
 
   return (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 block sm:hidden w-[280px]">
-      {/* Floating Pill Container */}
-      <div className="flex items-center justify-between bg-slate-900/90 backdrop-blur-2xl border border-slate-800/50 rounded-full px-4 py-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-        
+    <nav className="fixed bottom-0 left-0 right-0 z-50 block sm:hidden">
+      {/* Dark background bar */}
+      <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50" />
+      
+      <div className="relative flex items-center justify-around h-20 px-6 pb-safe-area-inset-bottom">
         {/* Beranda */}
         {beranda && (
           <NavItem item={beranda} pathname={pathname} />
         )}
 
-        {/* Center Scanner (The Action Button) */}
+        {/* Center Scanner Button */}
         {scannerItem && (() => {
           const ScanIcon = scannerItem.icon;
           return (
-            <div className="relative -top-2">
+            <div className="relative -top-5">
               <QRScanner customTrigger={
-                <button className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 shadow-[0_8px_20px_rgba(16,185,129,0.4)] transition-all active:scale-90 border-4 border-slate-900">
-                  <ScanIcon className="h-7 w-7 text-slate-950 stroke-[2.5]" />
+                <button className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 shadow-[0_8px_25px_rgba(16,185,129,0.4)] transition-all active:scale-90 border-[6px] border-slate-950">
+                  <ScanIcon className="h-8 w-8 text-slate-950 stroke-[2.5]" />
                 </button>
               } />
             </div>
@@ -54,12 +55,19 @@ function NavItem({ item, pathname }: { item: any, pathname: string }) {
   return (
     <Link
       href={item.href!}
-      className={cn(
-        "flex items-center justify-center h-10 w-10 rounded-full transition-all duration-300",
-        isActive ? "bg-emerald-500/20 text-emerald-400" : "text-slate-500"
-      )}
+      className="flex flex-col items-center justify-center relative py-2 px-4"
     >
-      <item.icon className={cn("h-6 w-6", isActive && "scale-110")} />
+      <div className={cn(
+        "flex items-center justify-center h-12 w-12 rounded-full transition-all duration-300",
+        isActive ? "bg-emerald-500/10 text-emerald-400" : "text-slate-500"
+      )}>
+        <item.icon className={cn("h-7 w-7", isActive && "scale-110")} />
+      </div>
+      
+      {/* Pill/Dot Indicator instead of text */}
+      {isActive && (
+        <div className="absolute -bottom-1 h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,1)]" />
+      )}
     </Link>
   );
 }
