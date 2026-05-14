@@ -173,7 +173,7 @@ export default async function FacilityManagementPage({
               <CardHeader className="border-b border-slate-800/50 bg-slate-900/20 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">
-                    Daftar Fasilitas - {units?.find(u => u.id === selectedUnitId)?.name}
+                    DAFTAR FASILITAS - {units?.find(u => u.id === selectedUnitId)?.name}
                   </CardTitle>
                   <Badge className="bg-slate-800 text-slate-400 text-[10px]">
                     {facilities?.length || 0} Aset
