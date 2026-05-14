@@ -12,6 +12,9 @@ export const metadata: Metadata = {
     title: "FRS",
     statusBarStyle: "black-translucent",
   },
+  icons: {
+    apple: "/icon.png",
+  },
 };
 
 export const viewport: Viewport = {

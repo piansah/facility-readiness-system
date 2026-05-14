@@ -1,13 +1,13 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Wrench, AlertTriangle, LogOut, History, BarChart3, AlertOctagon, Settings, ClipboardList, Clock3, Camera, Server, Calendar, Users } from "lucide-react";
+import { CheckCircle2, Wrench, AlertTriangle, LogOut, BarChart3, ClipboardList, Clock3, Camera, Server, Calendar, Users, BookOpen } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/login/actions";
 import { getProfile } from "@/lib/auth/profile";
-import { canCreateReports, canCreateIncidents, canManageUnit, canReviewReports, canAccessManagement, roleLabel } from "@/lib/auth/roles";
+import { canCreateReports, canCreateIncidents, canReviewReports, canAccessManagement, roleLabel } from "@/lib/auth/roles";
 import { RefreshOnDateChange } from "@/components/dashboard/refresh-on-date-change";
 import { AddUnitDialog } from "./AddUnitDialog";
 import { EditUnitDialog } from "./EditUnitDialog";
@@ -186,8 +186,8 @@ export default async function DashboardPage() {
 
   const unitStats = units.map(u => ({
     ...u,
-    personnelCount: allProfiles.filter((p: any) => p.unit_id === u.id).length,
-    facilityCount: allFacilities.filter((f: any) => f.unit_id === u.id).length
+    personnelCount: allProfiles.filter((p) => (p as { unit_id: string }).unit_id === u.id).length,
+    facilityCount: allFacilities.filter((f) => (f as { unit_id: string }).unit_id === u.id).length
   }));
 
   // Fetch unit info separately (users table may not support FK join)
@@ -623,6 +623,13 @@ export default async function DashboardPage() {
                     ) : null}
                   </>
                 )}
+
+                <div className="my-2 border-t border-slate-800" />
+                <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
+                  <Link href="/panduan">
+                    <BookOpen className="mr-3 h-4 w-4 text-amber-500" /> Panduan Sistem
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
 
@@ -708,7 +715,7 @@ function StatusCard({
           <p className="text-xl sm:text-3xl font-black">{value}</p>
         </div>
         <div className={`flex h-7 w-7 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg sm:rounded-xl ${colorStyles[color]} border shadow-lg shadow-black/20`}>
-          {React.cloneElement(icon as React.ReactElement<any>, { className: "h-3.5 w-3.5 sm:h-6 sm:w-6" })}
+          {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "h-3.5 w-3.5 sm:h-6 sm:w-6" })}
         </div>
       </CardContent>
     </Card>
