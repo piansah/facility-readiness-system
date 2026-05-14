@@ -67,7 +67,7 @@ export default function CalendarContent({ initialSchedules, facilities, userUnit
           </Button>
           <div>
             <h1 className="text-lg font-bold text-slate-100 tracking-tight leading-tight">Jadwal Preventive</h1>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">Planning & Maintenance</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">Planned Preventive Maintenance</p>
           </div>
         </div>
         
@@ -267,7 +267,7 @@ export default function CalendarContent({ initialSchedules, facilities, userUnit
             </Button>
             <div>
               <h1 className="text-lg font-bold text-slate-100 tracking-tight leading-tight">Jadwal Preventive</h1>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">Planning & Maintenance</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">Planned Preventive Maintenance</p>
             </div>
           </div>
           
