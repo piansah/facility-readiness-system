@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { MoreHorizontal, FileText, QrCode as QrIcon, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { deleteFacility, updateFacility } from "./actions";
-
 import { FacilityQRModal } from "./facility-qr-modal";
 
 type Category = {
@@ -26,41 +27,120 @@ type Facility = {
 
 export function FacilityRowActions({ facility, categories }: { facility: Facility; categories: Category[] }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isActive, setIsActive] = useState(facility.is_active);
 
   return (
-    <div className="flex items-center gap-1">
-      <FacilityQRModal facility={facility} />
-      <Button type="button" variant="ghost" size="sm" onClick={() => setIsOpen(true)} className="h-8 px-3 text-slate-400">
-        Edit
-      </Button>
+    <div className="flex items-center justify-end gap-1 relative">
+      {/* Trigger Dropdown */}
+      <div className="relative">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className={`h-8 w-8 p-0 ${isMenuOpen ? 'bg-slate-800 text-slate-100' : 'text-slate-400'}`}
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
 
+        {/* Custom Dropdown Menu */}
+        {isMenuOpen && (
+          <>
+            <div 
+              className="fixed inset-0 z-30" 
+              onClick={() => setIsMenuOpen(false)}
+            />
+            <div className="absolute right-0 top-9 z-40 w-48 rounded-lg border border-slate-800 bg-slate-950 p-1 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in duration-150">
+              <Link 
+                href={`/fasilitas/${facility.id}`}
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-100 transition-colors"
+              >
+                <FileText className="h-3.5 w-3.5 text-blue-400" />
+                Lihat Detail History
+              </Link>
+              
+              <div className="my-1 border-t border-slate-900" />
+              
+              {/* Kami tetap menggunakan FacilityQRModal tapi pemicunya kita sesuaikan jika perlu atau panggil manual */}
+              <button
+                onClick={() => {
+                  // Kita butuh cara untuk memicu modal QR
+                  // Karena FacilityQRModal punya state internal sendiri, 
+                  // kita biarkan dia ada di DOM tapi tersembunyi
+                  setIsMenuOpen(false);
+                  document.getElementById(`qr-trigger-${facility.id}`)?.click();
+                }}
+                className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-100 transition-colors"
+              >
+                <QrIcon className="h-3.5 w-3.5 text-emerald-400" />
+                Tampilkan QR Code
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsOpen(true);
+                  setIsMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-100 transition-colors"
+              >
+                <Pencil className="h-3.5 w-3.5 text-amber-400" />
+                Edit Fasilitas
+              </button>
+
+              <div className="my-1 border-t border-slate-900" />
+
+              <form action={deleteFacility} className="contents">
+                <input type="hidden" name="id" value={facility.id} />
+                <ConfirmSubmitButton
+                  type="submit"
+                  variant="ghost"
+                  message={`Hapus fasilitas ${facility.name}?`}
+                  className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors justify-start"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Hapus Fasilitas
+                </ConfirmSubmitButton>
+              </form>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Hidden QR Modal Trigger */}
+      <div className="hidden">
+        <FacilityQRModal facility={facility} triggerId={`qr-trigger-${facility.id}`} />
+      </div>
+
+      {/* Edit Modal */}
       {isOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-lg border border-slate-800 bg-slate-950 p-5 text-left shadow-2xl">
-            <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="w-full max-w-lg rounded-xl border border-slate-800 bg-slate-950 p-6 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="mb-6 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-slate-100">Edit Fasilitas</h2>
-                <p className="text-sm text-slate-400">{facility.name}</p>
+                <h2 className="text-xl font-bold text-slate-100">Edit Fasilitas</h2>
+                <p className="text-sm text-slate-400">Sesuaikan konfigurasi aset ini.</p>
               </div>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
-                Tutup
+              <Button type="button" variant="ghost" size="sm" onClick={() => setIsOpen(false)} className="rounded-full h-8 w-8 p-0">
+                <X className="h-4 w-4" />
               </Button>
             </div>
-            <form action={updateFacility} className="grid gap-4">
+            
+            <form action={updateFacility} className="grid gap-5">
               <input type="hidden" name="id" value={facility.id} />
               <input type="hidden" name="is_active" value={String(isActive)} />
+              
               <div className="grid gap-2">
-                <Label htmlFor={`facility_name_${facility.id}`}>Nama fasilitas</Label>
-                <Input id={`facility_name_${facility.id}`} name="name" defaultValue={facility.name} required />
+                <Label htmlFor={`facility_name_${facility.id}`} className="text-xs font-bold uppercase tracking-wider text-slate-500">Nama Fasilitas</Label>
+                <Input id={`facility_name_${facility.id}`} name="name" defaultValue={facility.name} required className="bg-slate-900 border-slate-800" />
               </div>
+              
               <div className="grid gap-2">
-                <Label htmlFor={`facility_category_${facility.id}`}>Kategori</Label>
+                <Label htmlFor={`facility_category_${facility.id}`} className="text-xs font-bold uppercase tracking-wider text-slate-500">Kategori</Label>
                 <select
                   id={`facility_category_${facility.id}`}
                   name="category_id"
                   defaultValue={facility.category_id}
-                  className="h-11 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500"
+                  className="h-11 rounded-md border border-slate-800 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500 transition-all"
                 >
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
@@ -70,38 +150,36 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
                   ))}
                 </select>
               </div>
+              
               <div className="grid gap-2">
-                <Label htmlFor={`facility_location_${facility.id}`}>Lokasi/detail</Label>
+                <Label htmlFor={`facility_location_${facility.id}`} className="text-xs font-bold uppercase tracking-wider text-slate-500">Lokasi / Detail</Label>
                 <Input
                   id={`facility_location_${facility.id}`}
                   name="location_detail"
                   defaultValue={facility.location_detail ?? ""}
+                  className="bg-slate-900 border-slate-800"
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor={`facility_sort_${facility.id}`}>Urutan</Label>
-                <Input id={`facility_sort_${facility.id}`} name="sort_order" type="number" defaultValue={facility.sort_order ?? 0} />
-              </div>
-              <label className="flex items-center gap-3 rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-200">
+
+              <label className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-200 cursor-pointer hover:bg-slate-900 transition-colors">
                 <input
                   type="checkbox"
                   checked={isActive}
                   onChange={(event) => setIsActive(event.target.checked)}
-                  className="h-4 w-4 accent-emerald-500"
+                  className="h-5 w-5 rounded border-slate-700 bg-slate-800 text-emerald-500 focus:ring-emerald-500 accent-emerald-500"
                 />
-                Fasilitas aktif
+                <div className="flex flex-col">
+                  <span className="font-semibold">Fasilitas Aktif</span>
+                  <span className="text-[10px] text-slate-500 uppercase tracking-tight">Muncul di laporan harian petugas</span>
+                </div>
               </label>
-              <div className="flex justify-between gap-3 border-t border-slate-800 pt-4">
-                <ConfirmSubmitButton
-                  type="submit"
-                  formAction={deleteFacility}
-                  variant="outline"
-                  message={`Hapus fasilitas ${facility.name}?`}
-                >
-                  Hapus
-                </ConfirmSubmitButton>
-                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
-                  Simpan
+
+              <div className="flex justify-end gap-3 border-t border-slate-800 pt-6 mt-2">
+                <Button type="button" variant="ghost" onClick={() => setIsOpen(false)} className="text-slate-400">
+                  Batal
+                </Button>
+                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 px-8 shadow-lg shadow-emerald-900/20">
+                  Simpan Perubahan
                 </Button>
               </div>
             </form>
