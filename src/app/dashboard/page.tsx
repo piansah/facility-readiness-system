@@ -260,16 +260,10 @@ export default async function DashboardPage() {
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500 mt-1">{dashboardSubTitle}</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden sm:block text-right">
+            <div className="text-right">
               <p className="text-xs font-semibold text-slate-200">{profile?.full_name ?? user.email}</p>
               <p className="text-[10px] text-slate-500 uppercase tracking-wider">{roleLabel(profile?.role)}</p>
             </div>
-            <form action={logout}>
-              <Button variant="ghost" size="sm" type="submit" className="text-slate-400 hover:text-red-400 transition-colors">
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden xs:inline">Keluar</span>
-              </Button>
-            </form>
           </div>
         </div>
       </header>
@@ -334,7 +328,7 @@ export default async function DashboardPage() {
           </Card>
         ) : null}
 
-        <div className="lg:col-span-8 grid gap-6">
+        <div className="lg:col-span-12 grid gap-6">
           {isSuperAdmin && (
             <section className="grid gap-6">
               <Card className="border-slate-800 bg-slate-900/40 shadow-xl overflow-hidden">
@@ -574,91 +568,6 @@ export default async function DashboardPage() {
         </div>
 
 
-        {/* --- Sidebar (4/12) --- */}
-        <div className="lg:col-span-4 grid gap-6 content-start">
-
-          {/* Quick Access Menu */}
-          <Card className="border-slate-800 bg-slate-900/40">
-            <CardHeader>
-              <CardTitle className="text-base">Akses Cepat</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-2">
-              {!isSuperAdmin && (
-                <>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/laporan">
-                      <ClipboardList className="mr-3 h-4 w-4 text-emerald-400" /> History Laporan
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/insiden">
-                      <Camera className="mr-3 h-4 w-4 text-amber-400" /> History Non-Rutin
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/manajemen/statistik">
-                      <BarChart3 className="mr-3 h-4 w-4 text-emerald-400" /> Analitik & Statistik
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/manajemen/jadwal">
-                      <Calendar className="mr-3 h-4 w-4 text-amber-400" /> Jadwal Maintenance
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/manajemen/dinas">
-                      <Users className="mr-3 h-4 w-4 text-blue-400" /> Jadwal Dinas
-                    </Link>
-                  </Button>
-                </>
-              )}
-
-              {isAdmin && (
-                <>
-                  {!isSuperAdmin && (
-                    <>
-                      <div className="my-2 border-t border-slate-800" />
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-1 mb-1">Manajemen Unit</p>
-                    </>
-                  )}
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/manajemen/pengguna">
-                      <LogOut className="mr-3 h-4 w-4 text-blue-400 rotate-180" /> Kelola Pengguna
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/manajemen/fasilitas">
-                      <Wrench className="mr-3 h-4 w-4 text-purple-400" /> Kelola Fasilitas
-                    </Link>
-                  </Button>
-                  {isSuperAdmin && (
-                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                      <Link href="/manajemen/sistem">
-                        <Server className="mr-3 h-4 w-4 text-blue-400" /> Manajemen Sistem
-                      </Link>
-                    </Button>
-                  )}
-                  {canReview ? (
-                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                      <Link href="/laporan/review">
-                        <CheckCircle2 className="mr-3 h-4 w-4 text-emerald-400" /> Review Laporan
-                      </Link>
-                    </Button>
-                  ) : null}
-                </>
-              )}
-
-              <div className="my-2 border-t border-slate-800" />
-              <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                <Link href="/panduan">
-                  <BookOpen className="mr-3 h-4 w-4 text-amber-500" /> Panduan Sistem
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Super Admin: Unit Health Grid - HIDDEN based on user request */}
-        </div>
       </div>
     </main>
   );

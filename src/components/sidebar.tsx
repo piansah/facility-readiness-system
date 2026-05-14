@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { NAVIGATION_ITEMS, SECONDARY_NAV_ITEMS, SIDEBAR_EXTRA_ITEMS } from "@/lib/constants/navigation";
+import { NAVIGATION_ITEMS } from "@/lib/constants/navigation";
 import { QRScanner } from "./qr-scanner";
 import { LogOut, ChevronRight } from "lucide-react";
 import { logout } from "@/app/login/actions";
@@ -12,7 +12,6 @@ import { Button } from "./ui/button";
 export function Sidebar() {
   const pathname = usePathname();
 
-  // Don't show sidebar on login page
   if (pathname === "/login") return null;
 
   return (
@@ -30,13 +29,25 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Main Navigation */}
-      <div className="flex-1 px-4 py-2 space-y-1 overflow-y-auto custom-scrollbar">
+      {/* Navigation */}
+      <div className="flex-1 px-4 py-2 space-y-1">
         <p className="px-2 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Menu Utama</p>
         
-        {/* Render Core Items (Beranda, Profil) */}
         {NAVIGATION_ITEMS.map((item) => {
-          if (item.isScanner) return null; // We'll handle scanner separately or differently
+          if (item.isScanner) {
+            return (
+              <div key="sidebar-scanner" className="pt-2 pb-2">
+                <QRScanner 
+                  customTrigger={
+                    <Button className="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold gap-2 h-11 rounded-xl shadow-lg shadow-emerald-500/10">
+                      <item.icon className="h-5 w-5" />
+                      Scan QR Fasilitas
+                    </Button>
+                  } 
+                />
+              </div>
+            );
+          }
 
           const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href!));
           
@@ -47,90 +58,22 @@ export function Sidebar() {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative",
                 isActive 
-                  ? "bg-emerald-500/10 text-emerald-400 shadow-[inset_0_0_10px_rgba(16,185,129,0.05)]" 
+                  ? "bg-emerald-500/10 text-emerald-400" 
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
               )}
             >
               {isActive && (
                 <div className="absolute left-0 w-1 h-5 bg-emerald-500 rounded-full" />
               )}
-              <item.icon className={cn(
-                "h-5 w-5 transition-transform group-hover:scale-110",
-                isActive && "text-emerald-400"
-              )} />
+              <item.icon className="h-5 w-5" />
               <span className="text-sm font-semibold">{item.label}</span>
-              {isActive && (
-                <ChevronRight className="ml-auto h-4 w-4" />
-              )}
+              {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
             </Link>
           );
         })}
-
-        {/* Render Extra Sidebar Items (Laporan, Fasilitas, Statistik) */}
-        <div className="pt-2">
-          {SIDEBAR_EXTRA_ITEMS.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href!));
-            return (
-              <Link
-                key={item.label}
-                href={item.href!}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative",
-                  isActive 
-                    ? "bg-emerald-500/10 text-emerald-400 shadow-[inset_0_0_10px_rgba(16,185,129,0.05)]" 
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-                )}
-              >
-                {isActive && (
-                  <div className="absolute left-0 w-1 h-5 bg-emerald-500 rounded-full" />
-                )}
-                <item.icon className={cn(
-                  "h-5 w-5 transition-transform group-hover:scale-110",
-                  isActive && "text-emerald-400"
-                )} />
-                <span className="text-sm font-semibold">{item.label}</span>
-                {isActive && (
-                  <ChevronRight className="ml-auto h-4 w-4" />
-                )}
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Scanner in Sidebar */}
-        <div className="pt-4 px-2">
-           {(() => {
-             const ScanItem = NAVIGATION_ITEMS.find(i => i.isScanner);
-             const ScanIcon = ScanItem?.icon;
-             return ScanIcon ? (
-               <QRScanner 
-                  customTrigger={
-                    <Button className="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold gap-2 h-11 rounded-xl shadow-lg shadow-emerald-500/10">
-                      <ScanIcon className="h-5 w-5" />
-                      Scan QR Fasilitas
-                    </Button>
-                  } 
-                />
-             ) : null;
-           })()}
-        </div>
-
-        <div className="pt-6">
-          <p className="px-2 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Bantuan</p>
-          {SECONDARY_NAV_ITEMS.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all group"
-            >
-              <item.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-semibold">{item.label}</span>
-            </Link>
-          ))}
-        </div>
       </div>
 
-      {/* Footer / User Action */}
+      {/* Logout at Bottom */}
       <div className="p-4 mt-auto border-t border-slate-800/50">
         <form action={logout}>
           <Button 
