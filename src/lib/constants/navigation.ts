@@ -7,7 +7,7 @@ export const NAVIGATION_ITEMS = [
     href: "/dashboard",
   },
   {
-    label: "Jadwal M",
+    label: "Jadwal Maintenance",
     icon: Calendar,
     href: "/manajemen/jadwal",
   },
@@ -17,7 +17,7 @@ export const NAVIGATION_ITEMS = [
     isScanner: true,
   },
   {
-    label: "Jadwal D",
+    label: "Jadwal Dinas",
     icon: Users,
     href: "/manajemen/dinas",
   },

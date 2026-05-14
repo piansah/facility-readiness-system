@@ -339,13 +339,35 @@ export default async function DashboardPage() {
                       <Camera className="mr-3 h-5 w-5 text-amber-400" /> History Non-Rutin
                     </Link>
                   </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                    <Link href="/manajemen/statistik">
+                      <BarChart3 className="mr-3 h-5 w-5 text-emerald-400" /> Analitik & Statistik
+                    </Link>
+                  </Button>
                 </>
               )}
-              <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
-                <Link href="/manajemen/fasilitas">
-                  <Wrench className="mr-3 h-5 w-5 text-purple-400" /> Kelola Fasilitas
-                </Link>
-              </Button>
+
+              {isAdmin && (
+                <>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                    <Link href="/manajemen/pengguna">
+                      <LogOut className="mr-3 h-5 w-5 text-blue-400 rotate-180" /> Kelola Pengguna
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                    <Link href="/manajemen/fasilitas">
+                      <Wrench className="mr-3 h-5 w-5 text-purple-400" /> Kelola Fasilitas
+                    </Link>
+                  </Button>
+                  {canReview ? (
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                      <Link href="/laporan/review">
+                        <CheckCircle2 className="mr-3 h-5 w-5 text-emerald-400" /> Review Laporan
+                      </Link>
+                    </Button>
+                  ) : null}
+                </>
+              )}
             </CardContent>
           </Card>
         </section>
