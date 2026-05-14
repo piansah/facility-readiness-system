@@ -70,7 +70,7 @@ export function FacilityQRModal({ facility }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10">
+        <Button variant="ghost" size="sm" title="Lihat QR Code" className="h-8 w-8 p-0 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10">
           <QrCode className="h-4 w-4" />
         </Button>
       </DialogTrigger>

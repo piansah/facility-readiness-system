@@ -323,7 +323,8 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
                       placeholder="Catatan opsional"
                       defaultValue={latestStatusByFacility.get(facility.id)?.notes ?? ""}
                     />
-                  </div>
+                    </div>
+                  );
                 })}
               </CardContent>
             </Card>
