@@ -25,8 +25,12 @@ export async function createIncident(formData: FormData) {
   const dailyReportId = String(formData.get("daily_report_id") ?? "");
   const facilityIdRaw = String(formData.get("facility_id") ?? "");
   const facilityId = facilityIdRaw === "__none__" ? "" : facilityIdRaw;
-  const incidentTime = String(formData.get("incident_time") ?? "");
-  const resolvedAt = String(formData.get("resolved_at") ?? "");
+  const incidentDate = String(formData.get("incident_date") ?? "");
+  const startTime = String(formData.get("incident_time_only") ?? "");
+  const endTime = String(formData.get("resolved_time_only") ?? "");
+
+  const incidentTime = `${incidentDate}T${startTime}`;
+  const resolvedAt = endTime ? `${incidentDate}T${endTime}` : "";
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const actionTaken = String(formData.get("action_taken") ?? "").trim();
@@ -134,8 +138,12 @@ export async function updateIncident(formData: FormData) {
   const actionTaken = String(formData.get("action_taken") ?? "").trim();
   const resultStatus = String(formData.get("result_status") ?? "pending");
   const handlerType = String(formData.get("handler_type") ?? "internal");
-  const incidentTime = String(formData.get("incident_time") ?? "");
-  const resolvedAt = String(formData.get("resolved_at") ?? "");
+  const incidentDate = String(formData.get("incident_date") ?? "");
+  const startTime = String(formData.get("incident_time_only") ?? "");
+  const endTime = String(formData.get("resolved_time_only") ?? "");
+
+  const incidentTime = `${incidentDate}T${startTime}`;
+  const resolvedAt = endTime ? `${incidentDate}T${endTime}` : "";
   const facilityIdRaw = String(formData.get("facility_id") ?? "");
   const facilityId = facilityIdRaw === "__none__" ? "" : facilityIdRaw;
 

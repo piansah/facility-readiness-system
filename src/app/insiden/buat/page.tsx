@@ -132,14 +132,34 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="grid min-w-0 gap-2">
-                <Label htmlFor="incident_time">Waktu Mulai (Otomatis)</Label>
-                <IncidentTimeInput name="incident_time" />
+                <Label htmlFor="incident_date">Tanggal Kegiatan</Label>
+                <Input 
+                  id="incident_date" 
+                  name="incident_date" 
+                  type="date" 
+                  required 
+                  defaultValue={new Date().toLocaleDateString('en-CA')} 
+                />
               </div>
               <div className="grid min-w-0 gap-2">
-                <Label htmlFor="resolved_at">Waktu Selesai (Manual)</Label>
-                <IncidentTimeInput name="resolved_at" noDefault />
+                <Label htmlFor="incident_time_only">Jam Mulai</Label>
+                <Input 
+                  id="incident_time_only" 
+                  name="incident_time_only" 
+                  type="time" 
+                  required 
+                  defaultValue={new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                />
+              </div>
+              <div className="grid min-w-0 gap-2">
+                <Label htmlFor="resolved_time_only">Jam Selesai</Label>
+                <Input 
+                  id="resolved_time_only" 
+                  name="resolved_time_only" 
+                  type="time" 
+                />
               </div>
             </div>
 

@@ -27,6 +27,7 @@ type IncidentData = {
   description: string;
   action_taken: string | null;
   incident_time: string;
+  resolved_at: string | null;
   status: string;
   result_status: string | null;
   handler_type: string | null;
@@ -159,9 +160,36 @@ export default function EditIncidentPage({ params, searchParams }: PageProps) {
                 </select>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="incident_time">Waktu Kejadian</Label>
-                <IncidentTimeInput defaultValue={incident.incident_time} />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid min-w-0 gap-2">
+                  <Label htmlFor="incident_date">Tanggal Kegiatan</Label>
+                  <Input 
+                    id="incident_date" 
+                    name="incident_date" 
+                    type="date" 
+                    required 
+                    defaultValue={incident.incident_time ? incident.incident_time.split('T')[0] : ''} 
+                  />
+                </div>
+                <div className="grid min-w-0 gap-2">
+                  <Label htmlFor="incident_time_only">Jam Mulai</Label>
+                  <Input 
+                    id="incident_time_only" 
+                    name="incident_time_only" 
+                    type="time" 
+                    required 
+                    defaultValue={incident.incident_time ? incident.incident_time.split('T')[1]?.slice(0, 5) : ''}
+                  />
+                </div>
+                <div className="grid min-w-0 gap-2">
+                  <Label htmlFor="resolved_time_only">Jam Selesai</Label>
+                  <Input 
+                    id="resolved_time_only" 
+                    name="resolved_time_only" 
+                    type="time" 
+                    defaultValue={incident.resolved_at ? incident.resolved_at.split('T')[1]?.slice(0, 5) : ''}
+                  />
+                </div>
               </div>
 
               <div className="grid gap-2">

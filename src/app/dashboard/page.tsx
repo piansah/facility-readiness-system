@@ -586,6 +586,9 @@ export default async function DashboardPage() {
             <CardContent className="grid gap-2">
               {!isSuperAdmin && (
                 <>
+                  <div className="mb-4">
+                    <QRScanner />
+                  </div>
                   <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
                     <Link href="/laporan">
                       <ClipboardList className="mr-3 h-4 w-4 text-emerald-400" /> History Laporan
