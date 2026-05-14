@@ -246,8 +246,8 @@ export default async function DashboardPage() {
   const dashboardSubTitle = isSuperAdmin
     ? "Monitoring Overview Seluruh Unit"
     : profile?.role === "admin"
-      ? `Management Dashboard - ${unit?.code ?? "Unit"}`
-      : `Operational Dashboard - ${unit?.code ?? "Unit"}`;
+      ? `Management Dashboard`
+      : `Operational Dashboard`;
 
   return (
     <main className="min-h-dvh bg-slate-950">
