@@ -77,21 +77,18 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
   const today = new Date().toLocaleDateString('en-CA');
   const initialDate = params.date || today;
   const initialShift = params.shift || "pagi";
-  const [{ data: facilities, error }, { data: staffOptions }, { data: latestReports }] = await Promise.all([
+
+  // Fetch all necessary data in parallel
+  const [
+    { data: facilities, error }, 
+    { data: staffOptions }, 
+    { data: latestReports },
+    { data: shiftConfigs },
+    { data: rosters }
+  ] = await Promise.all([
     supabase
       .from("facilities")
-      .select(
-        `
-        id,
-        name,
-        location_detail,
-        facility_categories (
-          name,
-          icon,
-          sort_order
-        )
-      `,
-      )
+      .select(`id, name, location_detail, facility_categories (name, icon, sort_order)`)
       .eq("unit_id", profile.unit_id)
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
@@ -107,24 +104,23 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
       .returns<StaffOption[]>(),
     supabase
       .from("daily_reports")
-      .select(
-        `
-        id,
-        report_date,
-        shift,
-        facility_status_logs (
-          facility_id,
-          status,
-          notes
-        )
-      `,
-      )
+      .select(`id, report_date, shift, facility_status_logs (facility_id, status, notes)`)
       .eq("unit_id", profile.unit_id)
       .in("status", ["submitted", "reviewed"])
       .order("report_date", { ascending: false })
       .order("submitted_at", { ascending: false })
       .limit(1)
       .returns<LatestReportSnapshot[]>(),
+    supabase
+      .from("shift_configs")
+      .select("id, code")
+      .eq("unit_id", profile.unit_id),
+    supabase
+      .from("duty_rosters")
+      .select("user_id, shift_config_id, duty_date")
+      .eq("unit_id", profile.unit_id)
+      .gte("duty_date", initialDate)
+      .lte("duty_date", new Date(new Date(initialDate).getTime() + 86400000).toLocaleDateString('en-CA')) // Include tomorrow for handover
   ]);
 
   const groups = groupFacilities(facilities ?? []);
@@ -138,6 +134,29 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
       },
     ]) ?? [],
   );
+
+  // Mapping shift to config IDs
+  const pagiConfig = shiftConfigs?.find(c => c.code === 'APBA');
+  const malamConfig = shiftConfigs?.find(c => c.code === 'APBB');
+  
+  const currentConfigId = initialShift === 'pagi' ? pagiConfig?.id : malamConfig?.id;
+  
+  // Logic for next shift: Pagi -> Malam (Today), Malam -> Pagi (Tomorrow)
+  const nextDate = initialShift === 'pagi' ? initialDate : new Date(new Date(initialDate).getTime() + 86400000).toLocaleDateString('en-CA');
+  const nextConfigId = initialShift === 'pagi' ? malamConfig?.id : pagiConfig?.id;
+
+  // Filter roster for current and next staff
+  const currentStaffIds = rosters
+    ?.filter(r => r.duty_date === initialDate && r.shift_config_id === currentConfigId)
+    .map(r => r.user_id) || [];
+    
+  const nextStaffIds = rosters
+    ?.filter(r => r.duty_date === nextDate && r.shift_config_id === nextConfigId)
+    .map(r => r.user_id) || [];
+
+  // Fallback to current user if roster is empty
+  const initialCurrentIds = currentStaffIds.length > 0 ? currentStaffIds : [user.id];
+  const initialNextIds = nextStaffIds;
 
   return (
     <main className="min-h-dvh bg-slate-950">
@@ -211,7 +230,8 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
                 <CardContent>
                   <StaffSelector 
                     staff={staffOptions ?? []} 
-                    initialCurrentIds={[user.id]}
+                    initialCurrentIds={initialCurrentIds}
+                    initialNextIds={initialNextIds}
                     currentDateLabel={formatDateShort(initialDate)}
                   />
                 </CardContent>

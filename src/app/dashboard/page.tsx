@@ -62,12 +62,24 @@ export default async function DashboardPage() {
 
   // Jendela Operasional: Tentukan tanggal dan shift yang relevan
   const now = new Date();
-  const currentHour = now.getHours();
+  const jakartaParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hour12: false
+  }).formatToParts(now);
 
-  // Ambil tanggal lokal hari ini dan kemarin
-  const today = now.toLocaleDateString('en-CA');
-  const yesterday = new Date(now.getTime() - 86400000).toLocaleDateString('en-CA');
-  const tomorrow = new Date(now.getTime() + 86400000).toLocaleDateString('en-CA');
+  const year = jakartaParts.find(p => p.type === 'year')?.value;
+  const month = jakartaParts.find(p => p.type === 'month')?.value;
+  const day = jakartaParts.find(p => p.type === 'day')?.value;
+  const currentHour = parseInt(jakartaParts.find(p => p.type === 'hour')?.value || '0');
+
+  const today = `${year}-${month}-${day}`;
+  const todayDate = new Date(`${today}T00:00:00`);
+  const yesterday = new Date(todayDate.getTime() - 86400000).toLocaleDateString('en-CA');
+  const tomorrow = new Date(todayDate.getTime() + 86400000).toLocaleDateString('en-CA');
 
   // Jendela Operasional (Rolling Window 12 jam)
   // 08:00 - 19:59: Shift Pagi sedang berjalan. Tampilkan: Malam Kemarin (DL: 08:00) & Pagi Hari Ini (DL: 20:00)
