@@ -339,16 +339,57 @@ export default async function DashboardPage() {
                       <Camera className="mr-3 h-5 w-5 text-amber-400" /> History Non-Rutin
                     </Link>
                   </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                    <Link href="/manajemen/statistik">
+                      <BarChart3 className="mr-3 h-5 w-5 text-emerald-400" /> Analitik & Statistik
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                    <Link href="/manajemen/jadwal">
+                      <Calendar className="mr-3 h-5 w-5 text-amber-400" /> Jadwal Maintenance
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                    <Link href="/manajemen/dinas">
+                      <Users className="mr-3 h-5 w-5 text-blue-400" /> Jadwal Dinas
+                    </Link>
+                  </Button>
                 </>
               )}
+
+              {isAdmin && (
+                <>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                    <Link href="/manajemen/pengguna">
+                      <LogOut className="mr-3 h-5 w-5 text-blue-400 rotate-180" /> Kelola Pengguna
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                    <Link href="/manajemen/fasilitas">
+                      <Wrench className="mr-3 h-5 w-5 text-purple-400" /> Kelola Fasilitas
+                    </Link>
+                  </Button>
+                  {isSuperAdmin && (
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                      <Link href="/manajemen/sistem">
+                        <Server className="mr-3 h-5 w-5 text-blue-400" /> Manajemen Sistem
+                      </Link>
+                    </Button>
+                  )}
+                  {canReview ? (
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                      <Link href="/laporan/review">
+                        <CheckCircle2 className="mr-3 h-5 w-5 text-emerald-400" /> Review Laporan
+                      </Link>
+                    </Button>
+                  ) : null}
+                </>
+              )}
+
+              <div className="my-2 border-t border-slate-800" />
               <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
-                <Link href="/manajemen/fasilitas">
-                  <Wrench className="mr-3 h-5 w-5 text-purple-400" /> Kelola Fasilitas
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
-                <Link href="/profil">
-                  <User className="mr-3 h-5 w-5 text-emerald-400" /> Profil Saya
+                <Link href="/panduan">
+                  <BookOpen className="mr-3 h-5 w-5 text-amber-500" /> Panduan Sistem
                 </Link>
               </Button>
             </CardContent>
