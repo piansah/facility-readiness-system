@@ -575,7 +575,7 @@ export default async function DashboardPage() {
 
 
         {/* --- Sidebar (4/12) --- */}
-        <div className="lg:col-span-4 order-first lg:order-last grid gap-6 content-start">
+        <div className="lg:col-span-4 grid gap-6 content-start">
 
           {/* Quick Access Menu */}
           <Card className="border-slate-800 bg-slate-900/40">

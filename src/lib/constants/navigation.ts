@@ -1,4 +1,4 @@
-import { Home, ClipboardList, Camera, Wrench, User, BarChart3, Calendar, Users, BookOpen, Settings, Shield } from "lucide-react";
+import { Home, QrCode, User, BarChart3, Calendar, Users, BookOpen, Settings, ClipboardList, Wrench } from "lucide-react";
 
 export const NAVIGATION_ITEMS = [
   {
@@ -7,14 +7,22 @@ export const NAVIGATION_ITEMS = [
     href: "/dashboard",
   },
   {
+    label: "SCAN QR",
+    icon: QrCode,
+    isScanner: true,
+  },
+  {
+    label: "Profil",
+    icon: User,
+    href: "/profil",
+  },
+];
+
+export const SIDEBAR_EXTRA_ITEMS = [
+  {
     label: "Laporan",
     icon: ClipboardList,
     href: "/laporan",
-  },
-  {
-    label: "Scan QR",
-    icon: Camera,
-    isScanner: true,
   },
   {
     label: "Fasilitas",
@@ -25,16 +33,6 @@ export const NAVIGATION_ITEMS = [
     label: "Statistik",
     icon: BarChart3,
     href: "/manajemen/statistik",
-  },
-  {
-    label: "Jadwal",
-    icon: Calendar,
-    href: "/manajemen/jadwal",
-  },
-  {
-    label: "Profil",
-    icon: User,
-    href: "/profil",
   },
 ];
 
