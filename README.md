@@ -10,12 +10,7 @@ Seringkali perbaikan fasilitas melibatkan pihak ketiga.
 Fitur: Database vendor (kontak, masa berlaku garansi per aset, dan histori servis mereka). Kita bisa menandai aset mana yang masih dalam masa garansi vendor.
 Keuntungan: Admin bisa langsung tahu siapa yang harus dihubungi saat ada kerusakan besar tanpa perlu membongkar tumpukan berkas fisik.
 
-3. Kalender Maintenance Terpadu (PPM - )
-Selain laporan harian (rutin), perlu ada jadwal pemeliharaan besar (bulanan/tahunan).
-
-Fitur: Kalender interaktif yang menunjukkan kapan jadwal servis AC, kalibrasi alat, atau penggantian oli genset.
-Keuntungan: Memastikan tidak ada jadwal pemeliharaan besar yang terlewatkan.
-4. Dokumentasi Digital (Knowledge Base)
+3. Dokumentasi Digital (Knowledge Base)
 Simpan semua manual book, SOP, dan foto asli pemasangan fasilitas di satu tempat.
 
 Fitur: Tab "Dokumen" pada setiap aset.
