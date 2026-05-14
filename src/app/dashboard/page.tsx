@@ -220,10 +220,22 @@ export default async function DashboardPage() {
     { normal: 0, broken: 0, degraded: 0 },
   );
 
+  // Calculate "now" in Jakarta for overdue comparison
+  const nowJakarta = new Date(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false
+  }).format(now));
+
   const shiftSummaries = activeShifts.map((cfg) => {
     const report = (dailyReports ?? []).find((r) => r.report_date === cfg.date && r.shift === cfg.shift);
     const deadlineTime = new Date(cfg.deadlineDate).getTime();
-    const isOverdue = (!report || report.status === 'draft') && now.getTime() > deadlineTime;
+    const isOverdue = (!report || report.status === 'draft') && nowJakarta.getTime() > deadlineTime;
     return {
       ...cfg,
       report,

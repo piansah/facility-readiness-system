@@ -45,7 +45,7 @@ export default function GuidePage() {
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 mb-4">
             <Zap className="h-6 w-6" />
           </div>
-          <h2 className="text-3xl font-bold text-slate-100 mb-4">Selamat Datang di Preventif</h2>
+          <h2 className="text-3xl font-bold text-slate-100 mb-4">Facility Readiness System</h2>
           <p className="text-slate-400 max-w-2xl mx-auto leading-relaxed">
             Sistem Pemeliharaan Preventif Terintegrasi dirancang untuk mempermudah monitoring fasilitas dan pelaporan insiden secara real-time. Pilih peran Anda di bawah untuk mempelajari cara menggunakan fitur-fitur yang tersedia.
           </p>
