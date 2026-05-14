@@ -320,6 +320,75 @@ export default async function DashboardPage() {
           </section>
         )}
 
+        {/* --- Akses Cepat (Quick Access) - Moved below KPI Grid --- */}
+        <section className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card className="lg:col-span-3 border-slate-800 bg-slate-900/40">
+            <CardHeader className="py-3">
+              <CardTitle className="text-base">Akses Cepat Menu</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pb-4">
+              {!isSuperAdmin && (
+                <>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-10 px-3">
+                    <Link href="/laporan">
+                      <ClipboardList className="mr-2 h-4 w-4 text-emerald-400" /> <span className="text-xs font-bold">Laporan</span>
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-10 px-3">
+                    <Link href="/insiden">
+                      <Camera className="mr-2 h-4 w-4 text-amber-400" /> <span className="text-xs font-bold">Insiden</span>
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-10 px-3">
+                    <Link href="/manajemen/statistik">
+                      <BarChart3 className="mr-2 h-4 w-4 text-emerald-400" /> <span className="text-xs font-bold">Analitik</span>
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-10 px-3">
+                    <Link href="/manajemen/jadwal">
+                      <Calendar className="mr-2 h-4 w-4 text-amber-400" /> <span className="text-xs font-bold">Jadwal</span>
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-10 px-3">
+                    <Link href="/manajemen/dinas">
+                      <Users className="mr-2 h-4 w-4 text-blue-400" /> <span className="text-xs font-bold">Dinas</span>
+                    </Link>
+                  </Button>
+                </>
+              )}
+
+              {isAdmin && (
+                <>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-10 px-3">
+                    <Link href="/manajemen/pengguna">
+                      <LogOut className="mr-2 h-4 w-4 text-blue-400 rotate-180" /> <span className="text-xs font-bold">Pengguna</span>
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-10 px-3">
+                    <Link href="/manajemen/fasilitas">
+                      <Wrench className="mr-2 h-4 w-4 text-purple-400" /> <span className="text-xs font-bold">Fasilitas</span>
+                    </Link>
+                  </Button>
+                  {isSuperAdmin && (
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-10 px-3">
+                      <Link href="/manajemen/sistem">
+                        <Server className="mr-2 h-4 w-4 text-blue-400" /> <span className="text-xs font-bold">Sistem</span>
+                      </Link>
+                    </Button>
+                  )}
+                  {canReview ? (
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-10 px-3">
+                      <Link href="/laporan/review">
+                        <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-400" /> <span className="text-xs font-bold">Review</span>
+                      </Link>
+                    </Button>
+                  ) : null}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
 
         {!profile?.is_active ? (
           <Card className="border-amber-900/70 bg-amber-950/20 backdrop-blur-sm">
@@ -569,89 +638,6 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* --- Sidebar (4/12) --- */}
-        <div className="lg:col-span-4 grid gap-6 content-start">
-
-          {/* Quick Access Menu */}
-          <Card className="border-slate-800 bg-slate-900/40">
-            <CardHeader>
-              <CardTitle className="text-base">Akses Cepat</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-2">
-              {!isSuperAdmin && (
-                <>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/laporan">
-                      <ClipboardList className="mr-3 h-4 w-4 text-emerald-400" /> History Laporan
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/insiden">
-                      <Camera className="mr-3 h-4 w-4 text-amber-400" /> History Non-Rutin
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/manajemen/statistik">
-                      <BarChart3 className="mr-3 h-4 w-4 text-emerald-400" /> Analitik & Statistik
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/manajemen/jadwal">
-                      <Calendar className="mr-3 h-4 w-4 text-amber-400" /> Jadwal Maintenance
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/manajemen/dinas">
-                      <Users className="mr-3 h-4 w-4 text-blue-400" /> Jadwal Dinas
-                    </Link>
-                  </Button>
-                </>
-              )}
-
-              {isAdmin && (
-                <>
-                  {!isSuperAdmin && (
-                    <>
-                      <div className="my-2 border-t border-slate-800" />
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-1 mb-1">Manajemen Unit</p>
-                    </>
-                  )}
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/manajemen/pengguna">
-                      <LogOut className="mr-3 h-4 w-4 text-blue-400 rotate-180" /> Kelola Pengguna
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                    <Link href="/manajemen/fasilitas">
-                      <Wrench className="mr-3 h-4 w-4 text-purple-400" /> Kelola Fasilitas
-                    </Link>
-                  </Button>
-                  {isSuperAdmin && (
-                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                      <Link href="/manajemen/sistem">
-                        <Server className="mr-3 h-4 w-4 text-blue-400" /> Manajemen Sistem
-                      </Link>
-                    </Button>
-                  )}
-                  {canReview ? (
-                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                      <Link href="/laporan/review">
-                        <CheckCircle2 className="mr-3 h-4 w-4 text-emerald-400" /> Review Laporan
-                      </Link>
-                    </Button>
-                  ) : null}
-                </>
-              )}
-
-              <div className="my-2 border-t border-slate-800" />
-              <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900">
-                <Link href="/panduan">
-                  <BookOpen className="mr-3 h-4 w-4 text-amber-500" /> Panduan Sistem
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
 
 
       </div>
