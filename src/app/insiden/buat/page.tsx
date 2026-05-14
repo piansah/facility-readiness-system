@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth/profile";
 import { canCreateIncidents, roleLabel } from "@/lib/auth/roles";
 import { createIncident } from "./actions";
-import { IncidentTimeInput } from "./incident-time-input";
+import { DateTimeInputs } from "./date-time-inputs";
 import { DraftManager } from "@/components/draft-manager";
 import { ImageCompressorInput } from "@/components/image-compressor-input";
 import { FormSelect } from "@/components/form-select";
@@ -132,36 +132,7 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="grid min-w-0 gap-2">
-                <Label htmlFor="incident_date">Tanggal Kegiatan</Label>
-                <Input 
-                  id="incident_date" 
-                  name="incident_date" 
-                  type="date" 
-                  required 
-                  defaultValue={new Date().toLocaleDateString('en-CA')} 
-                />
-              </div>
-              <div className="grid min-w-0 gap-2">
-                <Label htmlFor="incident_time_only">Jam Mulai</Label>
-                <Input 
-                  id="incident_time_only" 
-                  name="incident_time_only" 
-                  type="time" 
-                  required 
-                  defaultValue={new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                />
-              </div>
-              <div className="grid min-w-0 gap-2">
-                <Label htmlFor="resolved_time_only">Jam Selesai</Label>
-                <Input 
-                  id="resolved_time_only" 
-                  name="resolved_time_only" 
-                  type="time" 
-                />
-              </div>
-            </div>
+            <DateTimeInputs />
 
             <div className="grid min-w-0 gap-2">
               <Label htmlFor="title">Judul</Label>
