@@ -75,45 +75,65 @@ export function FacilityQRModal({ facility, triggerId, open: externalOpen, onOpe
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button id={triggerId} variant="outline" size="sm" title="Lihat QR Code" className="h-8 gap-2 border-emerald-500/50 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400">
-          <QrCode className="h-3.5 w-3.5" />
-          <span className="text-[10px] font-bold uppercase tracking-tight">QR Code</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
+      {/* Hanya tampilkan trigger jika tidak dikontrol secara eksternal (fallback) */}
+      {!externalOpen && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="h-8 gap-2 border-emerald-500/50 bg-emerald-500/5 text-emerald-500">
+            <QrCode className="h-3.5 w-3.5" />
+            <span className="text-[10px] font-bold uppercase">QR Code</span>
+          </Button>
+        </DialogTrigger>
+      )}
+      
+      <DialogContent className="max-w-md border-slate-800 bg-slate-950 p-0 overflow-hidden">
+        <div className="absolute top-4 right-4 z-50">
+          {/* Close button is handled by DialogContent usually, but we ensure it's clean */}
+        </div>
+
+        <DialogHeader className="p-6 pb-0 text-center">
+          <DialogTitle className="text-xl font-bold text-slate-100">
             QR Code Fasilitas
           </DialogTitle>
+          <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-semibold">Digital Asset Identity</p>
         </DialogHeader>
         
-        <div className="flex flex-col items-center justify-center space-y-6 py-6">
-          <div className="p-6 bg-white rounded-2xl shadow-2xl">
-            <QRCodeSVG 
-              id={`qr-code-${facility.id}`}
-              value={qrValue} 
-              size={200}
-              level="H"
-              includeMargin={true}
-            />
+        <div className="flex flex-col items-center justify-center space-y-6 p-8">
+          <div className="relative group">
+            <div className="absolute -inset-4 bg-emerald-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative p-6 bg-white rounded-2xl shadow-2xl">
+              <QRCodeSVG 
+                id={`qr-code-${facility.id}`}
+                value={qrValue} 
+                size={220}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
           </div>
           
-          <div className="text-center space-y-1">
-            <h3 className="text-lg font-bold text-slate-100">{facility.name}</h3>
-            <p className="text-sm text-slate-500">{facility.location_detail || "Lokasi tidak ditentukan"}</p>
+          <div className="text-center space-y-2">
+            <h3 className="text-xl font-black text-slate-100 tracking-tight">{facility.name}</h3>
+            <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
+              <span className="px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-[10px] uppercase font-bold text-slate-400">
+                {facility.location_detail || "Lokasi Umum"}
+              </span>
+            </div>
           </div>
           
-          <div className="flex gap-3 w-full">
-            <Button onClick={downloadQR} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-              <Download className="mr-2 h-4 w-4" /> Download
+          <div className="flex gap-3 w-full pt-2">
+            <Button onClick={downloadQR} className="flex-1 bg-emerald-600 hover:bg-emerald-700 h-11 font-bold shadow-lg shadow-emerald-900/20">
+              <Download className="mr-2 h-4 w-4" /> Download PNG
             </Button>
-            <Button onClick={() => window.print()} variant="outline" className="border-slate-800 text-slate-400">
+            <Button onClick={() => window.print()} variant="outline" className="h-11 w-11 border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-100">
               <Printer className="h-4 w-4" />
             </Button>
           </div>
           
-          <p className="text-[10px] text-slate-600 italic">Scan QR ini untuk langsung mengisi laporan fasilitas tersebut.</p>
+          <div className="w-full pt-4 border-t border-slate-900">
+            <p className="text-[10px] text-slate-500 text-center italic leading-relaxed">
+              Scan QR ini untuk melihat riwayat perawatan dan <br/> melaporkan kerusakan khusus untuk alat ini.
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
