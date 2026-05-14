@@ -90,11 +90,13 @@ export function FacilityQRModal({ facility, triggerId, open: externalOpen, onOpe
           {/* Close button is handled by DialogContent usually, but we ensure it's clean */}
         </div>
 
-        <DialogHeader className="p-6 pb-0 text-center">
-          <DialogTitle className="text-xl font-bold text-slate-100">
-            QR Code Fasilitas
-          </DialogTitle>
-          <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-semibold">Digital Asset Identity</p>
+        <DialogHeader>
+          <div className="p-6 pb-0 text-center">
+            <DialogTitle>
+              QR Code Fasilitas
+            </DialogTitle>
+            <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-semibold">Digital Asset Identity</p>
+          </div>
         </DialogHeader>
         
         <div className="flex flex-col items-center justify-center space-y-6 p-8">
