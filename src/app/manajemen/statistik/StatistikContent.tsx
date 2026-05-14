@@ -80,9 +80,9 @@ export default function StatistikContent({ initialData, unitName }: Props) {
     })).sort((a, b) => b.rate - a.rate);
   }, [initialData]);
 
-  // 4. Process Trends (last 7 days)
+  // 4. Process Trends (last 30 days for monthly report)
   const trendData = useMemo(() => {
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const last30Days = Array.from({ length: 30 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - i);
       return d.toISOString().split("T")[0];
@@ -94,7 +94,7 @@ export default function StatistikContent({ initialData, unitName }: Props) {
       return acc;
     }, {} as Record<string, number>);
 
-    return last7Days.map(date => ({
+    return last30Days.map(date => ({
       date: new Date(date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
       jumlah: dailyCounts[date] || 0
     }));
@@ -154,14 +154,21 @@ export default function StatistikContent({ initialData, unitName }: Props) {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-emerald-400" />
-                Tren Insiden (7 Hari Terakhir)
+                Tren Insiden (30 Hari Terakhir)
               </CardTitle>
             </CardHeader>
             <CardContent className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                  <XAxis dataKey="date" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#64748b" 
+                    fontSize={12} 
+                    tickLine={false} 
+                    axisLine={false} 
+                    minTickGap={40}
+                  />
                   <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px" }}

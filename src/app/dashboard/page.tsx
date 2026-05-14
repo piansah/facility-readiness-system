@@ -91,20 +91,20 @@ export default async function DashboardPage() {
   if (currentHour >= 8 && currentHour < 20) {
     // Sedang Shift Pagi: Tampilkan Malam Kemarin & Pagi Hari Ini
     activeShifts = [
-      { date: yesterday, shift: 'malam', label: 'Malam (Kemarin)', deadline: '08:00 tadi', deadlineDate: `${today}T08:00:00` },
-      { date: today, shift: 'pagi', label: 'Pagi (Hari Ini)', deadline: '20:00 nanti', deadlineDate: `${today}T20:00:00` }
+      { date: yesterday, shift: 'malam', label: 'Malam', deadline: '08:00 tadi', deadlineDate: `${today}T08:00:00` },
+      { date: today, shift: 'pagi', label: 'Pagi', deadline: '20:00 nanti', deadlineDate: `${today}T20:00:00` }
     ];
   } else if (currentHour >= 20) {
     // Sedang Shift Malam (Awal): Tampilkan Pagi Hari Ini & Malam Hari Ini
     activeShifts = [
-      { date: today, shift: 'pagi', label: 'Pagi (Tadi)', deadline: '20:00 tadi', deadlineDate: `${today}T20:00:00` },
-      { date: today, shift: 'malam', label: 'Malam (Sekarang)', deadline: '08:00 besok', deadlineDate: `${tomorrow}T08:00:00` }
+      { date: today, shift: 'pagi', label: 'Pagi', deadline: '20:00 tadi', deadlineDate: `${today}T20:00:00` },
+      { date: today, shift: 'malam', label: 'Malam', deadline: '08:00 besok', deadlineDate: `${tomorrow}T08:00:00` }
     ];
   } else {
     // Sedang Shift Malam (Lanjutan/Dini Hari): Tampilkan Pagi Kemarin & Malam Kemarin
     activeShifts = [
-      { date: yesterday, shift: 'pagi', label: 'Pagi (Kemarin)', deadline: '20:00 kemarin', deadlineDate: `${yesterday}T20:00:00` },
-      { date: yesterday, shift: 'malam', label: 'Malam (Sekarang)', deadline: '08:00 nanti', deadlineDate: `${today}T08:00:00` }
+      { date: yesterday, shift: 'pagi', label: 'Pagi', deadline: '20:00 kemarin', deadlineDate: `${yesterday}T20:00:00` },
+      { date: yesterday, shift: 'malam', label: 'Malam', deadline: '08:00 nanti', deadlineDate: `${today}T08:00:00` }
     ];
   }
 
