@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { deleteFacility, updateFacility } from "./actions";
 
+import { FacilityQRModal } from "./facility-qr-modal";
+
 type Category = {
   id: string;
   name: string;
@@ -27,7 +29,8 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
   const [isActive, setIsActive] = useState(facility.is_active);
 
   return (
-    <>
+    <div className="flex items-center gap-1">
+      <FacilityQRModal facility={facility} />
       <Button type="button" variant="ghost" size="sm" onClick={() => setIsOpen(true)} className="h-8 px-3 text-slate-400">
         Edit
       </Button>
@@ -105,6 +108,6 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
           </div>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }

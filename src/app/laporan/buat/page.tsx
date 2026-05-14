@@ -53,6 +53,7 @@ type CreateReportPageProps = {
     error?: string;
     date?: string;
     shift?: string;
+    facility_id?: string;
   }>;
 };
 
@@ -275,11 +276,18 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
                 <CardDescription>{group.facilities.length} fasilitas aktif</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3">
-                {group.facilities.map((facility, facilityIndex) => (
-                  <div
-                    key={facility.id}
-                    className="grid gap-3 rounded-md border border-slate-800 bg-slate-900 p-3"
-                  >
+                {group.facilities.map((facility, facilityIndex) => {
+                  const isHighlighted = params.facility_id === facility.id;
+                  return (
+                    <div
+                      key={facility.id}
+                      id={`facility-card-${facility.id}`}
+                      className={`grid gap-3 rounded-md border p-3 transition-all duration-500 ${
+                        isHighlighted 
+                          ? "border-amber-500 bg-amber-500/5 ring-2 ring-amber-500/20 scale-[1.02] shadow-lg shadow-amber-500/10 animate-pulse" 
+                          : "border-slate-800 bg-slate-900"
+                      }`}
+                    >
                     <div>
                       <p className="font-medium text-slate-100 flex items-center gap-2">
                         {group.icon ? <span className="text-slate-400">{group.icon}</span> : null}
@@ -316,7 +324,7 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
                       defaultValue={latestStatusByFacility.get(facility.id)?.notes ?? ""}
                     />
                   </div>
-                ))}
+                })}
               </CardContent>
             </Card>
           ))
@@ -330,6 +338,20 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
 
         <ConfirmSubmitButtons isEdit={false} />
       </form>
+
+      {/* Auto-scroll to highlighted facility if exists */}
+      {params.facility_id && (
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            setTimeout(() => {
+              const el = document.getElementById('facility-card-${params.facility_id}');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 500);
+          `
+        }} />
+      )}
     </div>
   </main>
   );
