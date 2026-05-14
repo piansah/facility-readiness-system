@@ -19,10 +19,15 @@ type Props = {
     location_detail: string | null;
   };
   triggerId?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
-export function FacilityQRModal({ facility, triggerId }: Props) {
-  const [open, setOpen] = useState(false);
+export function FacilityQRModal({ facility, triggerId, open: externalOpen, onOpenChange: setExternalOpen }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
   
   // Create the URL that the QR will point to
   // Format: domain/laporan/buat?facility_id=xxx

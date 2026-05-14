@@ -27,6 +27,7 @@ type Facility = {
 
 export function FacilityRowActions({ facility, categories }: { facility: Facility; categories: Category[] }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isActive, setIsActive] = useState(facility.is_active);
 
@@ -54,6 +55,7 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
               <Link 
                 href={`/fasilitas/${facility.id}`}
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-100 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
               >
                 <FileText className="h-3.5 w-3.5 text-blue-400" />
                 Lihat Detail History
@@ -61,16 +63,12 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
               
               <div className="my-1 border-t border-slate-900" />
               
-              {/* Kami tetap menggunakan FacilityQRModal tapi pemicunya kita sesuaikan jika perlu atau panggil manual */}
               <button
                 onClick={() => {
-                  // Kita butuh cara untuk memicu modal QR
-                  // Karena FacilityQRModal punya state internal sendiri, 
-                  // kita biarkan dia ada di DOM tapi tersembunyi
+                  setIsQrOpen(true);
                   setIsMenuOpen(false);
-                  document.getElementById(`qr-trigger-${facility.id}`)?.click();
                 }}
-                className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-100 transition-colors"
+                className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-100 transition-colors text-left"
               >
                 <QrIcon className="h-3.5 w-3.5 text-emerald-400" />
                 Tampilkan QR Code
@@ -81,7 +79,7 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
                   setIsOpen(true);
                   setIsMenuOpen(false);
                 }}
-                className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-100 transition-colors"
+                className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-100 transition-colors text-left"
               >
                 <Pencil className="h-3.5 w-3.5 text-amber-400" />
                 Edit Fasilitas
@@ -89,7 +87,7 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
 
               <div className="my-1 border-t border-slate-900" />
 
-              <form action={deleteFacility} className="contents">
+              <form action={deleteFacility} className="contents" onSubmit={() => setIsMenuOpen(false)}>
                 <input type="hidden" name="id" value={facility.id} />
                 <ConfirmSubmitButton
                   type="submit"
@@ -106,10 +104,12 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
         )}
       </div>
 
-      {/* Hidden QR Modal Trigger */}
-      <div className="hidden">
-        <FacilityQRModal facility={facility} triggerId={`qr-trigger-${facility.id}`} />
-      </div>
+      {/* QR Modal Controlled */}
+      <FacilityQRModal 
+        facility={facility} 
+        open={isQrOpen} 
+        onOpenChange={setIsQrOpen} 
+      />
 
       {/* Edit Modal */}
       {isOpen ? (
