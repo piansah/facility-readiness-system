@@ -26,7 +26,7 @@ export function FacilityQRModal({ facility }: Props) {
   // Create the URL that the QR will point to
   // Format: domain/laporan/buat?facility_id=xxx
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const qrValue = `${baseUrl}/laporan/buat?facility_id=${facility.id}`;
+  const qrValue = `${baseUrl}/fasilitas/${facility.id}`;
 
   const downloadQR = () => {
     const svg = document.getElementById(`qr-code-${facility.id}`);

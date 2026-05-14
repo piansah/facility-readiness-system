@@ -31,8 +31,8 @@ export function QRScanner() {
 
         scanner.render(
           (decodedText) => {
-            // Check if it's our URL
-            if (decodedText.includes("/laporan/buat?facility_id=")) {
+            const baseUrl = window.location.origin;
+            if (decodedText.startsWith(baseUrl) || decodedText.includes("/fasilitas/")) {
               scanner?.clear();
               setOpen(false);
               router.push(decodedText);
