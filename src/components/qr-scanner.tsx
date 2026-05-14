@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 
-export function QRScanner() {
+export function QRScanner({ customTrigger }: { customTrigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
@@ -60,9 +60,13 @@ export function QRScanner() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-lg font-bold gap-2 shadow-lg shadow-emerald-500/20">
-          <Camera className="h-6 w-6" /> Scan QR Fasilitas
-        </Button>
+        {customTrigger ? (
+          customTrigger
+        ) : (
+          <Button className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-lg font-bold gap-2 shadow-lg shadow-emerald-500/20">
+            <Camera className="h-6 w-6" /> Scan QR Fasilitas
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

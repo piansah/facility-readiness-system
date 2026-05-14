@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
+import { MobileNav } from "@/components/mobile-nav";
 
 export const metadata: Metadata = {
   title: "Facility Readiness System",
@@ -41,7 +42,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col" style={{ fontFamily: "'Inter', sans-serif" }}>
         <ServiceWorkerRegister />
         <PwaInstallPrompt />
-        {children}
+        <div className="flex-1 pb-20 sm:pb-0">
+          {children}
+        </div>
+        <MobileNav />
       </body>
     </html>
   );
