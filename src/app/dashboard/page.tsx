@@ -78,6 +78,8 @@ export default async function DashboardPage() {
   const currentHour = parseInt(jakartaParts.find(p => p.type === 'hour')?.value || '0');
 
   const today = `${year}-${month}-${day}`;
+  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  const formattedToday = `Tanggal: ${parseInt(day!)} ${monthNames[parseInt(month!) - 1]} ${year}`;
   const todayDate = new Date(`${today}T00:00:00`);
   const yesterday = new Date(todayDate.getTime() - 86400000).toLocaleDateString('en-CA');
   const tomorrow = new Date(todayDate.getTime() + 86400000).toLocaleDateString('en-CA');
@@ -395,7 +397,7 @@ export default async function DashboardPage() {
                     <CardTitle className="text-lg">
                       {isSuperAdmin ? "Progres Laporan Unit" : "Status Laporan Hari Ini"}
                     </CardTitle>
-                    <CardDescription>{today}</CardDescription>
+                    <CardDescription>{formattedToday}</CardDescription>
                   </div>
                   {canCreateReports(profile?.role) && (
                     <div className="flex items-center gap-2">

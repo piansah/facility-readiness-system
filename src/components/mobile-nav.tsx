@@ -9,38 +9,32 @@ import { NAVIGATION_ITEMS } from "@/lib/constants/navigation";
 export function MobileNav() {
   const pathname = usePathname();
 
-  // Don't show navbar on login page
   if (pathname === "/login") return null;
 
-  // We want: [Beranda] [SCAN QR] [Profil]
   const beranda = NAVIGATION_ITEMS.find(item => item.label === "Beranda");
   const profil = NAVIGATION_ITEMS.find(item => item.label === "Profil");
   const scannerItem = NAVIGATION_ITEMS.find(item => item.isScanner);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 block sm:hidden">
-      {/* Glassmorphism Background */}
-      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-2xl border-t border-slate-800/50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]" />
-      
-      <div className="relative flex items-center justify-around px-4 h-20 pb-safe-area-inset-bottom">
+    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 block sm:hidden w-[280px]">
+      {/* Floating Pill Container */}
+      <div className="flex items-center justify-between bg-slate-900/90 backdrop-blur-2xl border border-slate-800/50 rounded-full px-4 py-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        
         {/* Beranda */}
         {beranda && (
           <NavItem item={beranda} pathname={pathname} />
         )}
 
-        {/* Center Scanner Button */}
+        {/* Center Scanner (The Action Button) */}
         {scannerItem && (() => {
           const ScanIcon = scannerItem.icon;
           return (
-            <div className="relative -top-6 flex flex-col items-center">
+            <div className="relative -top-2">
               <QRScanner customTrigger={
-                <button className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 shadow-[0_10px_25px_rgba(16,185,129,0.4)] transition-all active:scale-90 active:shadow-inner border-4 border-slate-950">
-                  <ScanIcon className="h-8 w-8 text-slate-950 stroke-[2.5]" />
+                <button className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 shadow-[0_8px_20px_rgba(16,185,129,0.4)] transition-all active:scale-90 border-4 border-slate-900">
+                  <ScanIcon className="h-7 w-7 text-slate-950 stroke-[2.5]" />
                 </button>
               } />
-              <span className="mt-2 block text-center text-[10px] font-black uppercase tracking-widest text-emerald-500 drop-shadow-md">
-                {scannerItem.label}
-              </span>
             </div>
           );
         })()}
@@ -61,25 +55,11 @@ function NavItem({ item, pathname }: { item: any, pathname: string }) {
     <Link
       href={item.href!}
       className={cn(
-        "flex flex-col items-center justify-center transition-all duration-300 min-w-[70px] relative",
-        isActive ? "text-emerald-400" : "text-slate-500 hover:text-slate-300"
+        "flex items-center justify-center h-10 w-10 rounded-full transition-all duration-300",
+        isActive ? "bg-emerald-500/20 text-emerald-400" : "text-slate-500"
       )}
     >
-      <div className={cn(
-        "p-2 rounded-xl transition-all duration-300",
-        isActive && "bg-emerald-500/10"
-      )}>
-        <item.icon className={cn("h-6 w-6", isActive && "animate-in zoom-in-75 duration-300")} />
-      </div>
-      <span className={cn(
-        "text-[10px] font-bold uppercase tracking-tight mt-1 transition-all",
-        isActive ? "opacity-100 scale-100" : "opacity-60 scale-95"
-      )}>
-        {item.label}
-      </span>
-      {isActive && (
-        <div className="absolute -bottom-1 h-1 w-1 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,1)]" />
-      )}
+      <item.icon className={cn("h-6 w-6", isActive && "scale-110")} />
     </Link>
   );
 }
