@@ -326,29 +326,29 @@ export default async function DashboardPage() {
             <CardHeader className="py-3">
               <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-500">Akses Cepat</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-2 pb-4">
+            <CardContent className="grid grid-cols-1 gap-2 pb-4">
               {!isSuperAdmin && (
                 <>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-10 px-3">
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
                     <Link href="/laporan">
-                      <ClipboardList className="mr-2 h-4 w-4 text-emerald-400" /> <span className="text-xs">Laporan</span>
+                      <ClipboardList className="mr-3 h-5 w-5 text-emerald-400" /> History Laporan
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-10 px-3">
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
                     <Link href="/insiden">
-                      <Camera className="mr-2 h-4 w-4 text-amber-400" /> <span className="text-xs">Insiden</span>
+                      <Camera className="mr-3 h-5 w-5 text-amber-400" /> History Non-Rutin
                     </Link>
                   </Button>
                 </>
               )}
-              <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-10 px-3">
+              <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
                 <Link href="/manajemen/fasilitas">
-                  <Wrench className="mr-2 h-4 w-4 text-purple-400" /> <span className="text-xs">Fasilitas</span>
+                  <Wrench className="mr-3 h-5 w-5 text-purple-400" /> Kelola Fasilitas
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-10 px-3">
+              <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
                 <Link href="/profil">
-                  <User className="mr-2 h-4 w-4 text-emerald-400" /> <span className="text-xs">Profil</span>
+                  <User className="mr-3 h-5 w-5 text-emerald-400" /> Profil Saya
                 </Link>
               </Button>
             </CardContent>
