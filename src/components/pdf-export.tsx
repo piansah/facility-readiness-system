@@ -9,8 +9,6 @@ import { Button } from "./ui/button";
 type ReportForPdf = {
   report_date: string;
   shift: string;
-  start_time: string | null;
-  end_time: string | null;
   status: string;
   current_shift_staff?: StaffSnapshot[];
   next_shift_staff?: StaffSnapshot[];
@@ -98,8 +96,7 @@ export function PdfExport({ report }: PdfExportProps) {
       doc.setFontSize(10);
       doc.text(`Tanggal: ${formatDate(report.report_date)}`, 15, 40);
       doc.text(`Shift: ${report.shift?.toUpperCase()}`, 15, 46);
-      doc.text(`Waktu Kerja: ${report.start_time ?? "--:--"} s/d ${report.end_time ?? "--:--"}`, 15, 52);
-      doc.text(`Dibuat oleh: ${report.users?.full_name ?? "-"}`, 15, 58);
+      doc.text(`Dibuat oleh: ${report.users?.full_name ?? "-"}`, 15, 52);
       doc.text(`Status: ${report.status?.toUpperCase()}`, pageWidth - 15, 40, { align: "right" });
 
       doc.setFontSize(11);
