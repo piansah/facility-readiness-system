@@ -86,11 +86,17 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     let available = [...shifts];
     if (isTargetAdmin) {
       if (!available.some(s => s.code === 'APN7')) {
-        available.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#10b981' });
+        available.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' });
       }
       if (!available.some(s => s.code === 'APN8')) {
-        available.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#3b82f6' });
+        available.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' });
       }
+      // Pastikan APN7/APN8 selalu punya warna meskipun di DB null
+      available = available.map(s => {
+        if (s.code === 'APN7' && (!s.color_code || s.color_code === '#000000')) return { ...s, color_code: '#94a3b8' };
+        if (s.code === 'APN8' && (!s.color_code || s.color_code === '#000000')) return { ...s, color_code: '#94a3b8' };
+        return s;
+      });
     }
     return available.filter(s => {
       if (['APN7', 'APN8'].includes(s.code)) return isTargetAdmin;
@@ -193,8 +199,8 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     // Tambahkan Perhitungan Shift per Hari (Summary)
     // Gunakan list shift yang sudah digabung dengan APN7/APN8 untuk PDF
     const allShiftsForPDF = [...shifts];
-    if (!allShiftsForPDF.some(s => s.code === 'APN7')) allShiftsForPDF.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#10b981' });
-    if (!allShiftsForPDF.some(s => s.code === 'APN8')) allShiftsForPDF.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#3b82f6' });
+    if (!allShiftsForPDF.some(s => s.code === 'APN7')) allShiftsForPDF.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' });
+    if (!allShiftsForPDF.some(s => s.code === 'APN8')) allShiftsForPDF.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' });
 
     allShiftsForPDF.filter(s => ['APBA', 'APBB', 'APN7', 'APN8', 'FREE'].includes(s.code)).forEach(s => {
       // Tentukan label (PAGI, MALAM, LIBUR, dll)
@@ -542,7 +548,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                     {daysInMonth.map(d => {
                       const dateStr = format(d, "yyyy-MM-dd");
                       const entry = localRosters.find(r => r.user_id === p.id && r.duty_date === dateStr);
-                      const shift = entry ? [...localShifts, { code: 'APN7', name: 'Admin Jam 7', color_code: '#10b981' }, { code: 'APN8', name: 'Admin Jam 8', color_code: '#3b82f6' }].find(s => s.code === entry.shift_code) : null;
+                      const shift = entry ? [...localShifts, { code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' }, { code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' }].find(s => s.code === entry.shift_code) : null;
                       const menuKey = `${p.id}|${dateStr}`;
                       const isMenuOpen = openMenu === menuKey;
 
@@ -576,11 +582,11 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                             <div className="h-7 w-full" />
                           )}
 
-                          {/* Dropdown Menu */}
+                          {/* Dropdown Menu - Notion Style */}
                           {isMenuOpen && isAdmin && (
                             <>
                               <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setOpenMenu(null); }} />
-                              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 w-28 rounded-lg border border-slate-700 bg-slate-900 shadow-2xl py-1 animate-in fade-in zoom-in-95 duration-100" onClick={(e) => e.stopPropagation()}>
+                              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 w-32 rounded-lg border border-slate-700 bg-slate-900/95 backdrop-blur-sm shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-100" onClick={(e) => e.stopPropagation()}>
                                 {getAvailableShifts(p.id).map(s => {
                                   const isBlack = s.color_code === '#000000';
                                   const clr = isBlack ? '#3b82f6' : (s.color_code || '#94a3b8');
@@ -589,19 +595,23 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                                     <button
                                       key={s.code}
                                       onClick={(e) => { e.stopPropagation(); handleAssignShift(p.id, dateStr, s.code); }}
-                                      className={`w-full px-2 py-1.5 text-left text-[10px] font-bold flex items-center gap-2 hover:bg-slate-800 transition-colors ${isActive ? "bg-slate-800" : ""}`}
+                                      className={`w-full rounded-md px-2 py-1 text-[10px] font-bold transition-all ${isActive ? "ring-1 ring-white/30 scale-[1.02]" : "hover:brightness-125"}`}
+                                      style={{
+                                        backgroundColor: `${clr}20`,
+                                        color: clr,
+                                        border: `1px solid ${clr}30`
+                                      }}
                                     >
-                                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: clr }} />
-                                      <span style={{ color: clr }}>{s.code}</span>
+                                      {s.code}
                                     </button>
                                   );
                                 })}
-                                <div className="border-t border-slate-800 my-1" />
+                                <div className="border-t border-slate-800 pt-1" />
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleAssignShift(p.id, dateStr, null); }}
-                                  className="w-full px-2 py-1.5 text-left text-[10px] font-bold text-slate-500 hover:bg-slate-800 hover:text-red-400 transition-colors flex items-center gap-2"
+                                  className="w-full rounded-md px-2 py-1 text-[10px] font-bold text-slate-500 bg-slate-800/50 border border-slate-700/50 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-all flex items-center justify-center gap-1"
                                 >
-                                  <X className="w-2 h-2 flex-shrink-0" />
+                                  <X className="w-2.5 h-2.5" />
                                   Kosong
                                 </button>
                               </div>
@@ -623,8 +633,8 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
               </tr>
               {(() => {
                 const allShiftsForSummary = [...localShifts];
-                if (!allShiftsForSummary.some(s => s.code === 'APN7')) allShiftsForSummary.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#10b981' });
-                if (!allShiftsForSummary.some(s => s.code === 'APN8')) allShiftsForSummary.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#3b82f6' });
+                if (!allShiftsForSummary.some(s => s.code === 'APN7')) allShiftsForSummary.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' });
+                if (!allShiftsForSummary.some(s => s.code === 'APN8')) allShiftsForSummary.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' });
                 
                 return allShiftsForSummary.filter(s => ['APBA', 'APBB', 'APN7', 'APN8', 'FREE'].includes(s.code)).map(s => {
                   let label = s.code;
@@ -660,7 +670,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
         </div>
 
         {/* Shift Legend / Info */}
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {/* Legend APNZ khusus Admin */}
           <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center gap-3 transition-all hover:border-blue-500/50">
             <div className="h-10 w-1 rounded-full bg-blue-500" />
