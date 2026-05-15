@@ -1,4 +1,5 @@
 "use client";
+// Force rebuild for icon update
 
 import { useState } from "react";
 import { jsPDF } from "jspdf";
@@ -168,10 +169,10 @@ export function PdfExport({ report }: PdfExportProps) {
         styles: { fontSize: 9 },
         columnStyles: {
           0: { cellWidth: 10 },    // No
-          1: { cellWidth: 45 },    // Fasilitas
-          2: { cellWidth: 45 },    // Lokasi
-          3: { cellWidth: 25 },    // Status
-          4: { cellWidth: 55 },    // Catatan (Reduksi ~25% dari lebar default autotable)
+          1: { cellWidth: 63 },    // Fasilitas (+10%)
+          2: { cellWidth: 36 },    // Lokasi (-5%)
+          3: { cellWidth: 16 },    // Status (-5%)
+          4: { cellWidth: 55 },    // Catatan
         },
       });
 
