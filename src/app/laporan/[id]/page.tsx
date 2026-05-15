@@ -105,7 +105,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
 
   const admin = createAdminClient();
   
-  // 1. Fetch Main Report Data (simplified joins)
+  // 1. Fetch Main Report Data
   console.log("DEBUG: Fetching report with ID:", id);
   const { data: report, error: reportError } = await admin
     .from("daily_reports")
@@ -120,7 +120,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
       submitted_at,
       current_shift_staff,
       next_shift_staff,
-      users!created_by (full_name),
+      users!daily_reports_created_by_fkey (full_name),
       units (code, name),
       facility_status_logs (
         id, status, notes,
@@ -137,42 +137,48 @@ export default async function ReportDetailPage({ params }: PageProps) {
     .eq("id", id)
     .single<ReportDetail>();
 
-  if (reportError) {
+  if (reportError || !report) {
     console.error("DEBUG: REPORT FETCH ERROR:", reportError);
-    // If it's a join error, try a simpler query
-    if (reportError.message.includes("relationship") || reportError.message.includes("column")) {
-      console.log("DEBUG: Attempting simplified query...");
-      const { data: simpleReport, error: simpleError } = await admin
-        .from("daily_reports")
-        .select(`id, unit_id, report_date, shift, status, units(code, name)`)
-        .eq("id", id)
-        .single();
-      
-      if (simpleError) {
-        console.error("DEBUG: SIMPLE FETCH ERROR:", simpleError);
-        notFound();
-      }
-      console.log("DEBUG: Simple query succeeded. Schema mismatch in complex query.");
-    } else {
-      notFound();
-    }
-  }
-
-  if (!report) {
-    console.log("DEBUG: Report not found in database.");
-    notFound();
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center bg-slate-950 p-4 text-center">
+        <Calendar className="mb-4 h-16 w-16 text-slate-700" />
+        <h1 className="text-2xl font-bold text-slate-100">Laporan Tidak Ditemukan</h1>
+        <p className="mt-2 text-slate-400">
+          Laporan dengan ID tersebut tidak ditemukan di database.
+        </p>
+        <p className="mt-1 text-xs text-slate-600">ID: {id}</p>
+        <Button asChild className="mt-6" variant="outline">
+          <Link href="/laporan">Kembali ke Daftar Laporan</Link>
+        </Button>
+      </main>
+    );
   }
 
   const hasAccess = await canAccessUnit(supabase, profile, report.unit_id);
   console.log("DEBUG: UNIT ACCESS CHECK:", { 
+    user_role: profile.role,
     user_unit: profile.unit_id, 
     report_unit: report.unit_id, 
     hasAccess 
   });
 
   if (!hasAccess) {
-    console.log("DEBUG: Access denied for user.");
-    notFound();
+    console.log("DEBUG: ACCESS DENIED - showing forbidden message");
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center bg-slate-950 p-4 text-center">
+        <XCircle className="mb-4 h-16 w-16 text-red-500" />
+        <h1 className="text-2xl font-bold text-slate-100">Akses Ditolak</h1>
+        <p className="mt-2 text-slate-400">
+          Anda tidak memiliki izin untuk melihat laporan dari unit ini.
+        </p>
+        <p className="mt-1 text-xs text-slate-600">
+          User Unit: {profile.unit_id || "NULL"} | Report Unit: {report.unit_id}
+        </p>
+        <Button asChild className="mt-6" variant="outline">
+          <Link href="/dashboard">Kembali ke Dashboard</Link>
+        </Button>
+      </main>
+    );
   }
 
   // 2. Fetch Review Metadata separately
