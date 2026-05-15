@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
@@ -676,14 +676,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
           )})}
         </div>
 
-        {isAdmin && (
-          <div className="mt-6 flex items-center gap-4 text-xs text-emerald-500/70">
-            <div className="flex items-center gap-1.5">
-              <Info className="h-3.5 w-3.5" />
-              <span>Mode Admin: Klik pada kotak tanggal untuk mengganti shift, Auto save</span>
-            </div>
-          </div>
-        )}
+
       </main>
     </div>
   );
