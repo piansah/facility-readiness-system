@@ -9,7 +9,7 @@ import {
 import { id } from "date-fns/locale";
 import {
   ArrowLeft, Download, ChevronLeft, ChevronRight,
-  Users, Save, Loader2, Info, Settings2, Clock, Pencil, Printer
+  Users, Save, Loader2, Info, Settings2, Clock, Pencil, Printer, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,13 +65,11 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [hoveredCol, setHoveredCol] = useState<string | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null); // "userId|dateStr"
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
-
-  // Jika belum mounted, jangan render konten yang bergantung pada client-side date/state
-  // Tapi tetap render struktur dasar biar SEO aman
 
   const daysInMonth = useMemo(() => {
     return eachDayOfInterval({
@@ -80,65 +78,45 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     });
   }, [selectedMonth]);
 
-  // Auto-save logic
-  const handleCellClick = async (userId: string, date: Date) => {
-    if (!isAdmin) return;
-
-    const dateStr = format(date, "yyyy-MM-dd");
-    const currentEntry = localRosters.find(r => r.user_id === userId && r.duty_date === dateStr);
-
+  // Get available shifts for a specific user based on role
+  const getAvailableShifts = (userId: string) => {
     const person = personnel.find(p => p.id === userId);
     const isTargetAdmin = person?.role === 'admin';
 
-    // Ambil list shift dari database
-    let availableShifts = [...shifts];
-
-    // Jika target adalah admin, pastikan APN7 dan APN8 ada di daftar pilihan klik
+    let available = [...shifts];
     if (isTargetAdmin) {
-      if (!availableShifts.some(s => s.code === 'APN7')) {
-        availableShifts.push({ code: 'APN7', name: 'Admin Masuk Jam 7', color_code: '#10b981' });
+      if (!available.some(s => s.code === 'APN7')) {
+        available.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#10b981' });
       }
-      if (!availableShifts.some(s => s.code === 'APN8')) {
-        availableShifts.push({ code: 'APN8', name: 'Admin Masuk Jam 8', color_code: '#3b82f6' });
+      if (!available.some(s => s.code === 'APN8')) {
+        available.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#3b82f6' });
       }
     }
-
-    // Filter ulang berdasarkan role (safety check)
-    availableShifts = availableShifts.filter(s => {
-      if (['APN7', 'APN8'].includes(s.code)) {
-        return isTargetAdmin;
-      }
+    return available.filter(s => {
+      if (['APN7', 'APN8'].includes(s.code)) return isTargetAdmin;
       return true;
     });
+  };
 
-    let nextCode = "";
-    if (!currentEntry) {
-      nextCode = availableShifts[0]?.code || "APBA";
-    } else {
-      const currentIndex = availableShifts.findIndex(s => s.code === currentEntry.shift_code);
-      if (currentIndex === -1 || currentIndex === availableShifts.length - 1) {
-        nextCode = "";
-      } else {
-        nextCode = availableShifts[currentIndex + 1].code;
-      }
-    }
+  // Assign shift langsung dari dropdown
+  const handleAssignShift = async (userId: string, dateStr: string, shiftCode: string | null) => {
+    setOpenMenu(null);
 
     let updatedRosters: RosterEntry[];
-    if (nextCode === "") {
+    if (!shiftCode) {
       updatedRosters = localRosters.filter(r => !(r.user_id === userId && r.duty_date === dateStr));
     } else {
       const otherEntries = localRosters.filter(r => !(r.user_id === userId && r.duty_date === dateStr));
-      updatedRosters = [...otherEntries, { user_id: userId, duty_date: dateStr, shift_code: nextCode }];
+      updatedRosters = [...otherEntries, { user_id: userId, duty_date: dateStr, shift_code: shiftCode }];
     }
 
     setLocalRosters(updatedRosters);
 
-    // Auto save to database
     setIsSaving(true);
     try {
       await updateRoster(updatedRosters, unitId);
     } catch (e) {
-      console.error("Auto-save failed:", e);
+      console.error("Save failed:", e);
     } finally {
       setIsSaving(false);
     }
@@ -564,18 +542,20 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                     {daysInMonth.map(d => {
                       const dateStr = format(d, "yyyy-MM-dd");
                       const entry = localRosters.find(r => r.user_id === p.id && r.duty_date === dateStr);
-                      const shift = localShifts.find(s => s.code === entry?.shift_code);
+                      const shift = entry ? [...localShifts, { code: 'APN7', name: 'Admin Jam 7', color_code: '#10b981' }, { code: 'APN8', name: 'Admin Jam 8', color_code: '#3b82f6' }].find(s => s.code === entry.shift_code) : null;
+                      const menuKey = `${p.id}|${dateStr}`;
+                      const isMenuOpen = openMenu === menuKey;
 
                       return (
                         <td
                           key={dateStr}
                           onMouseEnter={() => setHoveredCol(dateStr)}
                           onMouseLeave={() => setHoveredCol(null)}
-                          onClick={() => handleCellClick(p.id, d)}
-                          className={`p-1 text-center border-r border-slate-800 transition-all ${isAdmin ? "cursor-pointer" : ""
+                          className={`p-1 text-center border-r border-slate-800 transition-all relative ${isAdmin ? "cursor-pointer" : ""
                             } ${hasMounted && isToday(d) ? "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/30" : ""} ${isWeekend(d) ? "bg-red-500/5" : ""
                             } ${hoveredCol === dateStr ? "bg-blue-500/10" : ""
                             } ${hoveredRow === p.id && hoveredCol === dateStr ? "ring-1 ring-inset ring-blue-500/50 bg-blue-500/10" : ""} ${isMe && !hoveredCol && !hoveredRow ? "bg-amber-500/[0.02]" : ""}`}
+                          onClick={() => { if (isAdmin) setOpenMenu(isMenuOpen ? null : menuKey); }}
                         >
                           {entry ? (() => {
                             const isBlack = shift?.color_code === '#000000';
@@ -594,6 +574,38 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                             );
                           })() : (
                             <div className="h-7 w-full" />
+                          )}
+
+                          {/* Dropdown Menu */}
+                          {isMenuOpen && isAdmin && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setOpenMenu(null); }} />
+                              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 w-28 rounded-lg border border-slate-700 bg-slate-900 shadow-2xl py-1 animate-in fade-in zoom-in-95 duration-100" onClick={(e) => e.stopPropagation()}>
+                                {getAvailableShifts(p.id).map(s => {
+                                  const isBlack = s.color_code === '#000000';
+                                  const clr = isBlack ? '#3b82f6' : (s.color_code || '#94a3b8');
+                                  const isActive = entry?.shift_code === s.code;
+                                  return (
+                                    <button
+                                      key={s.code}
+                                      onClick={(e) => { e.stopPropagation(); handleAssignShift(p.id, dateStr, s.code); }}
+                                      className={`w-full px-2 py-1.5 text-left text-[10px] font-bold flex items-center gap-2 hover:bg-slate-800 transition-colors ${isActive ? "bg-slate-800" : ""}`}
+                                    >
+                                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: clr }} />
+                                      <span style={{ color: clr }}>{s.code}</span>
+                                    </button>
+                                  );
+                                })}
+                                <div className="border-t border-slate-800 my-1" />
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleAssignShift(p.id, dateStr, null); }}
+                                  className="w-full px-2 py-1.5 text-left text-[10px] font-bold text-slate-500 hover:bg-slate-800 hover:text-red-400 transition-colors flex items-center gap-2"
+                                >
+                                  <X className="w-2 h-2 flex-shrink-0" />
+                                  Kosong
+                                </button>
+                              </div>
+                            </>
                           )}
                         </td>
                       );
