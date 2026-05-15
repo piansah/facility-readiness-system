@@ -83,7 +83,7 @@ export default async function UserManagementPage() {
             <h1 className="text-2xl font-bold text-slate-100">Manajemen Pengguna</h1>
             <p className="text-sm text-slate-400">Kelola akses, role, dan pembagian unit operasional.</p>
           </div>
-          <UserFormModal units={allUnits || []} />
+          <UserFormModal units={allUnits || []} currentUserRole={profile?.role ?? 'petugas'} />
         </div>
 
         {/* User Stats — berbeda untuk Super Admin vs Admin */}
@@ -205,7 +205,7 @@ export default async function UserManagementPage() {
                       </form>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <UserEditModal user={u} units={allUnits || []} />
+                      <UserEditModal user={u} units={allUnits || []} currentUserRole={profile?.role ?? 'petugas'} />
                     </td>
                   </tr>
                 ))}

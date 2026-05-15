@@ -24,6 +24,37 @@ async function requireSuperAdmin() {
   if (!profile?.is_active || profile.role !== "super_admin") {
     redirect("/dashboard");
   }
+
+  return profile;
+}
+
+async function requireManager() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?next=/manajemen/pengguna");
+  }
+
+  const { profile } = await getProfile(supabase, user.id);
+
+  if (!profile?.is_active || (profile.role !== "super_admin" && profile.role !== "admin")) {
+    redirect("/dashboard");
+  }
+
+  return profile;
+}
+
+/** Admin can only assign petugas/viewer. Super admin can assign any role. */
+const adminAllowedRoles: UserRole[] = ["petugas", "viewer"];
+
+function validateRoleAssignment(callerRole: string, targetRole: UserRole): UserRole {
+  if (callerRole === "super_admin") return targetRole;
+  // Admin trying to assign admin or super_admin → force to petugas
+  if (!adminAllowedRoles.includes(targetRole)) return "petugas";
+  return targetRole;
 }
 
 function readRole(value: FormDataEntryValue | null): UserRole {
@@ -32,14 +63,17 @@ function readRole(value: FormDataEntryValue | null): UserRole {
 }
 
 export async function createUser(formData: FormData) {
-  await requireSuperAdmin();
+  const manager = await requireManager();
 
   const adminClient = createAdminClient();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const fullName = String(formData.get("full_name") ?? "").trim();
-  const role = readRole(formData.get("role"));
-  const unitId = String(formData.get("unit_id") ?? "");
+  const rawRole = readRole(formData.get("role"));
+  const role = validateRoleAssignment(manager.role, rawRole);
+  const unitId = manager.role === "super_admin"
+    ? String(formData.get("unit_id") ?? "")
+    : manager.unit_id;
   const assignedUnits = formData.getAll("assigned_units").map(String).filter(Boolean);
 
   if (!email || !password || !fullName) {
@@ -111,14 +145,17 @@ export async function updateUserAccess(userId: string, assignedUnits: string[]) 
 }
 
 export async function updateUser(formData: FormData) {
-  await requireSuperAdmin();
+  const manager = await requireManager();
 
   const adminClient = createAdminClient();
   const userId = String(formData.get("user_id") ?? "");
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const fullName = String(formData.get("full_name") ?? "").trim();
-  const role = readRole(formData.get("role"));
-  const unitId = String(formData.get("unit_id") ?? "");
+  const rawRole = readRole(formData.get("role"));
+  const role = validateRoleAssignment(manager.role, rawRole);
+  const unitId = manager.role === "super_admin"
+    ? String(formData.get("unit_id") ?? "")
+    : manager.unit_id;
   const assignedUnits = formData.getAll("assigned_units").map(String).filter(Boolean);
 
   if (!userId || !email || !fullName) {

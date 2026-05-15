@@ -23,9 +23,22 @@ type EditableUser = {
   super_admin_unit_access?: { unit_id: string }[];
 };
 
-export function UserFormModal({ units }: { units: Unit[] }) {
+export function UserFormModal({ units, currentUserRole }: { units: Unit[]; currentUserRole: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState("petugas");
+
+  const isSuperAdmin = currentUserRole === "super_admin";
+  const roleOptions = isSuperAdmin
+    ? [
+        { value: "petugas", label: "Petugas (Operasional)" },
+        { value: "admin", label: "Admin (Reviewer Unit)" },
+        { value: "super_admin", label: "Super Admin (Manager)" },
+        { value: "viewer", label: "Viewer" },
+      ]
+    : [
+        { value: "petugas", label: "Petugas (Operasional)" },
+        { value: "viewer", label: "Viewer" },
+      ];
   const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,10 +129,9 @@ export function UserFormModal({ units }: { units: Unit[] }) {
                 onChange={(e) => setRole(e.target.value)}
                 className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
-                <option value="petugas">Petugas (Operasional)</option>
-                <option value="admin">Admin (Reviewer Unit)</option>
-                <option value="super_admin">Super Admin (Manager)</option>
-                <option value="viewer">Viewer</option>
+                {roleOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
 
@@ -176,9 +188,22 @@ export function UserFormModal({ units }: { units: Unit[] }) {
   );
 }
 
-export function UserEditModal({ user, units }: { user: EditableUser; units: Unit[] }) {
+export function UserEditModal({ user, units, currentUserRole }: { user: EditableUser; units: Unit[]; currentUserRole: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState(user.role);
+
+  const isSuperAdmin = currentUserRole === "super_admin";
+  const editRoleOptions = isSuperAdmin
+    ? [
+        { value: "petugas", label: "Petugas" },
+        { value: "admin", label: "Admin" },
+        { value: "super_admin", label: "Super Admin" },
+        { value: "viewer", label: "Viewer" },
+      ]
+    : [
+        { value: "petugas", label: "Petugas" },
+        { value: "viewer", label: "Viewer" },
+      ];
   const [selectedUnits, setSelectedUnits] = useState<string[]>(
     user.super_admin_unit_access?.map((access) => access.unit_id) ?? [],
   );
@@ -258,10 +283,9 @@ export function UserEditModal({ user, units }: { user: EditableUser; units: Unit
                 onChange={(event) => setRole(event.target.value)}
                 className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
-                <option value="petugas">Petugas</option>
-                <option value="admin">Admin</option>
-                <option value="super_admin">Super Admin</option>
-                <option value="viewer">Viewer</option>
+                {editRoleOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
 
