@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { FileText, Loader2 } from "lucide-react";
+import { Printer, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 
 type ReportForPdf = {
@@ -409,7 +409,7 @@ export function PdfExport({ report }: PdfExportProps) {
         {isExporting ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <FileText className="h-4 w-4" />
+          <Printer className="h-4 w-4" />
         )}
         <span className="hidden sm:inline">
           {isExporting ? "Menyiapkan..." : "Export PDF"}

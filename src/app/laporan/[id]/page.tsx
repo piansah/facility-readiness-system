@@ -237,12 +237,12 @@ export default async function ReportDetailPage({ params }: PageProps) {
               </Link>
             </Button>
             <div className="flex flex-col">
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
+              <h1 className="text-lg font-bold text-slate-100 leading-tight">
+                Detail Laporan Harian
+              </h1>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 mt-0.5">
                 Unit {report.units?.code ?? "ELBAN"} • Laporan Kesiapan
               </p>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-100 uppercase">
-                Detail Laporan <span className="text-emerald-500">Harian</span>
-              </h1>
             </div>
           </div>
           <PdfExport report={reportWithFullIncidents} />
