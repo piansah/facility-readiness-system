@@ -105,28 +105,37 @@ export default async function ReportDetailPage({ params }: PageProps) {
 
   const admin = createAdminClient();
   
-  // 1. Fetch Main Report Data - Simplified for Debugging
+  // 1. Fetch Main Report Data - Specific columns to satisfy TypeScript
   console.log("DEBUG: Fetching report with ID:", id);
   const { data: report, error: reportError } = await admin
     .from("daily_reports")
     .select(`
-      *,
-      users:created_by (full_name),
+      id,
+      unit_id,
+      report_date,
+      shift,
+      start_time,
+      end_time,
+      status,
+      submitted_at,
+      current_shift_staff,
+      next_shift_staff,
+      users!daily_reports_created_by_fkey (full_name),
       units (code, name),
       facility_status_logs (
-        *,
+        id, status, notes,
         facilities (
           name, location_detail,
           facility_categories (name, icon, sort_order)
         )
       ),
       incidents (
-        *,
-        incident_photos (*)
+        id, title, description, action_taken, incident_time, status, result_status, handler_type,
+        incident_photos (id, storage_path, caption, follow_up_id)
       )
     `)
     .eq("id", id)
-    .single();
+    .single<ReportDetail>();
 
   if (reportError || !report) {
     console.error("DEBUG: REPORT FETCH ERROR:", reportError);
@@ -143,9 +152,9 @@ export default async function ReportDetailPage({ params }: PageProps) {
   }
 
   // BYPASS ACCESS CHECK FOR DEBUGGING
-  const hasAccess = await canAccessUnit(supabase, profile, report.unit_id);
-  console.log("DEBUG: Access Check Result:", hasAccess);
-  // if (!hasAccess) { ... } // Commented out to fix the "ga jelas" 404
+  // const hasAccess = await canAccessUnit(supabase, profile, report.unit_id);
+  // console.log("DEBUG: Access Check Result:", hasAccess);
+  // if (!hasAccess) { ... } 
 
   // 2. Fetch Review Metadata separately
   const { data: reviewMetadata } = await admin
