@@ -73,11 +73,6 @@ type ReportDetail = {
     status_update: string;
     handler_type: string;
     incident: { title: string } | null;
-    incident_photos: {
-      id: string;
-      storage_path: string;
-      caption: string | null;
-    }[];
     photos?: {
       id: string;
       signedUrl: string | null;
@@ -122,7 +117,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
   }
 
   const admin = createAdminClient();
-  const { data: report } = await admin
+  const { data: report, error: reportError } = await admin
     .from("daily_reports")
     .select(
       `
@@ -180,23 +175,25 @@ export default async function ReportDetailPage({ params }: PageProps) {
         follow_up_time,
         status_update,
         handler_type,
-        incident:incidents!incident_id (title),
-        incident_photos (
-          id,
-          storage_path,
-          caption
-        )
+        incident:incidents!incident_id (title)
       )
-    `,
+    `
     )
     .eq("id", id)
     .single<ReportDetail>();
 
+  if (reportError) {
+    console.error("Supabase Error fetching report:", reportError);
+  }
+
   if (!report) {
+    console.error("Report not found for ID:", id);
     notFound();
   }
 
-  if (!(await canAccessUnit(supabase, profile, report.unit_id))) {
+  const hasAccess = await canAccessUnit(supabase, profile, report.unit_id);
+  if (!hasAccess) {
+    console.error("User does not have access to unit:", report.unit_id, "Profile:", profile);
     notFound();
   }
 
@@ -232,8 +229,11 @@ export default async function ReportDetailPage({ params }: PageProps) {
   });
 
   const followUpsWithPhotos = report.incident_follow_ups.map((fu) => {
-    // Collect photos for this specific follow-up from its join
-    const photosWithUrls = (fu.incident_photos || []).map((photo) => {
+    // Find incident_photos belonging to this follow-up from the parent incident
+    const parentIncident = report.incidents.find(inc => inc.id === fu.incident_id);
+    const fuPhotos = parentIncident?.incident_photos?.filter(p => p.follow_up_id === fu.id) || [];
+    
+    const photosWithUrls = fuPhotos.map((photo) => {
       const cleanPath = photo.storage_path.replace(/^\/+/, "");
       return {
         ...photo,
