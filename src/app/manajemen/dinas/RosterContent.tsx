@@ -64,6 +64,14 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
   const [tempShifts, setTempShifts] = useState<any[]>(shifts);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [hoveredCol, setHoveredCol] = useState<string | null>(null);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // Jika belum mounted, jangan render konten yang bergantung pada client-side date/state
+  // Tapi tetap render struktur dasar biar SEO aman
 
   const daysInMonth = useMemo(() => {
     return eachDayOfInterval({
@@ -475,12 +483,6 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
               </Button>
             )}
 
-            {isAdmin && isSaving && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-wider animate-pulse shadow-lg shadow-emerald-900/10 no-print">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Auto-Saving...
-              </div>
-            )}
           </div>
         </div>
       </header>
@@ -496,8 +498,8 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
         {/* Month Selector */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-slate-100 capitalize">
-              {format(selectedMonth, "MMMM yyyy", { locale: id })}
+            <h2 className="text-xl font-bold text-slate-100 capitalize" suppressHydrationWarning>
+              {hasMounted ? format(selectedMonth, "MMMM yyyy", { locale: id }) : ""}
             </h2>
             <div className="flex gap-1 print:hidden">
               <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0 border-slate-800">
@@ -527,6 +529,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                   return (
                     <th
                       key={d.toString()}
+                      suppressHydrationWarning
                       className={`p-2 text-center text-[10px] font-bold border-r border-slate-800 min-w-[35px] transition-colors ${isWeekend(d) ? "bg-red-500/5 text-red-400" : "text-slate-500"
                         } ${hoveredCol === dateStr ? "bg-blue-500/10 text-blue-400" : ""}`}
                     >
@@ -570,7 +573,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                           onMouseLeave={() => setHoveredCol(null)}
                           onClick={() => handleCellClick(p.id, d)}
                           className={`p-1 text-center border-r border-slate-800 transition-all ${isAdmin ? "cursor-pointer" : ""
-                            } ${isToday(d) ? "bg-emerald-500/5" : ""} ${isWeekend(d) ? "bg-red-500/5" : ""
+                            } ${hasMounted && isToday(d) ? "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/30" : ""} ${isWeekend(d) ? "bg-red-500/5" : ""
                             } ${hoveredCol === dateStr ? "bg-blue-500/10" : ""
                             } ${hoveredRow === p.id && hoveredCol === dateStr ? "ring-1 ring-inset ring-blue-500/50 bg-blue-500/10" : ""} ${isMe && !hoveredCol && !hoveredRow ? "bg-amber-500/[0.02]" : ""}`}
                         >
