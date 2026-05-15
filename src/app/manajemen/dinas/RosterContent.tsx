@@ -264,7 +264,11 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     doc.text("KETERANGAN SHIFT:", 5, finalY + 8);
 
     const legendBody = [
-      [{ content: 'APNZ', styles: { fontStyle: 'bold' as const, textColor: [0, 0, 0] as [number, number, number], halign: 'center' as const } }, { content: 'Admin 07.30 - 16.30', styles: { halign: 'left' as const } }],
+      [
+        { content: 'APNZ', styles: { fontStyle: 'bold' as const, textColor: [0, 0, 0] as [number, number, number], halign: 'center' as const } },
+        { content: 'Admin General', styles: { halign: 'left' as const } },
+        { content: '07.30 - 16.30', styles: { halign: 'center' as const } }
+      ],
       ...allShiftsForPDF.map(s => {
         const timeStr = s.start_time ? `${s.start_time.substring(0, 5)} - ${s.end_time?.substring(0, 5) || ''}` : (s.code === 'APN7' ? '07:00 - 16:00' : s.code === 'APN8' ? '08:00 - 17:00' : "LIBUR");
         const hex = (s.color_code || '#000000').replace('#', '');
@@ -273,7 +277,8 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
         const b = parseInt(hex.substring(4, 6), 16);
         return [
           { content: s.code, styles: { fontStyle: 'bold' as const, textColor: [r, g, b] as [number, number, number], halign: 'center' as const } },
-          { content: `${s.name || ""} ${timeStr}`, styles: { halign: 'left' as const } }
+          { content: s.name || "", styles: { halign: 'left' as const } },
+          { content: timeStr, styles: { halign: 'center' as const } }
         ];
       })
     ];
@@ -286,14 +291,17 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     const col2 = legendBody.slice(itemsPerCol, itemsPerCol * 2);
     const col3 = legendBody.slice(itemsPerCol * 2);
 
+    const colWidth = { 0: { cellWidth: 12 }, 1: { cellWidth: 28 }, 2: { cellWidth: 22 } };
+    const tableStyle = { fontSize: 6, cellPadding: 0.8, textColor: [0, 0, 0] as [number, number, number], lineColor: [0, 0, 0] as [number, number, number], lineWidth: 0.1, fontStyle: 'bold' as const };
+
     // Render 3 Tables side-by-side
     autoTable(doc, {
       body: col1,
       startY: finalY + 10,
       theme: 'grid',
       margin: { left: 5 },
-      styles: { fontSize: 6, cellPadding: 0.8, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1, fontStyle: 'bold' as const },
-      columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 35 } }
+      styles: tableStyle,
+      columnStyles: colWidth
     });
 
     const legendY = (doc as any).lastAutoTable.finalY;
@@ -302,18 +310,18 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       body: col2,
       startY: finalY + 10,
       theme: 'grid',
-      margin: { left: 60 },
-      styles: { fontSize: 6, cellPadding: 0.8, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1, fontStyle: 'bold' as const },
-      columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 35 } }
+      margin: { left: 70 },
+      styles: tableStyle,
+      columnStyles: colWidth
     });
 
     autoTable(doc, {
       body: col3,
       startY: finalY + 10,
       theme: 'grid',
-      margin: { left: 115 },
-      styles: { fontSize: 6, cellPadding: 0.8, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1, fontStyle: 'bold' as const },
-      columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 35 } }
+      margin: { left: 135 },
+      styles: tableStyle,
+      columnStyles: colWidth
     });
 
     const finalLegendY = Math.max(legendY, (doc as any).lastAutoTable.finalY) || finalY + 20;

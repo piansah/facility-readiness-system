@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -9,18 +10,25 @@ import { logout } from "@/app/login/actions";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="group fixed inset-y-0 left-0 z-[100] flex">
-      {/* Invisible Trigger Area - Hover this to show sidebar */}
-      <div className="w-2 h-full bg-transparent" />
+    <div className="fixed inset-y-0 left-0 z-[100] flex">
+      {/* Invisible Trigger Strip - narrow edge trigger */}
+      <div
+        className="w-3 h-full bg-transparent hidden sm:block"
+        onMouseEnter={() => setIsOpen(true)}
+      />
 
       {/* The Actual Sidebar */}
-      <aside className={cn(
-        "flex flex-col w-64 h-full border-r border-slate-800 bg-slate-950/80 backdrop-blur-2xl transition-transform duration-300 ease-in-out shadow-2xl",
-        "translate-x-[-100%] group-hover:translate-x-0",
-        "hidden sm:flex"
-      )}>
+      <aside
+        onMouseLeave={() => setIsOpen(false)}
+        className={cn(
+          "flex flex-col w-64 h-full border-r border-slate-800 bg-slate-950/80 backdrop-blur-2xl transition-transform duration-300 ease-in-out shadow-2xl",
+          isOpen ? "translate-x-0" : "translate-x-[-100%]",
+          "hidden sm:flex"
+        )}
+      >
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
             <div className="h-10 w-10 rounded-xl bg-emerald-500 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-emerald-500/20">
@@ -76,7 +84,10 @@ export function Sidebar() {
       </aside>
 
       {/* Visual Indicator (Optional subtle glow on edge) */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-32 bg-emerald-500/20 rounded-r-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className={cn(
+        "absolute left-0 top-1/2 -translate-y-1/2 w-1 h-32 bg-emerald-500/20 rounded-r-full blur-sm transition-opacity",
+        isOpen ? "opacity-100" : "opacity-0"
+      )} />
     </div>
   );
 }
