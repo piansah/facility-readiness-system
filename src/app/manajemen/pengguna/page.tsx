@@ -87,43 +87,43 @@ export default async function UserManagementPage() {
         </div>
 
         {/* User Stats — berbeda untuk Super Admin vs Admin */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <Card className="border-slate-800 bg-slate-900/40">
-            <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-[10px] uppercase tracking-wider">
+            <CardHeader className="p-2 sm:p-4 pb-1 sm:pb-2">
+              <CardDescription className="text-[8px] sm:text-[10px] uppercase tracking-wider truncate">
                 {isSuperAdmin ? "Total Pengguna" : "Pengguna Unit"}
               </CardDescription>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Users className="h-5 w-5 text-emerald-500" />
+              <CardTitle className="flex items-center gap-1 sm:gap-2 text-base sm:text-xl">
+                <Users className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-emerald-500 shrink-0" />
                 {users.length}
               </CardTitle>
             </CardHeader>
           </Card>
           {isSuperAdmin ? (
             <Card className="border-slate-800 bg-slate-900/40">
-              <CardHeader className="p-4 pb-2">
-                <CardDescription className="text-[10px] uppercase tracking-wider">Super Admin</CardDescription>
-                <CardTitle className="text-xl">
+              <CardHeader className="p-2 sm:p-4 pb-1 sm:pb-2">
+                <CardDescription className="text-[8px] sm:text-[10px] uppercase tracking-wider truncate">Super Admin</CardDescription>
+                <CardTitle className="text-base sm:text-xl">
                   {users.filter(u => u.role === 'super_admin').length}
                 </CardTitle>
               </CardHeader>
             </Card>
           ) : (
             <Card className="border-slate-800 bg-slate-900/40">
-              <CardHeader className="p-4 pb-2">
-                <CardDescription className="text-[10px] uppercase tracking-wider">Admin</CardDescription>
-                <CardTitle className="text-xl">
+              <CardHeader className="p-2 sm:p-4 pb-1 sm:pb-2">
+                <CardDescription className="text-[8px] sm:text-[10px] uppercase tracking-wider truncate">Admin</CardDescription>
+                <CardTitle className="text-base sm:text-xl">
                   {users.filter(u => u.role === 'admin').length}
                 </CardTitle>
               </CardHeader>
             </Card>
           )}
           <Card className="border-slate-800 bg-slate-900/40">
-            <CardHeader className="p-4 pb-2">
-              <CardDescription className="text-[10px] uppercase tracking-wider">
+            <CardHeader className="p-2 sm:p-4 pb-1 sm:pb-2">
+              <CardDescription className="text-[8px] sm:text-[10px] uppercase tracking-wider truncate">
                 {isSuperAdmin ? "Unit Aktif" : "Petugas"}
               </CardDescription>
-              <CardTitle className="text-xl">
+              <CardTitle className="text-base sm:text-xl">
                 {isSuperAdmin
                   ? (allUnits?.length || 0)
                   : users.filter(u => u.role === 'petugas').length
