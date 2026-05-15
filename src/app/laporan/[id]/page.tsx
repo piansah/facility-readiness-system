@@ -48,6 +48,7 @@ type ReportDetail = {
     description: string;
     action_taken: string | null;
     incident_time: string;
+    resolved_at: string | null;
     status: string;
     result_status: string | null;
     handler_type: string | null;
@@ -126,7 +127,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
         )
       ),
       incidents (
-        id, title, description, action_taken, incident_time, status, result_status, handler_type,
+        id, title, description, action_taken, incident_time, resolved_at, status, result_status, handler_type,
         incident_photos (id, storage_path, caption, follow_up_id)
       )
     `)
@@ -235,10 +236,12 @@ export default async function ReportDetailPage({ params }: PageProps) {
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Laporan Kesiapan</p>
-              <h1 className="text-xl font-semibold text-slate-100">
-                Unit {report.units?.code ?? "Unit"}
+            <div className="flex flex-col gap-1.5">
+              <div className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-emerald-500 border border-emerald-500/20 w-fit">
+                Facility Readiness System
+              </div>
+              <h1 className="text-2xl font-black tracking-tight text-slate-100 uppercase leading-none">
+                Laporan Kesiapan <span className="text-emerald-500">Unit {report.units?.code ?? "ELBAN"}</span>
               </h1>
             </div>
           </div>
@@ -347,7 +350,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
               staff={report.current_shift_staff ?? []}
             />
             <StaffList
-              title="Petugas shift berikutnya"
+              title={`Petugas shift ${report.shift.toLowerCase() === "pagi" ? "malam" : "pagi"}`}
               staff={report.next_shift_staff ?? []}
             />
           </CardContent>

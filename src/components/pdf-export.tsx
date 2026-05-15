@@ -35,6 +35,7 @@ type ReportForPdf = {
     description: string;
     action_taken: string | null;
     incident_time: string;
+    resolved_at: string | null;
     status: string;
     result_status: string | null;
     handler_type: string | null;
@@ -100,15 +101,55 @@ export function PdfExport({ report }: PdfExportProps) {
       doc.text(`Status: ${report.status?.toUpperCase()}`, pageWidth - 15, 40, { align: "right" });
 
       doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
       doc.text("Petugas Serah Terima Shift", 15, 68);
+      doc.setFont("helvetica", "normal");
+      
+      let currentY = 75;
+      const nextShiftLabel = report.shift.toLowerCase() === "pagi" ? "Shift Malam" : "Shift Pagi";
+
+      // 1. Current Shift Staff
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Shift ${report.shift.charAt(0).toUpperCase() + report.shift.slice(1)}`, 15, currentY);
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
-      const currentStaff = formatStaffList(report.current_shift_staff);
-      const nextStaff = formatStaffList(report.next_shift_staff);
-      doc.text(`Shift ${report.shift}: ${currentStaff}`, 15, 74);
-      doc.text(`Shift berikutnya: ${nextStaff}`, 15, 80);
+      currentY += 5;
+      
+      if (!report.current_shift_staff || report.current_shift_staff.length === 0) {
+        doc.text("-", 18, currentY);
+        currentY += 5;
+      } else {
+        report.current_shift_staff.forEach((staff, i) => {
+          doc.text(`${i + 1}. ${staff.name}`, 18, currentY);
+          currentY += 5;
+        });
+      }
+
+      currentY += 2; // Spacing
+
+      // 2. Next Shift Staff
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(nextShiftLabel, 15, currentY);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      currentY += 5;
+
+      if (!report.next_shift_staff || report.next_shift_staff.length === 0) {
+        doc.text("-", 18, currentY);
+        currentY += 5;
+      } else {
+        report.next_shift_staff.forEach((staff, i) => {
+          doc.text(`${i + 1}. ${staff.name}`, 18, currentY);
+          currentY += 5;
+        });
+      }
 
       doc.setFontSize(12);
-      doc.text("1. Checklist Kesiapan Fasilitas", 15, 92);
+      doc.setFont("helvetica", "bold");
+      doc.text("1. Checklist Kesiapan Fasilitas", 15, currentY + 10);
+      doc.setFont("helvetica", "normal");
 
       const tableData = report.facility_status_logs.map((log, index) => [
         index + 1,
@@ -119,17 +160,24 @@ export function PdfExport({ report }: PdfExportProps) {
       ]);
 
       autoTable(doc, {
-        startY: 97,
+        startY: currentY + 15,
         head: [["No", "Fasilitas", "Lokasi", "Status", "Catatan"]],
         body: tableData,
         theme: "striped",
         headStyles: { fillColor: [16, 185, 129] },
         styles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 10 },    // No
+          1: { cellWidth: 45 },    // Fasilitas
+          2: { cellWidth: 45 },    // Lokasi
+          3: { cellWidth: 25 },    // Status
+          4: { cellWidth: 55 },    // Catatan (Reduksi ~25% dari lebar default autotable)
+        },
       });
 
       // Selalu mulai Laporan Non-Rutin di halaman baru agar rapi
       doc.addPage();
-      let currentY = 20;
+      currentY = 20;
 
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
@@ -161,7 +209,10 @@ export function PdfExport({ report }: PdfExportProps) {
             statusText = `${rs} (Oleh ${ht})`;
           }
           
-          doc.text(`Waktu: ${formatDateTime(incident.incident_time)} | Status: ${statusText}`, 20, currentY + 10);
+          const startTime = formatTimeOnly(incident.incident_time);
+          const endTime = incident.resolved_at ? formatTimeOnly(incident.resolved_at) : "--:--";
+          
+          doc.text(`Waktu: ${formatDate(incident.incident_time)}, ${startTime} s/d ${endTime} | Status: ${statusText}`, 20, currentY + 10);
           doc.text(`Dilaporkan oleh: ${report.users?.full_name ?? "-"}`, 20, currentY + 15);
 
           const splitDescription = doc.splitTextToSize(`Deskripsi: ${incident.description}`, pageWidth - 35);
@@ -323,10 +374,18 @@ export function PdfExport({ report }: PdfExportProps) {
 
       const signY = currentY + 20;
       doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
 
+      // Left Side: Creator
       doc.text("Dibuat oleh,", 30, signY);
-      doc.text("( ____________________ )", 30, signY + 30);
-      doc.text(report.users?.full_name ?? "Petugas", 30, signY + 35);
+      doc.setFont("helvetica", "normal");
+      doc.text(report.users?.full_name ?? "Petugas", 30, signY + 30);
+
+      // Right Side: Reviewer (if exists)
+      doc.setFont("helvetica", "bold");
+      doc.text("Disetujui oleh,", pageWidth - 70, signY);
+      doc.setFont("helvetica", "normal");
+      doc.text(report.reviewer?.full_name ?? "Admin / Supervisor", pageWidth - 70, signY + 30);
 
       const filename = makePdfFilename(report);
       doc.save(filename);
@@ -410,6 +469,12 @@ function formatStaffList(staff?: StaffSnapshot[]) {
   }
 
   return staff.map((person) => person.name).join(", ");
+}
+
+function formatTimeOnly(value: string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 function formatDate(value: string) {
