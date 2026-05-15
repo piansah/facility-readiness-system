@@ -37,42 +37,56 @@ export function QRScanner({
 
     const startScanner = async () => {
       try {
-        const { Html5QrcodeScanner } = await import("html5-qrcode");
+        const { Html5Qrcode } = await import("html5-qrcode");
         
-        setTimeout(() => {
+        setTimeout(async () => {
           const readerElement = document.getElementById("reader");
           if (!readerElement) return;
 
-          scanner = new Html5QrcodeScanner(
-            "reader",
-            { 
-              fps: 10, 
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0,
-              showTorchButtonIfSupported: true,
-            },
-            false
-          );
+          // Hapus instance lama jika ada
+          if (scanner) {
+            try { await scanner.stop(); } catch(e) {}
+          }
 
-          scanner.render(
-            (decodedText: string) => {
-              const baseUrl = window.location.origin;
-              let targetPath = decodedText;
-              
-              if (decodedText.startsWith(baseUrl)) {
-                targetPath = decodedText.replace(baseUrl, "");
-              }
+          scanner = new Html5Qrcode("reader");
+          
+          const qrCodeSuccessCallback = (decodedText: string) => {
+            const baseUrl = window.location.origin;
+            let targetPath = decodedText;
+            
+            if (decodedText.startsWith(baseUrl)) {
+              targetPath = decodedText.replace(baseUrl, "");
+            }
 
-              if (targetPath.includes("/fasilitas/")) {
-                scanner?.clear().catch(() => {});
+            if (targetPath.includes("/fasilitas/")) {
+              scanner?.stop().then(() => {
                 setOpen(false);
                 router.push(targetPath);
-              } else {
-                toast.error("QR Code tidak dikenali oleh sistem FRS.");
-              }
-            },
+              }).catch(() => {
+                setOpen(false);
+                router.push(targetPath);
+              });
+            } else {
+              toast.error("QR Code tidak dikenali oleh sistem FRS.");
+            }
+          };
+
+          const config = { 
+            fps: 10, 
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+          };
+
+          // Langsung jalankan kamera belakang (environment)
+          scanner.start(
+            { facingMode: "environment" }, 
+            config, 
+            qrCodeSuccessCallback,
             () => {}
-          );
+          ).catch((err: any) => {
+            console.error("Kamera gagal start secara otomatis:", err);
+            // Jika gagal otomatis (misal: butuh klik user), biarkan saja atau beri info
+          });
         }, 300);
       } catch (err) {
         console.error("Failed to load scanner", err);
@@ -82,8 +96,8 @@ export function QRScanner({
     startScanner();
 
     return () => {
-      if (scanner) {
-        scanner.clear().catch((e: any) => console.error("Scanner clear error", e));
+      if (scanner && scanner.isScanning) {
+        scanner.stop().catch((e: any) => console.error("Scanner stop error", e));
       }
     };
   }, [open, isMounted, router, mode]);
