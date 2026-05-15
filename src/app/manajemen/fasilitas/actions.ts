@@ -226,6 +226,40 @@ export async function deleteFacilityCategory(formData: FormData) {
   redirect("/manajemen/fasilitas");
 }
 
+export async function updateFacilityCategory(formData: FormData) {
+  const manager = await requireManager();
+  const admin = createAdminClient();
+  const id = String(formData.get("category_id") ?? "");
+  const name = String(formData.get("category_name") ?? "").trim();
+  const icon = String(formData.get("category_icon") ?? "").trim();
+
+  if (!id || !name) {
+    redirect("/manajemen/fasilitas?error=incomplete_category");
+  }
+
+  let query = admin
+    .from("facility_categories")
+    .update({
+      name,
+      code: makeCategoryCode(name),
+      icon: icon || null,
+    })
+    .eq("id", id);
+
+  if (manager.role !== "super_admin" && manager.unit_id) {
+    query = query.eq("unit_id", manager.unit_id);
+  }
+
+  const { error } = await query;
+
+  if (error) {
+    redirect(`/manajemen/fasilitas?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/manajemen/fasilitas");
+  redirect("/manajemen/fasilitas");
+}
+
 async function requireSuperAdmin() {
   const profile = await requireManager();
 

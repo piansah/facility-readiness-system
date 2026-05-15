@@ -4,8 +4,8 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, Mail, Shield, Building2, ChevronRight, BookOpen } from "lucide-react";
-import { logout } from "@/app/login/actions";
 import { getProfile } from "@/lib/auth/profile";
+import { ProfileLogoutButton } from "@/components/ProfileLogoutButton";
 
 import { Suspense } from "react";
 
@@ -129,16 +129,8 @@ async function ProfilContent() {
         </div>
 
         {/* Action Button */}
-        <div className="mt-10 flex flex-col items-center">
-          <form action={logout} className="w-full max-w-[240px]">
-            <Button 
-              variant="outline" 
-              className="w-full h-10 rounded-xl gap-2 font-bold text-xs border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-all active:scale-95"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              Keluar dari Sistem
-            </Button>
-          </form>
+        <div className="mt-10 flex flex-col items-center w-full max-w-[240px] mx-auto">
+          <ProfileLogoutButton />
         </div>
       </div>
     </>

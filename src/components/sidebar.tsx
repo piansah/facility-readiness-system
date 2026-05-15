@@ -5,12 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NAVIGATION_ITEMS } from "@/lib/constants/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, AlertCircle } from "lucide-react";
 import { logout } from "@/app/login/actions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   return (
     <>
@@ -77,7 +80,7 @@ export function Sidebar() {
 
           <div className="mt-auto p-6 border-t border-slate-800/50">
             <button
-              onClick={() => logout()}
+              onClick={() => setIsLogoutDialogOpen(true)}
               className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
             >
               <LogOut className="h-5 w-5 rotate-180" />
@@ -86,6 +89,39 @@ export function Sidebar() {
           </div>
         </aside>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <DialogContent className="max-w-sm border-slate-800 bg-slate-900 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-500">
+              <AlertCircle className="h-5 w-5" />
+              Konfirmasi Keluar
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-slate-400">
+              Apakah Anda yakin ingin keluar dari sistem? Anda harus login kembali untuk mengakses dashboard.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button 
+              variant="destructive" 
+              onClick={() => logout()}
+              className="w-full bg-red-600 hover:bg-red-500 font-bold"
+            >
+              Ya, Logout Sekarang
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsLogoutDialogOpen(false)}
+              className="w-full text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+            >
+              Batal
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Visual Indicator - glow di tepi */}
       <div className={cn(
