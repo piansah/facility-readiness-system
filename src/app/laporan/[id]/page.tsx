@@ -106,6 +106,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
   const admin = createAdminClient();
   
   // 1. Fetch Main Report Data (simplified joins)
+  console.log("DEBUG: Fetching report with ID:", id);
   const { data: report, error: reportError } = await admin
     .from("daily_reports")
     .select(`
@@ -119,7 +120,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
       submitted_at,
       current_shift_staff,
       next_shift_staff,
-      users!daily_reports_created_by_fkey (full_name),
+      users!created_by (full_name),
       units (code, name),
       facility_status_logs (
         id, status, notes,
@@ -136,9 +137,29 @@ export default async function ReportDetailPage({ params }: PageProps) {
     .eq("id", id)
     .single<ReportDetail>();
 
-  if (reportError || !report) {
+  if (reportError) {
     console.error("DEBUG: REPORT FETCH ERROR:", reportError);
-    console.log("DEBUG: REPORT DATA:", report);
+    // If it's a join error, try a simpler query
+    if (reportError.message.includes("relationship") || reportError.message.includes("column")) {
+      console.log("DEBUG: Attempting simplified query...");
+      const { data: simpleReport, error: simpleError } = await admin
+        .from("daily_reports")
+        .select(`id, unit_id, report_date, shift, status, units(code, name)`)
+        .eq("id", id)
+        .single();
+      
+      if (simpleError) {
+        console.error("DEBUG: SIMPLE FETCH ERROR:", simpleError);
+        notFound();
+      }
+      console.log("DEBUG: Simple query succeeded. Schema mismatch in complex query.");
+    } else {
+      notFound();
+    }
+  }
+
+  if (!report) {
+    console.log("DEBUG: Report not found in database.");
     notFound();
   }
 
@@ -150,6 +171,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
   });
 
   if (!hasAccess) {
+    console.log("DEBUG: Access denied for user.");
     notFound();
   }
 
