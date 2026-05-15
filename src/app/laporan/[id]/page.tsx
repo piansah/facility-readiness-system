@@ -137,10 +137,19 @@ export default async function ReportDetailPage({ params }: PageProps) {
     .single<ReportDetail>();
 
   if (reportError || !report) {
+    console.error("DEBUG: REPORT FETCH ERROR:", reportError);
+    console.log("DEBUG: REPORT DATA:", report);
     notFound();
   }
 
-  if (!(await canAccessUnit(supabase, profile, report.unit_id))) {
+  const hasAccess = await canAccessUnit(supabase, profile, report.unit_id);
+  console.log("DEBUG: UNIT ACCESS CHECK:", { 
+    user_unit: profile.unit_id, 
+    report_unit: report.unit_id, 
+    hasAccess 
+  });
+
+  if (!hasAccess) {
     notFound();
   }
 
