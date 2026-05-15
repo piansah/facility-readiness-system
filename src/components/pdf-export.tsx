@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { FileText } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 
 type ReportForPdf = {
@@ -398,12 +398,28 @@ export function PdfExport({ report }: PdfExportProps) {
   };
 
   return (
-    <div className="grid gap-2">
-      <Button variant="outline" onClick={generatePdf} disabled={isExporting}>
-        <FileText className="h-4 w-4" aria-hidden="true" />
-        {isExporting ? "Menyiapkan..." : "Export PDF"}
+    <div className="flex items-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={generatePdf}
+        disabled={isExporting}
+        className="h-10 w-10 sm:w-auto border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold p-0 sm:px-4 shadow-lg transition-all active:scale-95 flex items-center justify-center sm:justify-start gap-2"
+      >
+        {isExporting ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <FileText className="h-4 w-4" />
+        )}
+        <span className="hidden sm:inline">
+          {isExporting ? "Menyiapkan..." : "Export PDF"}
+        </span>
       </Button>
-      {errorMessage ? <p className="text-xs text-red-300">{errorMessage}</p> : null}
+      {errorMessage ? (
+        <p className="absolute -bottom-5 right-0 text-[10px] text-red-400 whitespace-nowrap">
+          {errorMessage}
+        </p>
+      ) : null}
     </div>
   );
 }
