@@ -130,16 +130,16 @@ export function FacilityCreatePanel({
           ) : null}
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="name">Nama fasilitas</Label>
+          <Label htmlFor="name">Nama aset</Label>
           <Input id="name" name="name" required />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="location_detail">Lokasi/detail</Label>
+          <Label htmlFor="location_detail">Tempat/lokasi</Label>
           <Input id="location_detail" name="location_detail" />
         </div>
         <Button type="submit" disabled={facilityCategories.length === 0}>
           <Plus className="h-4 w-4" aria-hidden="true" />
-          Tambah Fasilitas
+          Tambah Aset
         </Button>
       </form>
 

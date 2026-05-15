@@ -151,7 +151,7 @@ export default async function FacilityManagementPage({
             {/* Form Fasilitas & Kategori - Selalu di kiri agar layout rapi */}
             <Card className="border-slate-800 bg-slate-900/40">
               <CardHeader className="px-4 py-4">
-                <CardTitle className="text-base">Fasilitas & Kategori</CardTitle>
+                <CardTitle className="text-base">Tambah Aset</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <FacilityCreatePanel
@@ -173,9 +173,9 @@ export default async function FacilityManagementPage({
               <CardHeader className="border-b border-slate-800/50 bg-slate-900/20 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm sm:text-lg uppercase font-bold tracking-tight">
-                    DAFTAR FASILITAS - {units?.find(u => u.id === selectedUnitId)?.name}
+                    DAFTAR ASET - {units?.find(u => u.id === selectedUnitId)?.name}
                   </CardTitle>
-                  <Badge className="bg-slate-800 text-slate-400 text-[10px]">
+                  <Badge className="bg-slate-800 text-slate-400 text-[10px] whitespace-nowrap shrink-0 ml-2">
                     {facilities?.length || 0} Aset
                   </Badge>
                 </div>
@@ -185,9 +185,9 @@ export default async function FacilityManagementPage({
                   <table className="w-full text-left text-sm">
                     <thead className="bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                       <tr>
-                        <th className="px-6 py-4">Nama Fasilitas</th>
+                        <th className="px-6 py-4">Nama Aset</th>
                         <th className="px-6 py-4">Kategori</th>
-                        <th className="px-6 py-4">Lokasi</th>
+                        <th className="px-6 py-4">Tempat/Lokasi</th>
                         <th className="px-6 py-4 text-right">Aksi</th>
                       </tr>
                     </thead>
