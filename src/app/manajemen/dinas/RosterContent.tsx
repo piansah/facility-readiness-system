@@ -82,8 +82,21 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     const person = personnel.find(p => p.id === userId);
     const isTargetAdmin = person?.role === 'admin';
 
-    // Filter shifts based on role
-    const availableShifts = shifts.filter(s => {
+    // Ambil list shift dari database
+    let availableShifts = [...shifts];
+
+    // Jika target adalah admin, pastikan APN7 dan APN8 ada di daftar pilihan klik
+    if (isTargetAdmin) {
+      if (!availableShifts.some(s => s.code === 'APN7')) {
+        availableShifts.push({ code: 'APN7', name: 'Admin Masuk Jam 7', color_code: '#10b981' });
+      }
+      if (!availableShifts.some(s => s.code === 'APN8')) {
+        availableShifts.push({ code: 'APN8', name: 'Admin Masuk Jam 8', color_code: '#3b82f6' });
+      }
+    }
+
+    // Filter ulang berdasarkan role (safety check)
+    availableShifts = availableShifts.filter(s => {
       if (['APN7', 'APN8'].includes(s.code)) {
         return isTargetAdmin;
       }
@@ -192,7 +205,12 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     body.push([{ content: '', colSpan: daysInMonth.length + 2, styles: { fillColor: [255, 255, 255], minCellHeight: 2, lineWidth: 0 } }]);
 
     // Tambahkan Perhitungan Shift per Hari (Summary)
-    shifts.filter(s => ['APBA', 'APBB', 'APN7', 'APN8', 'FREE'].includes(s.code)).forEach(s => {
+    // Gunakan list shift yang sudah digabung dengan APN7/APN8 untuk PDF
+    const allShiftsForPDF = [...shifts];
+    if (!allShiftsForPDF.some(s => s.code === 'APN7')) allShiftsForPDF.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#10b981' });
+    if (!allShiftsForPDF.some(s => s.code === 'APN8')) allShiftsForPDF.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#3b82f6' });
+
+    allShiftsForPDF.filter(s => ['APBA', 'APBB', 'APN7', 'APN8', 'FREE'].includes(s.code)).forEach(s => {
       // Tentukan label (PAGI, MALAM, LIBUR, dll)
       let label = s.code;
       if (s.code === 'APBA') label = 'PAGI';
@@ -255,8 +273,8 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
     const legendBody = [
       [{ content: 'APNZ', styles: { fontStyle: 'bold' as const, textColor: [0, 0, 0] as [number, number, number], halign: 'center' as const } }, { content: 'Admin 07.30 - 16.30', styles: { halign: 'left' as const } }],
-      ...shifts.map(s => {
-        const timeStr = s.start_time ? `${s.start_time.substring(0, 5)} - ${s.end_time?.substring(0, 5) || ''}` : "LIBUR";
+      ...allShiftsForPDF.map(s => {
+        const timeStr = s.start_time ? `${s.start_time.substring(0, 5)} - ${s.end_time?.substring(0, 5) || ''}` : (s.code === 'APN7' ? '07:00 - 16:00' : s.code === 'APN8' ? '08:00 - 17:00' : "LIBUR");
         const hex = (s.color_code || '#000000').replace('#', '');
         const r = parseInt(hex.substring(0, 2), 16);
         const g = parseInt(hex.substring(2, 4), 16);
@@ -563,32 +581,40 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                 </td>
                 {daysInMonth.map(d => <td key={d.toString()} className="border-r border-slate-800" />)}
               </tr>
-              {localShifts.filter(s => ['APBA', 'APBB', 'APN7', 'APN8', 'FREE'].includes(s.code)).map(s => {
-                let label = s.code;
-                if (s.code === 'APBA') label = 'PAGI';
-                else if (s.code === 'APBB') label = 'MALAM';
-                else if (s.code === 'FREE') label = 'LIBUR';
+              {(() => {
+                const allShiftsForSummary = [...localShifts];
+                if (!allShiftsForSummary.some(s => s.code === 'APN7')) allShiftsForSummary.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#10b981' });
+                if (!allShiftsForSummary.some(s => s.code === 'APN8')) allShiftsForSummary.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#3b82f6' });
+                
+                return allShiftsForSummary.filter(s => ['APBA', 'APBB', 'APN7', 'APN8', 'FREE'].includes(s.code)).map(s => {
+                  let label = s.code;
+                  if (s.code === 'APBA') label = 'PAGI';
+                  else if (s.code === 'APBB') label = 'MALAM';
+                  else if (s.code === 'FREE') label = 'LIBUR';
+                  else if (s.code === 'APN7') label = 'ADM-7';
+                  else if (s.code === 'APN8') label = 'ADM-8';
 
-                return (
-                  <tr key={s.code} className="border-b border-slate-800 bg-slate-900/10 hover:bg-slate-900/20 transition-colors print:hidden">
-                    <td className="sticky left-0 z-10 p-3 border-r border-slate-800 bg-slate-900/60">
-                       <div className="flex items-center gap-2">
-                         <span className="text-[10px] font-black text-slate-400">{s.code}</span>
-                         <span className="text-[9px] font-bold text-slate-500">: {label}</span>
-                       </div>
-                    </td>
-                    {daysInMonth.map(d => {
-                      const dateStr = format(d, "yyyy-MM-dd");
-                      const count = localRosters.filter(r => r.duty_date === dateStr && r.shift_code === s.code).length;
-                      return (
-                        <td key={dateStr} className="p-1 text-center border-r border-slate-800 text-[10px] font-bold text-slate-300">
-                          {count > 0 ? count : "-"}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                )
-              })}
+                  return (
+                    <tr key={s.code} className="border-b border-slate-800 bg-slate-900/10 hover:bg-slate-900/20 transition-colors print:hidden">
+                      <td className="sticky left-0 z-10 p-3 border-r border-slate-800 bg-slate-900/60">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black text-slate-400">{s.code}</span>
+                          <span className="text-[9px] font-bold text-slate-500">: {label}</span>
+                        </div>
+                      </td>
+                      {daysInMonth.map(d => {
+                        const dateStr = format(d, "yyyy-MM-dd");
+                        const count = localRosters.filter(r => r.duty_date === dateStr && r.shift_code === s.code).length;
+                        return (
+                          <td key={dateStr} className="p-1 text-center border-r border-slate-800 text-[10px] font-bold text-slate-300">
+                            {count > 0 ? count : "-"}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  )
+                });
+              })()}
             </tbody>
           </table>
         </div>
