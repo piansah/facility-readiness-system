@@ -236,11 +236,11 @@ export default async function ReportDetailPage({ params }: PageProps) {
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
-            <div className="flex flex-col gap-1.5">
-              <div className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-emerald-500 border border-emerald-500/20 w-fit">
+            <div className="flex flex-col">
+              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
                 Unit {report.units?.code ?? "ELBAN"} • Laporan Kesiapan
-              </div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-100 uppercase leading-none">
+              </p>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-100 uppercase">
                 Detail Laporan <span className="text-emerald-500">Harian</span>
               </h1>
             </div>
