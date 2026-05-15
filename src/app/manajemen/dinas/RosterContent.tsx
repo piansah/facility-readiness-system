@@ -286,20 +286,45 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       })
     ];
 
+    // Split Legend into 3 columns
+    const totalLegendItems = legendBody.length;
+    const itemsPerCol = Math.ceil(totalLegendItems / 3);
+    
+    const col1 = legendBody.slice(0, itemsPerCol);
+    const col2 = legendBody.slice(itemsPerCol, itemsPerCol * 2);
+    const col3 = legendBody.slice(itemsPerCol * 2);
+
+    // Render 3 Tables side-by-side
     autoTable(doc, {
-      body: legendBody,
+      body: col1,
       startY: finalY + 10,
       theme: 'grid',
       margin: { left: 5 },
       styles: { fontSize: 6, cellPadding: 0.8, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1, fontStyle: 'bold' as const },
-      columnStyles: {
-        0: { cellWidth: 15 },
-        1: { cellWidth: 60 }
-      }
+      columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 35 } }
     });
 
-    // Add Signature at bottom right
-    const finalLegendY = (doc as any).lastAutoTable.finalY || finalY + 20;
+    const legendY = (doc as any).lastAutoTable.finalY;
+
+    autoTable(doc, {
+      body: col2,
+      startY: finalY + 10,
+      theme: 'grid',
+      margin: { left: 60 },
+      styles: { fontSize: 6, cellPadding: 0.8, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1, fontStyle: 'bold' as const },
+      columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 35 } }
+    });
+
+    autoTable(doc, {
+      body: col3,
+      startY: finalY + 10,
+      theme: 'grid',
+      margin: { left: 115 },
+      styles: { fontSize: 6, cellPadding: 0.8, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1, fontStyle: 'bold' as const },
+      columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 35 } }
+    });
+
+    const finalLegendY = Math.max(legendY, (doc as any).lastAutoTable.finalY) || finalY + 20;
     const rightMargin = pageWidth - 60;
     
     doc.setFontSize(8);
