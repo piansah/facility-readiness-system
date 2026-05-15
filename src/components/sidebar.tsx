@@ -94,9 +94,11 @@ export function Sidebar() {
       <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
         <DialogContent className="max-w-sm border-slate-800 bg-slate-900 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-500">
-              <AlertCircle className="h-5 w-5" />
-              Konfirmasi Keluar
+            <DialogTitle>
+              <div className="flex items-center gap-2 text-red-500">
+                <AlertCircle className="h-5 w-5" />
+                Konfirmasi Keluar
+              </div>
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
