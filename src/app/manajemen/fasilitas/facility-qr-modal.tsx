@@ -76,14 +76,6 @@ export function FacilityQRModal({ facility, triggerId, open: externalOpen, onOpe
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {/* Hanya tampilkan trigger jika tidak dikontrol secara eksternal (fallback) */}
-      {!externalOpen && (
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 gap-2 border-emerald-500/50 bg-emerald-500/5 text-emerald-500">
-            <QrCode className="h-3.5 w-3.5" />
-            <span className="text-[10px] font-bold uppercase">QR Code</span>
-          </Button>
-        </DialogTrigger>
-      )}
       
       <DialogContent className="max-w-md border-slate-800 bg-slate-950 p-0 overflow-hidden">
         <div className="absolute top-4 right-4 z-50">
