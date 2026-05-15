@@ -4,6 +4,7 @@ import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { MobileNav } from "@/components/mobile-nav";
 import { Sidebar } from "@/components/sidebar";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Facility Readiness System",
@@ -25,11 +26,14 @@ export const viewport: Viewport = {
   themeColor: "#10b981",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html
       lang="id"
@@ -44,16 +48,16 @@ export default function RootLayout({
         <ServiceWorkerRegister />
         <PwaInstallPrompt />
         
-        {/* Desktop Sidebar */}
-        <Sidebar />
+        {/* Desktop Sidebar - Only show if logged in */}
+        {user && <Sidebar />}
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 pb-20 sm:pb-0">
           {children}
         </div>
 
-        {/* Mobile Bottom Nav */}
-        <MobileNav />
+        {/* Mobile Bottom Nav - Only show if logged in */}
+        {user && <MobileNav />}
       </body>
     </html>
   );

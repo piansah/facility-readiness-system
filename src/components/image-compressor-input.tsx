@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, ImagePlus, X } from "lucide-react";
 import imageCompression from "browser-image-compression";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 export function ImageCompressorInput({ name }: { name: string; required?: boolean }) {
@@ -57,7 +58,7 @@ export function ImageCompressorInput({ name }: { name: string; required?: boolea
       updatePreviews();
     } catch (error) {
       console.error("Compression error:", error);
-      alert("Gagal mengompresi foto. Pastikan format gambar didukung.");
+      toast.error("Gagal mengompresi foto. Pastikan format gambar didukung.");
     } finally {
       setIsCompressing(false);
     }

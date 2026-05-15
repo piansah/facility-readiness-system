@@ -4,7 +4,19 @@ import { getProfile } from "@/lib/auth/profile";
 import RosterContent from "@/app/manajemen/dinas/RosterContent";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 
-export default async function DinasPage({ searchParams }: { searchParams: { month?: string } }) {
+import { Suspense } from "react";
+
+export default function DinasPage({ searchParams }: { searchParams: { month?: string } }) {
+  return (
+    <div className="min-h-dvh bg-slate-950">
+      <Suspense fallback={<div className="p-12 text-center text-slate-500 animate-pulse uppercase text-[10px] font-bold tracking-widest">Memuat Jadwal Dinas...</div>}>
+        <DinasContent searchParams={searchParams} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function DinasContent({ searchParams }: { searchParams: { month?: string } }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -15,13 +27,11 @@ export default async function DinasPage({ searchParams }: { searchParams: { mont
 
   const isSuperAdmin = profile.role === "super_admin";
   
-  // Handle selected month (default to current)
   const selectedMonthStr = (await searchParams).month || format(new Date(), "yyyy-MM");
   const selectedMonth = new Date(selectedMonthStr + "-01");
   const startDate = format(startOfMonth(selectedMonth), "yyyy-MM-dd");
   const endDate = format(endOfMonth(selectedMonth), "yyyy-MM-dd");
 
-  // 1. Fetch Users in the unit (Filtered by role)
   let userQuery = supabase
     .from("users")
     .select("id, full_name, role, unit_id")
@@ -32,16 +42,11 @@ export default async function DinasPage({ searchParams }: { searchParams: { mont
     userQuery = userQuery.eq("unit_id", profile.unit_id);
   }
 
-  // 2. Fetch Shift Configs
-  let shiftQuery = supabase
-    .from("shift_configs")
-    .select("*");
-  
+  let shiftQuery = supabase.from("shift_configs").select("*");
   if (!isSuperAdmin) {
     shiftQuery = shiftQuery.eq("unit_id", profile.unit_id);
   }
 
-  // 3. Fetch Existing Roster for the month
   let rosterQuery = supabase
     .from("duty_rosters")
     .select("*")
@@ -63,69 +68,33 @@ export default async function DinasPage({ searchParams }: { searchParams: { mont
     ]);
 
     if (pRes.error || sRes.error || rRes.error) {
-      return (
-        <div className="p-20 text-red-500 bg-slate-950 min-h-screen">
-          <h1 className="text-xl font-bold mb-4">Database Error:</h1>
-          <pre className="bg-slate-900 p-4 rounded border border-red-500/30 text-xs">
-            {JSON.stringify({ personnel: pRes.error, shifts: sRes.error, rosters: rRes.error }, null, 2)}
-          </pre>
-        </div>
-      );
+      return <div>Database Error</div>;
     }
 
     personnel = pRes.data;
     shifts = sRes.data;
     rosters = rRes.data;
 
-    // Seed default shifts if none exist
     if (shifts?.length === 0 && !isSuperAdmin) {
        const defaultShifts = [
          { unit_id: profile.unit_id, code: 'APBA', name: 'Shift Pagi (A)', color_code: '#000000', start_time: '08:00:00', end_time: '20:00:00' },
          { unit_id: profile.unit_id, code: 'APBB', name: 'Shift Malam (B)', color_code: '#10b981', start_time: '20:00:00', end_time: '08:00:00' },
          { unit_id: profile.unit_id, code: 'FREE', name: 'Libur', color_code: '#ef4444', start_time: null, end_time: null },
-         { unit_id: profile.unit_id, code: 'AH', name: 'Asrama Haji', color_code: '#f59e0b', start_time: '08:00:00', end_time: '20:00:00' }
+         { unit_id: profile.unit_id, code: 'AH', name: 'Asrama Haji', color_code: '#f59e0b', start_time: '08:00:00', end_time: '20:00:00' },
+         { unit_id: profile.unit_id, code: 'APN7', name: 'Admin Masuk Jam 7', color_code: '#2563eb', start_time: '07:00:00', end_time: '16:00:00' },
+         { unit_id: profile.unit_id, code: 'APN8', name: 'Admin Masuk Jam 8', color_code: '#7c3aed', start_time: '08:00:00', end_time: '17:00:00' }
        ];
        await supabase.from("shift_configs").insert(defaultShifts);
        shouldRedirect = true;
     }
-
-    // AUTO-FIX: Jika ada shift yang jam kerjanya masih NULL, kita isi otomatis
-    const nullShifts = shifts?.filter(s => !s.start_time && s.code !== 'FREE');
-    if (nullShifts && nullShifts.length > 0 && !shouldRedirect) {
-      for (const s of nullShifts) {
-        const isNight = s.code === 'APBB';
-        await supabase.from("shift_configs").update({ 
-          start_time: isNight ? '20:00:00' : '08:00:00',
-          end_time: isNight ? '08:00:00' : '20:00:00'
-        }).eq("unit_id", s.unit_id).eq("code", s.code);
-      }
-      shouldRedirect = true;
-    }
-
-    // AUTO-FIX: Tukar warna Pagi (Hijau -> Hitam) dan Malam (Biru -> Hijau)
-    const hasOldColors = shifts?.some(s => (s.code === 'APBA' && s.color_code === '#10b981') || (s.code === 'APBB' && s.color_code === '#3b82f6'));
-    if (hasOldColors && !shouldRedirect) {
-      await Promise.all([
-        supabase.from("shift_configs").update({ color_code: '#000000' }).eq("unit_id", profile.unit_id).eq("code", "APBA"),
-        supabase.from("shift_configs").update({ color_code: '#10b981' }).eq("unit_id", profile.unit_id).eq("code", "APBB")
-      ]);
-      shouldRedirect = true;
-    }
-  } catch (err: any) {
-    return (
-      <div className="p-20 text-red-500 bg-slate-950 min-h-screen">
-        <h1 className="text-xl font-bold mb-4">Runtime Error:</h1>
-        <p className="text-sm">{err.message}</p>
-      </div>
-    );
+  } catch (err) {
+    return <div>Error loading roster</div>;
   }
 
-  // Handle redirect outside of try-catch
   if (shouldRedirect) {
     redirect(`/manajemen/dinas?month=${selectedMonthStr}`);
   }
 
-  // Fetch Unit Name separately
   const { data: unitData } = await supabase
     .from("units")
     .select("name")
@@ -133,18 +102,16 @@ export default async function DinasPage({ searchParams }: { searchParams: { mont
     .single();
 
   return (
-    <div className="min-h-dvh bg-slate-950">
-      <RosterContent 
-        personnel={personnel || []} 
-        shifts={shifts || []}
-        rosters={rosters || []}
-        selectedMonth={selectedMonth}
-        unitId={profile.unit_id}
-        unitName={unitData?.name || "Unit"}
-        adminName={profile.full_name || "Admin"}
-        isAdmin={profile.role === 'admin' || isSuperAdmin}
-        currentUserId={user.id}
-      />
-    </div>
+    <RosterContent 
+      personnel={personnel || []} 
+      shifts={shifts || []}
+      rosters={rosters || []}
+      selectedMonth={selectedMonth}
+      unitId={profile.unit_id}
+      unitName={unitData?.name || "Unit"}
+      adminName={profile.full_name || "Admin"}
+      isAdmin={profile.role === 'admin' || isSuperAdmin}
+      currentUserId={user.id}
+    />
   );
 }

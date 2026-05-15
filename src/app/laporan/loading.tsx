@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function Loading() {
   return (
     <div className="min-h-dvh bg-slate-950 flex flex-col items-center justify-center p-6 text-center">

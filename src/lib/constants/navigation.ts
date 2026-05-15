@@ -1,4 +1,4 @@
-import { Home, QrCode, User, Calendar, Users } from "lucide-react";
+import { Home, QrCode, User, Calendar, LayoutList } from "lucide-react";
 
 export const NAVIGATION_ITEMS = [
   {
@@ -14,11 +14,11 @@ export const NAVIGATION_ITEMS = [
   {
     label: "SCAN QR",
     icon: QrCode,
-    isScanner: true,
+    href: "/scan",
   },
   {
     label: "Jadwal Dinas",
-    icon: Users,
+    icon: LayoutList,
     href: "/manajemen/dinas",
   },
   {

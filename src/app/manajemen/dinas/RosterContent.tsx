@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { updateRoster, updateShiftConfigs } from "@/app/manajemen/dinas/actions";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { toast } from "sonner";
 
 type Personnel = {
   id: string;
@@ -78,15 +79,26 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     const dateStr = format(date, "yyyy-MM-dd");
     const currentEntry = localRosters.find(r => r.user_id === userId && r.duty_date === dateStr);
 
+    const person = personnel.find(p => p.id === userId);
+    const isTargetAdmin = person?.role === 'admin';
+
+    // Filter shifts based on role
+    const availableShifts = shifts.filter(s => {
+      if (['APN7', 'APN8'].includes(s.code)) {
+        return isTargetAdmin;
+      }
+      return true;
+    });
+
     let nextCode = "";
     if (!currentEntry) {
-      nextCode = shifts[0]?.code || "APBA";
+      nextCode = availableShifts[0]?.code || "APBA";
     } else {
-      const currentIndex = shifts.findIndex(s => s.code === currentEntry.shift_code);
-      if (currentIndex === -1 || currentIndex === shifts.length - 1) {
+      const currentIndex = availableShifts.findIndex(s => s.code === currentEntry.shift_code);
+      if (currentIndex === -1 || currentIndex === availableShifts.length - 1) {
         nextCode = "";
       } else {
-        nextCode = shifts[currentIndex + 1].code;
+        nextCode = availableShifts[currentIndex + 1].code;
       }
     }
 
@@ -118,7 +130,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       setLocalShifts(tempShifts);
       setIsSettingOpen(false);
     } catch (e) {
-      alert("Gagal menyimpan pengaturan shift.");
+      toast.error("Gagal menyimpan pengaturan shift.");
     } finally {
       setIsSaving(false);
     }
@@ -180,7 +192,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     body.push([{ content: '', colSpan: daysInMonth.length + 2, styles: { fillColor: [255, 255, 255], minCellHeight: 2, lineWidth: 0 } }]);
 
     // Tambahkan Perhitungan Shift per Hari (Summary)
-    shifts.filter(s => ['APBA', 'APBB', 'FREE'].includes(s.code)).forEach(s => {
+    shifts.filter(s => ['APBA', 'APBB', 'APN7', 'APN8', 'FREE'].includes(s.code)).forEach(s => {
       // Tentukan label (PAGI, MALAM, LIBUR, dll)
       let label = s.code;
       if (s.code === 'APBA') label = 'PAGI';
@@ -241,17 +253,20 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     doc.setFont("helvetica", "bold");
     doc.text("KETERANGAN SHIFT:", 5, finalY + 8);
 
-    const legendBody = shifts.map(s => {
-      const timeStr = s.start_time ? `${s.start_time.substring(0, 5)} - ${s.end_time?.substring(0, 5) || ''}` : "LIBUR";
-      const hex = (s.color_code || '#000000').replace('#', '');
-      const r = parseInt(hex.substring(0, 2), 16);
-      const g = parseInt(hex.substring(2, 4), 16);
-      const b = parseInt(hex.substring(4, 6), 16);
-      return [
-        { content: s.code, styles: { fontStyle: 'bold' as const, textColor: [r, g, b] as [number, number, number], halign: 'center' as const } },
-        { content: `${s.name || ""} ${timeStr}`, styles: { halign: 'left' as const } }
-      ];
-    });
+    const legendBody = [
+      [{ content: 'APNZ', styles: { fontStyle: 'bold' as const, textColor: [0, 0, 0] as [number, number, number], halign: 'center' as const } }, { content: 'Admin 07.30 - 16.30', styles: { halign: 'left' as const } }],
+      ...shifts.map(s => {
+        const timeStr = s.start_time ? `${s.start_time.substring(0, 5)} - ${s.end_time?.substring(0, 5) || ''}` : "LIBUR";
+        const hex = (s.color_code || '#000000').replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        return [
+          { content: s.code, styles: { fontStyle: 'bold' as const, textColor: [r, g, b] as [number, number, number], halign: 'center' as const } },
+          { content: `${s.name || ""} ${timeStr}`, styles: { halign: 'left' as const } }
+        ];
+      })
+    ];
 
     autoTable(doc, {
       body: legendBody,
@@ -289,8 +304,8 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     <div className="space-y-6">
       {/* Modal Pengaturan (Ditaruh paling atas biar prioritas utama) */}
       {isAdmin && (
-        <Dialog open={isSettingOpen} onOpenChange={setIsSettingOpen} className="!max-w-[1100px] w-[95vw]">
-          <DialogContent className="bg-slate-950 border-slate-800 shadow-2xl sm:rounded-2xl z-[9999] p-0 overflow-hidden">
+        <Dialog open={isSettingOpen} onOpenChange={setIsSettingOpen}>
+          <DialogContent className="max-w-4xl bg-slate-950 border-slate-800 shadow-2xl sm:rounded-2xl z-[9999] p-0 overflow-hidden">
             <div className="p-6 border-b border-slate-800 bg-slate-900/50">
               <DialogHeader>
                 <DialogTitle>
@@ -548,7 +563,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                 </td>
                 {daysInMonth.map(d => <td key={d.toString()} className="border-r border-slate-800" />)}
               </tr>
-              {localShifts.filter(s => ['APBA', 'APBB', 'FREE'].includes(s.code)).map(s => {
+              {localShifts.filter(s => ['APBA', 'APBB', 'APN7', 'APN8', 'FREE'].includes(s.code)).map(s => {
                 let label = s.code;
                 if (s.code === 'APBA') label = 'PAGI';
                 else if (s.code === 'APBB') label = 'MALAM';
@@ -580,6 +595,16 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
         {/* Shift Legend / Info */}
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Legend APNZ khusus Admin */}
+          <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center gap-3 transition-all hover:border-blue-500/50">
+            <div className="h-10 w-1 rounded-full bg-blue-500" />
+            <div className="flex-1">
+              <p className="text-xs font-bold text-slate-100 uppercase">APNZ</p>
+              <p className="text-[10px] text-slate-400 font-medium">Admin General</p>
+              <p className="text-[10px] text-emerald-500 font-bold mt-0.5">07.30 - 16.30</p>
+            </div>
+          </div>
+          
           {localShifts.map((s, idx) => {
             const isBlack = s.color_code === '#000000';
             const displayColor = isBlack ? '#3b82f6' : (s.color_code || '#64748b');

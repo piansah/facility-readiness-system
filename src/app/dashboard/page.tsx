@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
 import { CheckCircle2, Wrench, AlertTriangle, LogOut, BarChart3, ClipboardList, Clock3, Camera, Server, Calendar, Users, BookOpen, User } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -46,7 +46,28 @@ type PendingReview = {
   status: string;
 };
 
-export default async function DashboardPage() {
+
+export default function DashboardPage() {
+  return (
+    <main className="min-h-dvh bg-slate-950">
+      <RefreshOnDateChange />
+      <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
+          <div>
+            <h1 className="text-xl font-bold text-slate-100 tracking-tight">Facility <span className="text-emerald-500">Readiness System</span></h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500 mt-1">Operational Dashboard</p>
+          </div>
+        </div>
+      </header>
+
+      <Suspense fallback={<div className="p-6 space-y-4"><div className="h-24 bg-slate-900/50 rounded-2xl animate-pulse" /></div>}>
+        <DashboardContent />
+      </Suspense>
+    </main>
+  );
+}
+
+async function DashboardContent() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -78,33 +99,26 @@ export default async function DashboardPage() {
   const currentHour = parseInt(jakartaParts.find(p => p.type === 'hour')?.value || '0');
 
   const today = `${year}-${month}-${day}`;
-  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-  const formattedToday = `Tanggal: ${parseInt(day!)} ${monthNames[parseInt(month!) - 1]} ${year}`;
+  const formattedToday = new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "full",
+  }).format(now);
   const todayDate = new Date(`${today}T00:00:00`);
   const yesterday = new Date(todayDate.getTime() - 86400000).toLocaleDateString('en-CA');
   const tomorrow = new Date(todayDate.getTime() + 86400000).toLocaleDateString('en-CA');
 
-  // Jendela Operasional (Rolling Window 12 jam)
-  // 08:00 - 19:59: Shift Pagi sedang berjalan. Tampilkan: Malam Kemarin (DL: 08:00) & Pagi Hari Ini (DL: 20:00)
-  // 20:00 - 23:59: Shift Malam sedang berjalan. Tampilkan: Pagi Hari Ini (DL: 20:00) & Malam Hari Ini (DL: 08:00)
-  // 00:00 - 07:59: Shift Malam sedang berjalan. Tampilkan: Pagi Kemarin (DL: 20:00) & Malam Kemarin (DL: 08:00)
-
   let activeShifts: { date: string; shift: string; label: string; deadline: string; deadlineDate: string }[] = [];
 
   if (currentHour >= 8 && currentHour < 20) {
-    // Sedang Shift Pagi: Tampilkan Malam Kemarin & Pagi Hari Ini
     activeShifts = [
       { date: yesterday, shift: 'malam', label: 'Malam', deadline: '08:00 tadi', deadlineDate: `${today}T08:00:00` },
       { date: today, shift: 'pagi', label: 'Pagi', deadline: '20:00 nanti', deadlineDate: `${today}T20:00:00` }
     ];
   } else if (currentHour >= 20) {
-    // Sedang Shift Malam (Awal): Tampilkan Pagi Hari Ini & Malam Hari Ini
     activeShifts = [
       { date: today, shift: 'pagi', label: 'Pagi', deadline: '20:00 tadi', deadlineDate: `${today}T20:00:00` },
       { date: today, shift: 'malam', label: 'Malam', deadline: '08:00 besok', deadlineDate: `${tomorrow}T08:00:00` }
     ];
   } else {
-    // Sedang Shift Malam (Lanjutan/Dini Hari): Tampilkan Pagi Kemarin & Malam Kemarin
     activeShifts = [
       { date: yesterday, shift: 'pagi', label: 'Pagi', deadline: '20:00 kemarin', deadlineDate: `${yesterday}T20:00:00` },
       { date: yesterday, shift: 'malam', label: 'Malam', deadline: '08:00 nanti', deadlineDate: `${today}T08:00:00` }
@@ -112,12 +126,9 @@ export default async function DashboardPage() {
   }
 
   const targetDates = Array.from(new Set(activeShifts.map(s => s.date)));
-
-  // 1. Determine accessible Unit IDs
   let accessibleUnitIds: string[] = [];
 
   if (isSuperAdmin) {
-    // Check if this Super Admin is assigned to specific units
     const { data: assignedUnits } = await supabase
       .from("super_admin_unit_access")
       .select("unit_id")
@@ -125,9 +136,6 @@ export default async function DashboardPage() {
 
     if (assignedUnits && assignedUnits.length > 0) {
       accessibleUnitIds = assignedUnits.map(a => a.unit_id);
-    } else {
-      // If no assignments, assume they can see ALL active units (Global Super Admin)
-      // Or you can make this more restrictive if needed.
     }
   } else if (profile?.unit_id) {
     accessibleUnitIds = [profile.unit_id];
@@ -138,7 +146,6 @@ export default async function DashboardPage() {
     .select("id, report_date, submitted_at, shift, status")
     .in("report_date", targetDates);
 
-  // Tetap ambil summary untuk angka KPI (Normal/Rusak/Menurun) untuk hari kalender (Today)
   let summariesQuery = supabase
     .from("vw_report_summary")
     .select("*")
@@ -149,14 +156,12 @@ export default async function DashboardPage() {
     .select("*")
     .order("occurred_at", { ascending: false });
 
-  // 3. Apply Filters
   if (accessibleUnitIds.length > 0) {
     reportsQuery = reportsQuery.in("unit_id", accessibleUnitIds);
     summariesQuery = summariesQuery.in("unit_id", accessibleUnitIds);
     openIssuesQuery = openIssuesQuery.in("unit_id", accessibleUnitIds);
   }
 
-  // Extra data for Super Admin Grid
   let unitsQuery = null;
   if (isSuperAdmin) {
     unitsQuery = supabase.from("units").select("id, code, name").eq("is_active", true).order("code");
@@ -165,7 +170,6 @@ export default async function DashboardPage() {
     }
   }
 
-  // Pending reviews for Admin
   let pendingReviewsQuery = null;
   if (canReview) {
     pendingReviewsQuery = supabase.from("daily_reports").select("id, report_date, submitted_at, shift, status").eq("status", "submitted").order("submitted_at", { ascending: false }).limit(5);
@@ -188,16 +192,14 @@ export default async function DashboardPage() {
     openIssuesQuery.limit(isSuperAdmin ? 20 : 5).returns<OpenIssue[]>(),
     unitsQuery ? unitsQuery.returns<UnitInfo[]>() : Promise.resolve({ data: null }),
     pendingReviewsQuery ? pendingReviewsQuery.returns<PendingReview[]>() : Promise.resolve({ data: null }),
-    isSuperAdmin ? supabase.from("profiles").select("unit_id") : Promise.resolve({ data: [] }),
+    isSuperAdmin ? supabase.from("users").select("unit_id") : Promise.resolve({ data: [] }),
     isSuperAdmin ? supabase.from("facilities").select("unit_id") : Promise.resolve({ data: [] })
   ]);
 
   const allProfiles = isSuperAdmin ? (profilesResult?.data ?? []) : [];
   const allFacilities = isSuperAdmin ? (facilitiesResult?.data ?? []) : [];
-
   const totalUsers = allProfiles.length;
   const totalFacilities = allFacilities.length;
-
   const units = unitsResult?.data ?? [];
   const pendingReviews = pendingReviewsResult?.data ?? [];
 
@@ -206,13 +208,6 @@ export default async function DashboardPage() {
     personnelCount: allProfiles.filter((p) => (p as { unit_id: string }).unit_id === u.id).length,
     facilityCount: allFacilities.filter((f) => (f as { unit_id: string }).unit_id === u.id).length
   }));
-
-  // Fetch unit info separately (users table may not support FK join)
-  let unit: { code: string; name: string } | null = null;
-  if (profile?.unit_id && !isSuperAdmin) {
-    const { data } = await supabase.from("units").select("code, name").eq("id", profile.unit_id).single();
-    unit = data;
-  }
 
   const totals = (summaries ?? []).reduce(
     (acc, report) => ({
@@ -223,7 +218,6 @@ export default async function DashboardPage() {
     { normal: 0, broken: 0, degraded: 0 },
   );
 
-  // Calculate "now" in Jakarta for overdue comparison
   const nowJakarta = new Date(new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Jakarta',
     year: 'numeric',
@@ -239,11 +233,7 @@ export default async function DashboardPage() {
     const report = (dailyReports ?? []).find((r) => r.report_date === cfg.date && r.shift === cfg.shift);
     const deadlineTime = new Date(cfg.deadlineDate).getTime();
     const isOverdue = (!report || report.status === 'draft') && nowJakarta.getTime() > deadlineTime;
-    return {
-      ...cfg,
-      report,
-      isOverdue
-    };
+    return { ...cfg, report, isOverdue };
   });
 
   const dashboardSubTitle = isSuperAdmin
@@ -253,22 +243,7 @@ export default async function DashboardPage() {
       : `Operational Dashboard`;
 
   return (
-    <main className="min-h-dvh bg-slate-950">
-      <RefreshOnDateChange />
-      <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div>
-            <h1 className="text-xl font-bold text-slate-100 tracking-tight">Facility <span className="text-emerald-500">Readiness System</span></h1>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500 mt-1">{dashboardSubTitle}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-xs font-semibold text-slate-200">{profile?.full_name ?? user.email}</p>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider">{roleLabel(profile?.role)}</p>
-            </div>
-          </div>
-        </div>
-      </header>
+    <>
 
       <div className="mx-auto grid max-w-6xl lg:grid-cols-12 gap-6 px-4 py-6">
         {/* --- Super Admin Welcome Banner --- */}
@@ -320,26 +295,26 @@ export default async function DashboardPage() {
           </section>
         )}
 
-        {/* --- Mobile Only Quick Access (Below KPI, hidden on desktop) --- */}
-        <section className="sm:hidden lg:col-span-12">
+        {/* --- Mobile & Tablet Quick Access (Below KPI, hidden on large desktop) --- */}
+        <section className="lg:hidden lg:col-span-12">
           <Card className="border-slate-800 bg-slate-900/40">
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-500">Akses Cepat</CardTitle>
+            <CardHeader className="py-4">
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-white">Monitoring & History</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-2 pb-4">
               {!isSuperAdmin && (
                 <>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/laporan">
                       <ClipboardList className="mr-3 h-5 w-5 text-emerald-400" /> History Laporan
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/insiden">
                       <Camera className="mr-3 h-5 w-5 text-amber-400" /> History Non-Rutin
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/manajemen/statistik">
                       <BarChart3 className="mr-3 h-5 w-5 text-emerald-400" /> Analitik & Statistik
                     </Link>
@@ -349,18 +324,31 @@ export default async function DashboardPage() {
 
               {isAdmin && (
                 <>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                  {!isSuperAdmin && (
+                    <>
+                      <div className="my-2 border-t border-slate-800" />
+                      <p className="text-sm font-bold uppercase tracking-wider text-white px-1 mb-2">Management Unit</p>
+                    </>
+                  )}
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/manajemen/pengguna">
                       <LogOut className="mr-3 h-5 w-5 text-blue-400 rotate-180" /> Kelola Pengguna
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/manajemen/fasilitas">
                       <Wrench className="mr-3 h-5 w-5 text-purple-400" /> Kelola Fasilitas
                     </Link>
                   </Button>
+                  {isSuperAdmin && (
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
+                      <Link href="/manajemen/sistem">
+                        <Server className="mr-3 h-5 w-5 text-blue-400" /> Manajemen Sistem
+                      </Link>
+                    </Button>
+                  )}
                   {canReview ? (
-                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 h-11 px-3">
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                       <Link href="/laporan/review">
                         <CheckCircle2 className="mr-3 h-5 w-5 text-emerald-400" /> Review Laporan
                       </Link>
@@ -621,26 +609,26 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* --- Sidebar (4/12) - RESTORED for Desktop Only --- */}
+        {/* --- Desktop Sidebar (4/12) --- */}
         <div className="hidden lg:grid lg:col-span-4 gap-6 content-start">
           <Card className="border-slate-800 bg-slate-900/40">
             <CardHeader>
-              <CardTitle className="text-base font-bold">Akses Cepat</CardTitle>
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-white">Monitoring & Laporan</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-2">
               {!isSuperAdmin && (
                 <>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11">
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/laporan">
                       <ClipboardList className="mr-3 h-5 w-5 text-emerald-400" /> History Laporan
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11">
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/insiden">
                       <Camera className="mr-3 h-5 w-5 text-amber-400" /> History Non-Rutin
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11">
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/manajemen/statistik">
                       <BarChart3 className="mr-3 h-5 w-5 text-emerald-400" /> Analitik & Statistik
                     </Link>
@@ -653,28 +641,28 @@ export default async function DashboardPage() {
                   {!isSuperAdmin && (
                     <>
                       <div className="my-2 border-t border-slate-800" />
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-1 mb-1">Manajemen Unit</p>
+                      <p className="text-sm font-bold uppercase tracking-wider text-white px-1 mb-2">Management Unit</p>
                     </>
                   )}
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11">
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/manajemen/pengguna">
                       <LogOut className="mr-3 h-5 w-5 text-blue-400 rotate-180" /> Kelola Pengguna
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11">
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/manajemen/fasilitas">
                       <Wrench className="mr-3 h-5 w-5 text-purple-400" /> Kelola Fasilitas
                     </Link>
                   </Button>
                   {isSuperAdmin && (
-                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11">
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                       <Link href="/manajemen/sistem">
                         <Server className="mr-3 h-5 w-5 text-blue-400" /> Manajemen Sistem
                       </Link>
                     </Button>
                   )}
                   {canReview ? (
-                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11">
+                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                       <Link href="/laporan/review">
                         <CheckCircle2 className="mr-3 h-5 w-5 text-emerald-400" /> Review Laporan
                       </Link>
@@ -689,7 +677,7 @@ export default async function DashboardPage() {
 
 
       </div>
-    </main>
+    </>
   );
 }
 

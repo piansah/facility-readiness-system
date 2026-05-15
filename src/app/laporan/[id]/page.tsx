@@ -17,6 +17,8 @@ type ReportDetail = {
   unit_id: string;
   report_date: string;
   shift: string;
+  start_time: string | null;
+  end_time: string | null;
   status: string;
   submitted_at: string | null;
   current_shift_staff: StaffSnapshot[];
@@ -128,6 +130,8 @@ export default async function ReportDetailPage({ params }: PageProps) {
       unit_id,
       report_date,
       shift,
+      start_time,
+      end_time,
       status,
       submitted_at,
       current_shift_staff,

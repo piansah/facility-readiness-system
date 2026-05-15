@@ -23,6 +23,7 @@ import { createSchedule, updateScheduleStatus, deleteSchedule } from "./actions"
 import { SubmitButton } from "@/components/submit-button";
 import { Trash2, Printer } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 type Schedule = {
   id: string;
@@ -54,6 +55,8 @@ export default function CalendarContent({ initialSchedules, facilities, userUnit
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeletePending, setIsDeletePending] = useState(false);
 
   // Render Header
   const renderHeader = () => (
@@ -226,10 +229,10 @@ export default function CalendarContent({ initialSchedules, facilities, userUnit
                 <Input id="title" name="title" placeholder="Misal: Service AC Berkala atau Pengecekan Panel" className="h-11 bg-slate-900/50 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/10 transition-all" required />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <div className="grid gap-2">
                    <Label htmlFor="facility_id" className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Fasilitas Unit</Label>
-                   <select name="facility_id" className="h-11 rounded-md border border-slate-800 bg-slate-900/50 px-3 text-sm outline-none focus:border-amber-500/50 focus:ring-amber-500/10 transition-all text-slate-300">
+                   <select name="facility_id" className="w-full h-11 rounded-md border border-slate-800 bg-slate-900/50 px-3 text-sm outline-none focus:border-amber-500/50 focus:ring-amber-500/10 transition-all text-slate-300">
                      <option value="">Semua Fasilitas / Umum</option>
                      {facilities.map(f => (
                        <option key={f.id} value={f.id}>{f.name}</option>
@@ -238,7 +241,7 @@ export default function CalendarContent({ initialSchedules, facilities, userUnit
                  </div>
                  <div className="grid gap-2">
                    <Label htmlFor="planned_date" className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Tanggal Eksekusi</Label>
-                   <Input id="planned_date" name="planned_date" type="date" defaultValue={format(selectedDate, 'yyyy-MM-dd')} className="h-11 bg-slate-900/50 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/10 transition-all" required />
+                   <Input id="planned_date" name="planned_date" type="date" defaultValue={format(selectedDate, 'yyyy-MM-dd')} className="w-full h-11 bg-slate-900/50 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/10 transition-all" required />
                  </div>
               </div>
 
@@ -317,7 +320,7 @@ export default function CalendarContent({ initialSchedules, facilities, userUnit
              </div>
              
              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div className="space-y-1">
                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</p>
                       <p className="text-sm text-slate-200 flex items-center gap-2">
@@ -348,12 +351,7 @@ export default function CalendarContent({ initialSchedules, facilities, userUnit
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          onClick={async () => {
-                            if (confirm("Hapus jadwal ini?")) {
-                              await deleteSchedule(selectedSchedule.id);
-                              setIsDetailOpen(false);
-                            }
-                          }}
+                          onClick={() => setIsDeleteConfirmOpen(true)}
                           className="text-red-500 hover:text-red-400 hover:bg-red-500/10 h-7 px-2 text-[10px] font-bold uppercase tracking-tight gap-1"
                         >
                            <Trash2 className="h-3 w-3" /> Hapus Jadwal
@@ -362,7 +360,7 @@ export default function CalendarContent({ initialSchedules, facilities, userUnit
                      <div className="grid grid-cols-2 gap-2">
                         {[
                           { val: 'planned', label: 'Direncanakan', color: 'amber' },
-                          { val: 'ongoing', label: 'Sedang Jalan', color: 'blue' },
+                          { val: 'ongoing', label: 'Progres', color: 'blue' },
                           { val: 'completed', label: 'Selesai', color: 'emerald' },
                           { val: 'missed', label: 'Terlewat', color: 'red' }
                         ].map((s) => (
@@ -414,7 +412,7 @@ export default function CalendarContent({ initialSchedules, facilities, userUnit
                    </div>
                    <div className="flex items-center gap-3 text-xs text-slate-400">
                       <div className="h-3 w-3 rounded bg-blue-500" />
-                      <span>Ongoing (Sedang Jalan)</span>
+                      <span>Ongoing (Progres)</span>
                    </div>
                    <div className="flex items-center gap-3 text-xs text-slate-400">
                       <div className="h-3 w-3 rounded bg-emerald-500" />
@@ -477,6 +475,32 @@ export default function CalendarContent({ initialSchedules, facilities, userUnit
            </div>
         </div>
       </main>
+
+      {/* Custom Confirm Dialog */}
+      {selectedSchedule && (
+        <ConfirmDialog
+          isOpen={isDeleteConfirmOpen}
+          onClose={() => setIsDeleteConfirmOpen(false)}
+          onConfirm={async () => {
+            setIsDeletePending(true);
+            try {
+              await deleteSchedule(selectedSchedule.id);
+              setIsDeleteConfirmOpen(false);
+              setIsDetailOpen(false);
+              toast.success("Jadwal berhasil dihapus");
+            } catch (error) {
+              toast.error("Gagal menghapus jadwal");
+            } finally {
+              setIsDeletePending(false);
+            }
+          }}
+          title="Hapus Jadwal Maintenance"
+          description={`Apakah Anda yakin ingin menghapus jadwal "${selectedSchedule.title}"? Tindakan ini tidak dapat dibatalkan.`}
+          confirmText="Hapus Sekarang"
+          variant="destructive"
+          isPending={isDeletePending}
+        />
+      )}
     </>
   );
 }

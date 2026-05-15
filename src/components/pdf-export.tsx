@@ -9,6 +9,8 @@ import { Button } from "./ui/button";
 type ReportForPdf = {
   report_date: string;
   shift: string;
+  start_time: string | null;
+  end_time: string | null;
   status: string;
   current_shift_staff?: StaffSnapshot[];
   next_shift_staff?: StaffSnapshot[];
@@ -96,19 +98,20 @@ export function PdfExport({ report }: PdfExportProps) {
       doc.setFontSize(10);
       doc.text(`Tanggal: ${formatDate(report.report_date)}`, 15, 40);
       doc.text(`Shift: ${report.shift?.toUpperCase()}`, 15, 46);
-      doc.text(`Dibuat oleh: ${report.users?.full_name ?? "-"}`, 15, 52);
+      doc.text(`Waktu Kerja: ${report.start_time ?? "--:--"} s/d ${report.end_time ?? "--:--"}`, 15, 52);
+      doc.text(`Dibuat oleh: ${report.users?.full_name ?? "-"}`, 15, 58);
       doc.text(`Status: ${report.status?.toUpperCase()}`, pageWidth - 15, 40, { align: "right" });
 
       doc.setFontSize(11);
-      doc.text("Petugas Serah Terima Shift", 15, 62);
+      doc.text("Petugas Serah Terima Shift", 15, 68);
       doc.setFontSize(9);
       const currentStaff = formatStaffList(report.current_shift_staff);
       const nextStaff = formatStaffList(report.next_shift_staff);
-      doc.text(`Shift ${report.shift}: ${currentStaff}`, 15, 68);
-      doc.text(`Shift berikutnya: ${nextStaff}`, 15, 74);
+      doc.text(`Shift ${report.shift}: ${currentStaff}`, 15, 74);
+      doc.text(`Shift berikutnya: ${nextStaff}`, 15, 80);
 
       doc.setFontSize(12);
-      doc.text("1. Checklist Kesiapan Fasilitas", 15, 86);
+      doc.text("1. Checklist Kesiapan Fasilitas", 15, 92);
 
       const tableData = report.facility_status_logs.map((log, index) => [
         index + 1,
@@ -119,7 +122,7 @@ export function PdfExport({ report }: PdfExportProps) {
       ]);
 
       autoTable(doc, {
-        startY: 91,
+        startY: 97,
         head: [["No", "Fasilitas", "Lokasi", "Status", "Catatan"]],
         body: tableData,
         theme: "striped",

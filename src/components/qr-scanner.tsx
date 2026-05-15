@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
-import { QrCode, X, Camera } from "lucide-react";
+import { QrCode, Camera } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,55 +13,88 @@ import {
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 
-export function QRScanner({ customTrigger }: { customTrigger?: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+export function QRScanner({ 
+  customTrigger, 
+  mode = "dialog",
+  forceShow = false 
+}: { 
+  customTrigger?: React.ReactNode, 
+  mode?: "dialog" | "inline",
+  forceShow?: boolean 
+}) {
+  const [open, setOpen] = useState(forceShow || mode === "inline");
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    let scanner: Html5QrcodeScanner | null = null;
+    setIsMounted(true);
+  }, []);
 
-    if (open) {
-      // Delay slightly to ensure the element is in DOM
-      const timer = setTimeout(() => {
-        scanner = new Html5QrcodeScanner(
-          "reader",
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          /* verbose= */ false
-        );
+  useEffect(() => {
+    if ((mode === "dialog" && !open) || !isMounted) return;
 
-        scanner.render(
-          (decodedText) => {
-            const baseUrl = window.location.origin;
-            // Clean up the URL: if it's a full URL of our site, convert to relative path
-            let targetPath = decodedText;
-            if (decodedText.startsWith(baseUrl)) {
-              targetPath = decodedText.replace(baseUrl, "");
-            }
+    let scanner: any = null;
 
-            if (targetPath.includes("/fasilitas/")) {
-              scanner?.clear().catch(() => {});
-              setOpen(false);
-              router.push(targetPath);
-            } else {
-              alert("QR Code tidak dikenali oleh sistem FRS.");
-              scanner?.clear().catch(() => {});
-              setOpen(false);
-            }
-          },
-          (errorMessage) => {
-            // Quietly ignore errors
-          }
-        );
-      }, 300);
+    const startScanner = async () => {
+      try {
+        const { Html5QrcodeScanner } = await import("html5-qrcode");
+        
+        setTimeout(() => {
+          const readerElement = document.getElementById("reader");
+          if (!readerElement) return;
 
-      return () => {
-        clearTimeout(timer);
-        if (scanner) {
-          scanner.clear().catch(e => console.error("Scanner clear error", e));
-        }
-      };
-    }
-  }, [open, router]);
+          scanner = new Html5QrcodeScanner(
+            "reader",
+            { 
+              fps: 10, 
+              qrbox: { width: 250, height: 250 },
+              aspectRatio: 1.0,
+              showTorchButtonIfSupported: true,
+            },
+            false
+          );
+
+          scanner.render(
+            (decodedText: string) => {
+              const baseUrl = window.location.origin;
+              let targetPath = decodedText;
+              
+              if (decodedText.startsWith(baseUrl)) {
+                targetPath = decodedText.replace(baseUrl, "");
+              }
+
+              if (targetPath.includes("/fasilitas/")) {
+                scanner?.clear().catch(() => {});
+                setOpen(false);
+                router.push(targetPath);
+              } else {
+                toast.error("QR Code tidak dikenali oleh sistem FRS.");
+              }
+            },
+            () => {}
+          );
+        }, 300);
+      } catch (err) {
+        console.error("Failed to load scanner", err);
+      }
+    };
+
+    startScanner();
+
+    return () => {
+      if (scanner) {
+        scanner.clear().catch((e: any) => console.error("Scanner clear error", e));
+      }
+    };
+  }, [open, isMounted, router, mode]);
+
+  if (mode === "inline") {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-black">
+        <div id="reader" className="w-full h-full overflow-hidden"></div>
+      </div>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -76,9 +109,7 @@ export function QRScanner({ customTrigger }: { customTrigger?: React.ReactNode }
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            Scanner Fasilitas
-          </DialogTitle>
+          <DialogTitle>Scanner Fasilitas</DialogTitle>
         </DialogHeader>
         
         <div className="flex flex-col items-center justify-center space-y-4 py-4">
@@ -86,7 +117,7 @@ export function QRScanner({ customTrigger }: { customTrigger?: React.ReactNode }
           <p className="text-xs text-slate-500 text-center italic">
             Arahkan kamera ke stiker QR Code pada fasilitas.
           </p>
-          <Button variant="ghost" onClick={() => setOpen(false)} className="text-slate-400">
+          <Button variant="ghost" onClick={() => setOpen(false)} className="text-slate-400 hover:text-white">
             Batalkan
           </Button>
         </div>

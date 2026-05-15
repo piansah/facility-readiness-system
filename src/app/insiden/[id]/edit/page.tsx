@@ -13,6 +13,8 @@ import { updateIncident, deleteIncident } from "../../buat/actions";
 import { IncidentTimeInput } from "../../buat/incident-time-input";
 import { ImageCompressorInput } from "@/components/image-compressor-input";
 import { SubmitButton } from "@/components/submit-button";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { toast } from "sonner";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -45,6 +47,8 @@ export default function EditIncidentPage({ params, searchParams }: PageProps) {
   const [incident, setIncident] = useState<IncidentData | null>(null);
   const [facilities, setFacilities] = useState<FacilityOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -241,19 +245,41 @@ export default function EditIncidentPage({ params, searchParams }: PageProps) {
         </form>
 
         <div className="mt-6 pt-6 border-t border-slate-800">
-          <form action={deleteIncident} onSubmit={(e) => {
-            if (!confirm("Yakin ingin menghapus laporan ini secara permanen?")) {
-              e.preventDefault();
-            }
-          }}>
-            <input type="hidden" name="incident_id" value={id} />
-            <Button type="submit" variant="ghost" className="w-full text-red-400 hover:text-red-300 hover:bg-red-500/10 h-12 border border-red-500/20">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={() => setIsDeleteConfirmOpen(true)}
+              className="w-full text-red-400 hover:text-red-300 hover:bg-red-500/10 h-12 border border-red-500/20"
+            >
               <Trash2 className="h-4 w-4 mr-2" />
               Hapus Laporan Secara Permanen
             </Button>
-          </form>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={async () => {
+          setIsDeleting(true);
+          try {
+            const formData = new FormData();
+            formData.append("incident_id", id);
+            await deleteIncident(formData);
+            toast.success("Laporan berhasil dihapus");
+          } catch (error) {
+            toast.error("Gagal menghapus laporan");
+          } finally {
+            setIsDeleting(false);
+            setIsDeleteConfirmOpen(false);
+          }
+        }}
+        title="Hapus Laporan Insiden"
+        description="Apakah Anda yakin ingin menghapus laporan ini secara permanen? Data yang sudah dihapus tidak dapat dipulihkan kembali."
+        confirmText="Hapus Permanen"
+        variant="destructive"
+        isPending={isDeleting}
+      />
     </main>
   );
 }

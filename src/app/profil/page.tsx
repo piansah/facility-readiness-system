@@ -5,8 +5,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, Mail, Shield, Building2, ChevronRight, BookOpen } from "lucide-react";
 import { logout } from "@/app/login/actions";
+import { getProfile } from "@/lib/auth/profile";
 
-export default async function ProfilPage() {
+import { Suspense } from "react";
+
+export default function ProfilPage() {
+  return (
+    <div className="flex flex-col min-h-screen bg-slate-950 pb-32">
+      <Suspense fallback={<div className="p-12 text-center text-slate-500 animate-pulse uppercase text-[10px] font-bold tracking-widest">Menyiapkan Profil...</div>}>
+        <ProfilContent />
+      </Suspense>
+    </div>
+  );
+}
+
+async function ProfilContent() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -14,25 +27,29 @@ export default async function ProfilPage() {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  const { profile: userData } = await getProfile(supabase, user.id);
+
+  const formatUnitName = (name?: string) => {
+    if (!name) return "Unit Tidak Diketahui";
+    return name.toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
+  const unitName = (userData as any)?.units?.name;
 
   const roleLabel = (role?: string) => {
     switch (role) {
       case "super_admin": return "Super Admin";
       case "admin": return "Admin Unit";
-      default: return "Staff / Teknisi";
+      case "petugas": return "Staff / Teknisi";
+      case "viewer": return "Viewer / Tamu";
+      default: return role || "User";
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-950 pb-32">
+    <>
       {/* Header Section */}
-      <div className="bg-slate-900/50 pt-12 pb-24 px-6 border-b border-slate-800">
-        <h1 className="text-2xl font-bold text-slate-100 text-center">Profil Saya</h1>
+      <div className="bg-slate-900/30 pt-12 pb-24 px-6 border-b border-slate-800">
       </div>
 
       <div className="px-6 -mt-16 max-w-md mx-auto w-full">
@@ -46,47 +63,44 @@ export default async function ProfilPage() {
               </div>
             </div>
 
-            <div className="text-center -mt-8 mb-8">
-              <h2 className="text-xl font-bold text-slate-100">{profile?.full_name || "User"}</h2>
-              <p className="text-emerald-500 font-bold text-xs uppercase tracking-widest mt-1">
-                {roleLabel(profile?.role)}
-              </p>
+            <div className="text-center -mt-8 mb-10">
+              <h2 className="text-xl font-bold text-slate-100">{userData?.full_name || "User"}</h2>
             </div>
 
             {/* Info Items */}
             <div className="w-full space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/50 border border-slate-800/50">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/30 border border-slate-800/30">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 rounded-lg bg-blue-500/10 text-blue-400">
                     <Mail className="h-4 w-4" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-slate-500 uppercase font-bold">Email</span>
-                    <span className="text-sm text-slate-200">{user.email}</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Email</span>
+                    <span className="text-sm text-slate-200 font-medium">{user.email}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/50 border border-slate-800/50">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/30 border border-slate-800/30">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-400">
                     <Shield className="h-4 w-4" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-slate-500 uppercase font-bold">Wewenang</span>
-                    <span className="text-sm text-slate-200">{roleLabel(profile?.role)}</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Wewenang</span>
+                    <span className="text-sm text-slate-200 font-medium">{roleLabel(userData?.role)}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/50 border border-slate-800/50">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/30 border border-slate-800/30">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 rounded-lg bg-purple-500/10 text-purple-400">
                     <Building2 className="h-4 w-4" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] text-slate-500 uppercase font-bold">Unit Kerja</span>
-                    <span className="text-sm text-slate-200">{profile?.unit_id || "BIJB Kertajati"}</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Unit Kerja</span>
+                    <span className="text-sm text-slate-200 font-medium">{formatUnitName(unitName)}</span>
                   </div>
                 </div>
               </div>
@@ -96,11 +110,11 @@ export default async function ProfilPage() {
 
         {/* Menu Section */}
         <div className="mt-8 space-y-3">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Lainnya</p>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Lainnya</p>
           <Button 
             asChild
             variant="outline" 
-            className="w-full h-14 rounded-2xl justify-between px-5 border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold shadow-xl active:scale-95 transition-all"
+            className="w-full h-14 rounded-xl justify-between px-5 border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-slate-200 font-bold active:scale-95 transition-all"
           >
             <Link href="/panduan">
               <div className="flex items-center gap-3">
@@ -115,23 +129,18 @@ export default async function ProfilPage() {
         </div>
 
         {/* Action Button */}
-        <div className="mt-12">
-          <form action={logout}>
+        <div className="mt-10 flex flex-col items-center">
+          <form action={logout} className="w-full max-w-[240px]">
             <Button 
-              variant="destructive" 
-              className="w-full h-14 rounded-2xl gap-3 font-black text-base shadow-xl shadow-red-500/10 active:scale-95 transition-all"
+              variant="outline" 
+              className="w-full h-10 rounded-xl gap-2 font-bold text-xs border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-all active:scale-95"
             >
-              <LogOut className="h-5 w-5" />
-              Keluar Sistem
+              <LogOut className="h-3.5 w-3.5" />
+              Keluar dari Sistem
             </Button>
           </form>
-          <div className="text-center mt-6">
-            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">
-              FRS Mobile v1.2.5 • BIJB Kertajati
-            </p>
-          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
