@@ -347,13 +347,7 @@ async function DashboardContent() {
                       </Link>
                     </Button>
                   )}
-                  {canReview ? (
-                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
-                      <Link href="/laporan/review">
-                        <CheckCircle2 className="mr-3 h-5 w-5 text-emerald-400" /> Review Laporan
-                      </Link>
-                    </Button>
-                  ) : null}
+
                 </>
               )}
             </CardContent>
@@ -661,13 +655,7 @@ async function DashboardContent() {
                       </Link>
                     </Button>
                   )}
-                  {canReview ? (
-                    <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
-                      <Link href="/laporan/review">
-                        <CheckCircle2 className="mr-3 h-5 w-5 text-emerald-400" /> Review Laporan
-                      </Link>
-                    </Button>
-                  ) : null}
+
                 </>
               )}
             </CardContent>
