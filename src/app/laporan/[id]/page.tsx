@@ -238,10 +238,10 @@ export default async function ReportDetailPage({ params }: PageProps) {
             </Button>
             <div className="flex flex-col gap-1.5">
               <div className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-emerald-500 border border-emerald-500/20 w-fit">
-                Facility Readiness System
+                Unit {report.units?.code ?? "ELBAN"} • Laporan Kesiapan
               </div>
               <h1 className="text-2xl font-black tracking-tight text-slate-100 uppercase leading-none">
-                Laporan Kesiapan <span className="text-emerald-500">Unit {report.units?.code ?? "ELBAN"}</span>
+                Detail Laporan <span className="text-emerald-500">Harian</span>
               </h1>
             </div>
           </div>
