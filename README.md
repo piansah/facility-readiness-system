@@ -4,14 +4,20 @@ Ini adalah fitur "terpusat" yang paling praktis. Setiap aset/fasilitas diberikan
 Cara Kerja: Petugas cukup scan QR lewat HP (PWA Anda), dan langsung diarahkan ke form laporan fasilitas tersebut atau melihat history perbaikannya tanpa harus mencari di list.
 Keuntungan: Menghilangkan kesalahan input data dan mempercepat proses inspeksi di lapangan.
 
-2. Modul Manajemen Vendor & Kontrak
-Seringkali perbaikan fasilitas melibatkan pihak ketiga.
+2. Modul Manajemen Vendor & Kontrak (SLA & Warranty Tracking)
+Seringkali perbaikan fasilitas melibatkan pihak ketiga. Modul ini memastikan aset dikelola secara profesional sesuai kontrak.
 
-Fitur: Database vendor (kontak, masa berlaku garansi per aset, dan histori servis mereka). Kita bisa menandai aset mana yang masih dalam masa garansi vendor.
-Keuntungan: Admin bisa langsung tahu siapa yang harus dihubungi saat ada kerusakan besar tanpa perlu membongkar tumpukan berkas fisik.
+Fitur: 
+- Sistem Garansi Otomatis: Muncul badge "Under Warranty" dan alert jika aset yang dilaporkan rusak masih dalam masa garansi vendor.
+- Database Vendor & Kontak: Direktori terpusat lengkap dengan Person In Charge (PIC), nomor telepon darurat, dan lampiran dokumen kontrak.
+- Log Servis Eksternal: Mencatat kapan vendor dipanggil, berapa lama waktu respon mereka (SLA), dan history biaya perbaikan.
+Keuntungan: Menghemat biaya perbaikan dengan memaksimalkan klaim garansi dan memiliki data valid untuk mengevaluasi kinerja vendor saat perpanjangan kontrak.
 
-3. Dokumentasi Digital (Knowledge Base)
-Simpan semua manual book, SOP, dan foto asli pemasangan fasilitas di satu tempat.
+3. Dokumentasi Digital & Knowledge Base (SOP Visual)
+Pusat informasi teknis untuk memastikan standar pemeliharaan tetap terjaga meskipun petugas berganti.
 
-Fitur: Tab "Dokumen" pada setiap aset.
-Keuntungan: Saat ada petugas baru, mereka bisa langsung membaca cara penanganan alat tersebut melalui aplikasi.
+Fitur:
+- Pustaka Teknis Per Aset: Tab khusus berisi PDF Manual Book, diagram kelistrikan, dan skema pemasangan yang bisa dibuka instan di lapangan.
+- Foto Referensi "Kondisi Ideal": Galeri foto standar pemasangan awal sebagai pembanding bagi petugas saat melakukan pengecekan.
+- SOP & Troubleshooting Guide: Panduan langkah-demi-langkah (checklist) jika terjadi error tertentu pada alat, sehingga petugas bisa melakukan "First Level Support" secara mandiri.
+Keuntungan: Mempercepat proses onboarding petugas baru dan meminimalisir kesalahan prosedur teknis yang bisa berakibat fatal pada peralatan mahal.

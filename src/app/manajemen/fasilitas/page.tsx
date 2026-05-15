@@ -172,7 +172,7 @@ export default async function FacilityManagementPage({
             <Card className="border-slate-800 bg-slate-900/40 overflow-hidden">
               <CardHeader className="border-b border-slate-800/50 bg-slate-900/20 px-6 py-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
+                  <CardTitle className="text-sm sm:text-lg uppercase font-bold tracking-tight">
                     DAFTAR FASILITAS - {units?.find(u => u.id === selectedUnitId)?.name}
                   </CardTitle>
                   <Badge className="bg-slate-800 text-slate-400 text-[10px]">
