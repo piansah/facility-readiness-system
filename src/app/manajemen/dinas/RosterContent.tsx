@@ -283,48 +283,21 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       })
     ];
 
-    // Split Legend into 3 columns
-    const totalLegendItems = legendBody.length;
-    const itemsPerCol = Math.ceil(totalLegendItems / 3);
-    
-    const col1 = legendBody.slice(0, itemsPerCol);
-    const col2 = legendBody.slice(itemsPerCol, itemsPerCol * 2);
-    const col3 = legendBody.slice(itemsPerCol * 2);
-
-    const colWidth = { 0: { cellWidth: 12 }, 1: { cellWidth: 28 }, 2: { cellWidth: 22 } };
-    const tableStyle = { fontSize: 6, cellPadding: 0.8, textColor: [0, 0, 0] as [number, number, number], lineColor: [0, 0, 0] as [number, number, number], lineWidth: 0.1, fontStyle: 'bold' as const };
-
-    // Render 3 Tables side-by-side
+    // Single table with 3 columns: Code | Keterangan | Waktu
     autoTable(doc, {
-      body: col1,
+      body: legendBody,
       startY: finalY + 10,
       theme: 'grid',
       margin: { left: 5 },
-      styles: tableStyle,
-      columnStyles: colWidth
+      styles: { fontSize: 6, cellPadding: 0.8, textColor: [0, 0, 0] as [number, number, number], lineColor: [0, 0, 0] as [number, number, number], lineWidth: 0.1, fontStyle: 'bold' as const },
+      columnStyles: {
+        0: { cellWidth: 15 },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 25 }
+      }
     });
 
-    const legendY = (doc as any).lastAutoTable.finalY;
-
-    autoTable(doc, {
-      body: col2,
-      startY: finalY + 10,
-      theme: 'grid',
-      margin: { left: 70 },
-      styles: tableStyle,
-      columnStyles: colWidth
-    });
-
-    autoTable(doc, {
-      body: col3,
-      startY: finalY + 10,
-      theme: 'grid',
-      margin: { left: 135 },
-      styles: tableStyle,
-      columnStyles: colWidth
-    });
-
-    const finalLegendY = Math.max(legendY, (doc as any).lastAutoTable.finalY) || finalY + 20;
+    const finalLegendY = (doc as any).lastAutoTable.finalY || finalY + 20;
     const rightMargin = pageWidth - 60;
     
     doc.setFontSize(8);
