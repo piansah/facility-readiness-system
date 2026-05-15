@@ -65,7 +65,7 @@ type ReportDetail = {
       caption: string | null;
     }[];
   }[];
-  incident_follow_ups: {
+  incident_follow_ups?: {
     id: string;
     incident_id: string;
     action_taken: string;
@@ -119,136 +119,24 @@ export default async function ReportDetailPage({ params }: PageProps) {
   const admin = createAdminClient();
   const { data: report, error: reportError } = await admin
     .from("daily_reports")
-    .select(
-      `
-      id,
-      unit_id,
-      report_date,
-      shift,
-      start_time,
-      end_time,
-      status,
-      submitted_at,
-      current_shift_staff,
-      next_shift_staff,
-      users!daily_reports_created_by_fkey (
-        full_name
-      ),
-      units (
-        code,
-        name
-      ),
-      facility_status_logs (
-        id,
-        status,
-        notes,
-        facilities (
-          name,
-          location_detail,
-          facility_categories (
-            name,
-            icon,
-            sort_order
-          )
-        )
-      ),
-      incidents (
-        id,
-        title,
-        description,
-        action_taken,
-        incident_time,
-        status,
-        incident_photos (
-          id,
-          storage_path,
-          caption,
-          follow_up_id
-        ),
-        result_status,
-        handler_type
-      ),
-      incident_follow_ups (
-        id,
-        incident_id,
-        action_taken,
-        follow_up_time,
-        status_update,
-        handler_type,
-        incident:incidents!incident_id (title)
-      )
-    `
-    )
+    .select("id, unit_id, status")
     .eq("id", id)
-    .single<ReportDetail>();
+    .single();
 
   if (reportError) {
-    console.error("Supabase Error fetching report:", reportError);
+    return <div className="p-10 text-red-500 bg-slate-950 min-h-screen">DB Error: {reportError.message}</div>;
   }
 
   if (!report) {
-    console.error("Report not found for ID:", id);
-    notFound();
+    return <div className="p-10 text-red-500 bg-slate-950 min-h-screen">Record not found for ID: {id}</div>;
   }
 
+  // If it gets here, the record exists.
+  return <div className="p-10 text-emerald-500 bg-slate-950 min-h-screen">Record found! Status: {report.status}. Debugging joins now...</div>;
+
+  // Commented out for now
+  /*
   const hasAccess = await canAccessUnit(supabase, profile, report.unit_id);
-  if (!hasAccess) {
-    console.error("User does not have access to unit:", report.unit_id, "Profile:", profile);
-    notFound();
-  }
-
-  const { data: reviewMetadata } = await admin
-    .from("daily_reports")
-    .select(
-      `
-      reviewed_at,
-      review_notes,
-      reviewer:users!daily_reports_reviewed_by_fkey (
-        full_name
-      )
-    `,
-    )
-    .eq("id", id)
-    .maybeSingle<ReviewMetadata>();
-
-  // Generate public URLs for incident photos and follow-ups
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-  const incidentsWithPhotos = report.incidents.map((incident) => {
-    // Filter only photos that belong to the main incident (no follow_up_id)
-    const mainIncidentPhotos = incident.incident_photos.filter(p => !p.follow_up_id);
-    
-    const photosWithUrls = mainIncidentPhotos.map((photo) => {
-      const cleanPath = photo.storage_path.replace(/^\/+/, "");
-      return {
-        ...photo,
-        signedUrl: `${supabaseUrl}/storage/v1/object/public/incident-photos/${cleanPath}`
-      };
-    });
-    return { ...incident, photos: photosWithUrls };
-  });
-
-  const followUpsWithPhotos = report.incident_follow_ups.map((fu) => {
-    // Find incident_photos belonging to this follow-up from the parent incident
-    const parentIncident = report.incidents.find(inc => inc.id === fu.incident_id);
-    const fuPhotos = parentIncident?.incident_photos?.filter(p => p.follow_up_id === fu.id) || [];
-    
-    const photosWithUrls = fuPhotos.map((photo) => {
-      const cleanPath = photo.storage_path.replace(/^\/+/, "");
-      return {
-        ...photo,
-        signedUrl: `${supabaseUrl}/storage/v1/object/public/incident-photos/${cleanPath}`
-      };
-    });
-    return { ...fu, photos: photosWithUrls };
-  });
-
-  const reportWithFullIncidents = { 
-    ...report, 
-    ...reviewMetadata, 
-    incidents: incidentsWithPhotos,
-    incident_follow_ups: followUpsWithPhotos 
-  };
 
   const groups = groupLogs(report.facility_status_logs);
   const canReview = canReviewReports(profile.role);
