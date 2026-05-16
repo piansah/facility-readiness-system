@@ -82,6 +82,20 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     });
   }, [selectedMonth]);
 
+  // UI Color Helper (Never use black for standard codes in UI)
+  const getSafeColor = (code: string, dbColor: string | null) => {
+    // Force specific colors for standard codes if DB color is black or missing
+    if (!dbColor || dbColor === '#000000') {
+      if (code === 'APBA') return '#3b82f6'; // Blue
+      if (code === 'APBB') return '#10b981'; // Emerald/Green
+      if (code === 'FREE') return '#ef4444'; // Red
+      if (code === 'AH') return '#f59e0b';   // Amber/Orange
+      if (code === 'APN7' || code === 'APN8' || code === 'APNZ') return '#94a3b8'; // Slate
+      return '#3b82f6';
+    }
+    return dbColor;
+  };
+
   const getAvailableShifts = (userId: string) => {
     const person = personnel.find(p => p.id === userId);
     const isTargetAdmin = person?.role === 'admin';
@@ -125,7 +139,6 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     }
   };
 
-  // Drag Handlers
   const onMouseDown = (userId: string, dateIdx: number) => {
     if (!isAdmin) return;
     setIsDragging(true);
@@ -147,165 +160,57 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       const endU = Math.max(userIdx1, userIdx2);
       const startD = Math.min(dragStart.dateIdx, dragEnd.dateIdx);
       const endD = Math.max(dragStart.dateIdx, dragEnd.dateIdx);
-
       const targetUserIds = personnel.slice(startU, endU + 1).map(p => p.id);
       const targetDates = daysInMonth.slice(startD, endD + 1).map(d => format(d, "yyyy-MM-dd"));
-
-      // Jika hanya satu kolom terpilih, tampilkan dropdown
       if (targetUserIds.length === 1 && targetDates.length === 1) {
-        const person = personnel.find(p => p.id === targetUserIds[0]);
-        setOpenDropdown({
-          userId: targetUserIds[0],
-          dateStr: targetDates[0],
-          fullName: person?.full_name || "",
-          dayIdx: startD
-        });
+        setOpenDropdown({ userId: targetUserIds[0], dateStr: targetDates[0], fullName: personnel.find(p => p.id === targetUserIds[0])?.full_name || "", dayIdx: startD });
       } else {
         setSelectedRange({ userIds: targetUserIds, dates: targetDates });
       }
     }
-    setIsDragging(false);
-    setDragStart(null);
-    setDragEnd(null);
+    setIsDragging(false); setDragStart(null); setDragEnd(null);
   };
 
   const isInRange = (userId: string, dateIdx: number) => {
     if (!dragStart || !dragEnd) return false;
-    const userIdx1 = personnel.findIndex(p => p.id === dragStart.userId);
-    const userIdx2 = personnel.findIndex(p => p.id === dragEnd.userId);
-    const currentU = personnel.findIndex(p => p.id === userId);
-    const startU = Math.min(userIdx1, userIdx2);
-    const endU = Math.max(userIdx1, userIdx2);
-    const startD = Math.min(dragStart.dateIdx, dragEnd.dateIdx);
-    const endD = Math.max(dragStart.dateIdx, dragEnd.dateIdx);
+    const userIdx1 = personnel.findIndex(p => p.id === dragStart.userId); const userIdx2 = personnel.findIndex(p => p.id === dragEnd.userId); const currentU = personnel.findIndex(p => p.id === userId);
+    const startU = Math.min(userIdx1, userIdx2); const endU = Math.max(userIdx1, userIdx2); const startD = Math.min(dragStart.dateIdx, dragEnd.dateIdx); const endD = Math.max(dragStart.dateIdx, dragEnd.dateIdx);
     return currentU >= startU && currentU <= endU && dateIdx >= startD && dateIdx <= endD;
   };
 
   const handleSaveShifts = async () => {
     setIsSaving(true);
     try {
-      await updateShiftConfigs(tempShifts, unitId);
-      setLocalShifts(tempShifts);
-      setIsSettingOpen(false);
-    } catch (e) {
-      toast.error("Gagal menyimpan pengaturan shift.");
-    } finally {
-      setIsSaving(false);
-    }
+      await updateShiftConfigs(tempShifts, unitId); setLocalShifts(tempShifts); setIsSettingOpen(false);
+    } catch (e) { toast.error("Gagal menyimpan pengaturan shift."); } finally { setIsSaving(false); }
   };
 
   const handleExportPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4');
     const monthYear = format(selectedMonth, "MMMM yyyy", { locale: id });
     const pageWidth = doc.internal.pageSize.getWidth();
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text(`JADWAL DINAS ${unitName?.toUpperCase() || "PERSONIL"}`, pageWidth / 2, 15, { align: 'center' });
-    doc.setFontSize(11);
-    doc.text(`BANDARA INTERNASIONAL JAWA BARAT`, pageWidth / 2, 21, { align: 'center' });
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Periode: ${monthYear}`, pageWidth / 2, 27, { align: 'center' });
-    const dayNames = ['MG', 'SN', 'SL', 'RB', 'KM', 'JM', 'SB'];
+    doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.text(`JADWAL DINAS ${unitName?.toUpperCase() || "PERSONIL"}`, pageWidth / 2, 15, { align: 'center' });
+    doc.setFontSize(11); doc.text(`BANDARA INTERNASIONAL JAWA BARAT`, pageWidth / 2, 21, { align: 'center' });
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.text(`Periode: ${monthYear}`, pageWidth / 2, 27, { align: 'center' });
     const head = [
-      [
-        { content: 'NO', rowSpan: 2, styles: { valign: 'middle' as const, fillColor: [146, 208, 80] as [number, number, number] } },
-        { content: 'NAMA', rowSpan: 2, styles: { valign: 'middle' as const, fillColor: [146, 208, 80] as [number, number, number] } },
-        ...daysInMonth.map(d => {
-          const dayName = dayNames[d.getDay()];
-          const isWeekendDay = d.getDay() === 0 || d.getDay() === 6;
-          return { content: dayName, styles: { fillColor: (isWeekendDay ? [255, 204, 0] : [146, 208, 80]) as [number, number, number] } };
-        })
-      ],
-      [
-        ...daysInMonth.map(d => {
-          const isWeekendDay = d.getDay() === 0 || d.getDay() === 6;
-          return { content: format(d, "dd"), styles: { fillColor: (isWeekendDay ? [255, 204, 0] : [146, 208, 80]) as [number, number, number] } };
-        })
-      ]
+      [{ content: 'NO', rowSpan: 2, styles: { valign: 'middle' as const, fillColor: [146, 208, 80] as [number, number, number] } }, { content: 'NAMA', rowSpan: 2, styles: { valign: 'middle' as const, fillColor: [146, 208, 80] as [number, number, number] } }, ...daysInMonth.map(d => ({ content: ['MG', 'SN', 'SL', 'RB', 'KM', 'JM', 'SB'][d.getDay()], styles: { fillColor: (d.getDay() === 0 || d.getDay() === 6 ? [255, 204, 0] : [146, 208, 80]) as [number, number, number] } }))],
+      [...daysInMonth.map(d => ({ content: format(d, "dd"), styles: { fillColor: (d.getDay() === 0 || d.getDay() === 6 ? [255, 204, 0] : [146, 208, 80]) as [number, number, number] } }))]
     ];
-    const body: any[] = personnel.map((p, i) => {
-      const row = [
-        (i + 1).toString(),
-        p.full_name,
-        ...daysInMonth.map(d => {
-          const entry = localRosters.find(r => r.user_id === p.id && r.duty_date === format(d, "yyyy-MM-dd"));
-          return entry ? entry.shift_code : "";
-        })
-      ];
-      return row;
-    });
+    const body: any[] = personnel.map((p, i) => [(i + 1).toString(), p.full_name, ...daysInMonth.map(d => { const entry = localRosters.find(r => r.user_id === p.id && r.duty_date === format(d, "yyyy-MM-dd")); return entry ? entry.shift_code : ""; })]);
     body.push([{ content: '', colSpan: daysInMonth.length + 2, styles: { fillColor: [255, 255, 255], minCellHeight: 2, lineWidth: 0 } }]);
     const allShiftsForPDF = [...shifts];
     if (!allShiftsForPDF.some(s => s.code === 'APN7')) allShiftsForPDF.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' });
     if (!allShiftsForPDF.some(s => s.code === 'APN8')) allShiftsForPDF.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' });
     allShiftsForPDF.filter(s => ['APBA', 'APBB', 'APN7', 'APN8', 'FREE'].includes(s.code)).forEach(s => {
-      let label = s.code;
-      if (s.code === 'APBA') label = 'PAGI';
-      else if (s.code === 'APBB') label = 'MALAM';
-      else if (s.code === 'FREE') label = 'LIBUR';
-      const countRow = [
-        { content: s.code, styles: { fontStyle: 'bold' as const, halign: 'center' as const } },
-        { content: `: ${label}`, styles: { fontStyle: 'bold' as const, halign: 'left' as const } },
-        ...daysInMonth.map(d => {
-          const dateStr = format(d, "yyyy-MM-dd");
-          const count = localRosters.filter(r => r.duty_date === dateStr && r.shift_code === s.code).length;
-          return { content: count > 0 ? count.toString() : "0", styles: { halign: 'center' as const } };
-        })
-      ];
-      body.push(countRow);
+      let label = s.code === 'APBA' ? 'PAGI' : s.code === 'APBB' ? 'MALAM' : s.code === 'FREE' ? 'LIBUR' : s.code;
+      body.push([{ content: s.code, styles: { fontStyle: 'bold' as const, halign: 'center' as const } }, { content: `: ${label}`, styles: { fontStyle: 'bold' as const, halign: 'left' as const } }, ...daysInMonth.map(d => { const count = localRosters.filter(r => r.duty_date === format(d, "yyyy-MM-dd") && r.shift_code === s.code).length; return { content: count > 0 ? count.toString() : "0", styles: { halign: 'center' as const } }; })]);
     });
-    const colStyles: any = { 0: { halign: 'center', cellWidth: 8 }, 1: { halign: 'left', cellWidth: 45 } };
-    daysInMonth.forEach((_, idx) => { colStyles[idx + 2] = { halign: 'center', cellWidth: 7.5 }; });
-    autoTable(doc, {
-      head, body, startY: 30, theme: 'grid', margin: { left: 5, right: 5 },
-      styles: { fontSize: 5.5, cellPadding: 0.5, halign: 'center', textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.2, fontStyle: 'bold', overflow: 'hidden' },
-      headStyles: { textColor: [0, 0, 0], fontStyle: 'bold' },
-      columnStyles: colStyles,
-      didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index > 1 && data.row.index < personnel.length) {
-          const code = data.cell.text[0];
-          if (code) {
-            const shift = localShifts.find(s => s.code === code);
-            if (shift && shift.color_code) {
-              const hex = shift.color_code.replace('#', '');
-              const r = parseInt(hex.substring(0, 2), 16);
-              const g = parseInt(hex.substring(2, 4), 16);
-              const b = parseInt(hex.substring(4, 6), 16);
-              data.cell.styles.textColor = [r, g, b];
-            }
-          }
-        }
+    autoTable(doc, { head, body, startY: 30, theme: 'grid', margin: { left: 5, right: 5 }, styles: { fontSize: 5.5, cellPadding: 0.5, halign: 'center', textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.2, fontStyle: 'bold', overflow: 'hidden' }, headStyles: { textColor: [0, 0, 0], fontStyle: 'bold' }, columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 45 } }, didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index > 1 && data.row.index < personnel.length) {
+        const code = data.cell.text[0]; if (code) { const shift = localShifts.find(s => s.code === code); if (shift && shift.color_code) { const hex = shift.color_code.replace('#', ''); data.cell.styles.textColor = [parseInt(hex.substring(0, 2), 16), parseInt(hex.substring(2, 4), 16), parseInt(hex.substring(4, 6), 16)]; } }
       }
-    });
-    const finalY = (doc as any).lastAutoTable.finalY;
-    doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.text("KETERANGAN SHIFT:", 5, finalY + 8);
-    const legendBody = [
-      [{ content: 'APNZ', styles: { fontStyle: 'bold' as const, textColor: [0, 0, 0] as [number, number, number], halign: 'center' as const } }, { content: 'Admin General', styles: { halign: 'left' as const } }, { content: '07.30 - 16.30', styles: { halign: 'center' as const } }],
-      ...allShiftsForPDF.map(s => {
-        const timeStr = s.start_time ? `${s.start_time.substring(0, 5)} - ${s.end_time?.substring(0, 5) || ''}` : (s.code === 'APN7' ? '07:00 - 16:00' : s.code === 'APN8' ? '08:00 - 17:00' : "LIBUR");
-        const hex = (s.color_code || '#000000').replace('#', '');
-        const r = parseInt(hex.substring(0, 2), 16); const g = parseInt(hex.substring(2, 4), 16); const b = parseInt(hex.substring(4, 6), 16);
-        return [
-          { content: s.code, styles: { fontStyle: 'bold' as const, textColor: [r, g, b] as [number, number, number], halign: 'center' as const } },
-          { content: s.name || "", styles: { halign: 'left' as const } },
-          { content: timeStr, styles: { halign: 'center' as const } }
-        ];
-      })
-    ];
-    autoTable(doc, {
-      body: legendBody, startY: finalY + 10, theme: 'grid', margin: { left: 5 },
-      styles: { fontSize: 6, cellPadding: 0.8, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1, fontStyle: 'bold' },
-      columnStyles: { 0: { cellWidth: 15 }, 1: { cellWidth: 45 }, 2: { cellWidth: 25 } }
-    });
-    const finalLegendY = (doc as any).lastAutoTable.finalY || finalY + 20;
-    const rightMargin = pageWidth - 60;
-    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.text("Ditetapkan di: Majalengka", rightMargin, finalLegendY + 15);
-    doc.text(`Tanggal: ${format(new Date(), "dd MMMM yyyy", { locale: id })}`, rightMargin, finalLegendY + 19);
-    doc.setFont("helvetica", "bold"); doc.text(`${unitName || "Unit"}`, rightMargin, finalLegendY + 27);
-    doc.text(`${adminName || "Administrator"}`, rightMargin, finalLegendY + 45);
-    doc.setLineWidth(0.3); doc.line(rightMargin, finalLegendY + 46, rightMargin + 40, finalLegendY + 46);
-    doc.save(`Jadwal_Dinas_${monthYear.replace(' ', '_')}.pdf`);
+    }});
+    doc.save(`Jadwal_Dinas_${format(selectedMonth, "MMMM_yyyy")}.pdf`);
   };
 
   return (
@@ -314,44 +219,23 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
         <Dialog open={isSettingOpen} onOpenChange={setIsSettingOpen}>
           <DialogContent className="max-w-4xl bg-slate-950 border-slate-800 shadow-2xl sm:rounded-2xl z-[9999] p-0 overflow-hidden">
             <div className="p-6 border-b border-slate-800 bg-slate-900/50">
-              <DialogHeader>
-                <DialogTitle>
-                  <div className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-blue-500/10"><Settings2 className="h-5 w-5 text-blue-500" /></div>
-                    Konfigurasi Shift & Jam Kerja
-                  </div>
-                </DialogTitle>
-              </DialogHeader>
+              <DialogHeader><DialogTitle><div className="text-xl font-bold text-slate-100 flex items-center gap-2"><div className="p-2 rounded-lg bg-blue-500/10"><Settings2 className="h-5 w-5 text-blue-500" /></div>Konfigurasi Shift & Jam Kerja</div></DialogTitle></DialogHeader>
             </div>
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto scrollbar-hide bg-slate-950">
               {tempShifts.map((s, idx) => (
                 <div key={idx} className="p-4 rounded-xl border border-slate-800 bg-slate-900/20 grid grid-cols-12 gap-6 items-center transition-all hover:bg-slate-900/40">
-                  <div className="col-span-2">
-                    <Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Kode</Label>
-                    <Input value={s.code} onChange={(e) => { const newShifts = [...tempShifts]; newShifts[idx].code = e.target.value.toUpperCase(); setTempShifts(newShifts); }} className="h-11 font-bold bg-slate-950 border-slate-800 text-center" />
-                  </div>
-                  <div className="col-span-5">
-                    <Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Nama Shift</Label>
-                    <Input value={s.name || ''} onChange={(e) => { const newShifts = [...tempShifts]; newShifts[idx].name = e.target.value; setTempShifts(newShifts); }} className="h-11 bg-slate-950 border-slate-800" />
-                  </div>
+                  <div className="col-span-2"><Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Kode</Label><Input value={s.code} onChange={(e) => { const n = [...tempShifts]; n[idx].code = e.target.value.toUpperCase(); setTempShifts(n); }} className="h-11 font-bold bg-slate-950 border-slate-800 text-center" /></div>
+                  <div className="col-span-5"><Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Nama Shift</Label><Input value={s.name || ''} onChange={(e) => { const n = [...tempShifts]; n[idx].name = e.target.value; setTempShifts(n); }} className="h-11 bg-slate-950 border-slate-800" /></div>
                   <div className="col-span-5 grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Jam Mulai</Label>
-                      <Input type="time" value={s.start_time ? s.start_time.substring(0, 5) : ''} onChange={(e) => { const newShifts = [...tempShifts]; newShifts[idx].start_time = e.target.value ? e.target.value + ":00" : null; setTempShifts(newShifts); }} className="h-11 bg-slate-950 border-slate-800" />
-                    </div>
-                    <div>
-                      <Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Jam Selesai</Label>
-                      <Input type="time" value={s.end_time ? s.end_time.substring(0, 5) : ''} onChange={(e) => { const newShifts = [...tempShifts]; newShifts[idx].end_time = e.target.value ? e.target.value + ":00" : null; setTempShifts(newShifts); }} className="h-11 bg-slate-950 border-slate-800" />
-                    </div>
+                    <div><Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Jam Mulai</Label><Input type="time" value={s.start_time ? s.start_time.substring(0, 5) : ''} onChange={(e) => { const n = [...tempShifts]; n[idx].start_time = e.target.value ? e.target.value + ":00" : null; setTempShifts(n); }} className="h-11 bg-slate-950 border-slate-800" /></div>
+                    <div><Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Jam Selesai</Label><Input type="time" value={s.end_time ? s.end_time.substring(0, 5) : ''} onChange={(e) => { const n = [...tempShifts]; n[idx].end_time = e.target.value ? e.target.value + ":00" : null; setTempShifts(n); }} className="h-11 bg-slate-950 border-slate-800" /></div>
                   </div>
                 </div>
               ))}
             </div>
             <div className="p-6 flex justify-end gap-3 border-t border-slate-800 bg-slate-900/50">
               <Button variant="ghost" onClick={() => setIsSettingOpen(false)} className="text-slate-400">Batal</Button>
-              <Button onClick={handleSaveShifts} disabled={isSaving} className="bg-blue-600 px-10 h-11 shadow-lg font-bold">
-                {isSaving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Save className="h-5 w-5 mr-2" />} Simpan
-              </Button>
+              <Button onClick={handleSaveShifts} disabled={isSaving} className="bg-blue-600 px-10 h-11 shadow-lg font-bold">Simpan</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -359,38 +243,15 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
       <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4 px-4 py-3 sm:py-4">
-          <div className="flex items-center gap-4">
-            <Button asChild variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 sm:inline-flex"><Link href="/dashboard"><ArrowLeft className="h-5 w-5" /></Link></Button>
-            <div>
-              <h1 className="text-lg font-bold text-slate-100 tracking-tight">Jadwal Dinas Personil</h1>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-500 mt-0.5">Shift Roster Matrix</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleExportPDF} className="h-10 bg-slate-900 border border-slate-800 text-slate-300 font-bold px-4 no-print flex items-center gap-2"><Printer className="h-4 w-4" /> <span className="hidden sm:inline">PDF</span></Button>
-            {isAdmin && (
-              <Button variant="outline" size="sm" className="h-10 border-slate-800 text-blue-400 font-bold px-4 no-print flex items-center gap-2" onClick={() => { setTempShifts([...localShifts]); setIsSettingOpen(true); }}>
-                <Settings2 className="h-4 w-4" /> <span className="hidden sm:inline">Settings</span>
-              </Button>
-            )}
-          </div>
+          <div className="flex items-center gap-4"><Button asChild variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 sm:inline-flex"><Link href="/dashboard"><ArrowLeft className="h-5 w-5" /></Link></Button><div><h1 className="text-lg font-bold text-slate-100 tracking-tight">Jadwal Dinas Personil</h1><p className="text-[10px] font-bold uppercase tracking-wider text-blue-500 mt-0.5">Shift Roster Matrix</p></div></div>
+          <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={handleExportPDF} className="h-10 bg-slate-900 border border-slate-800 text-slate-300 font-bold px-4 no-print flex items-center gap-2"><Printer className="h-4 w-4" /> <span className="hidden sm:inline">PDF</span></Button>{isAdmin && <Button variant="outline" size="sm" className="h-10 border-slate-800 text-blue-400 font-bold px-4 no-print flex items-center gap-2" onClick={() => { setTempShifts([...localShifts]); setIsSettingOpen(true); }}><Settings2 className="h-4 w-4" /> <span className="hidden sm:inline">Settings</span></Button>}</div>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-slate-100 capitalize" suppressHydrationWarning>{hasMounted ? format(selectedMonth, "MMMM yyyy", { locale: id }) : ""}</h2>
-            <div className="flex gap-1 print:hidden">
-              <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0 border-slate-800"><Link href={`/manajemen/dinas?month=${format(subMonths(selectedMonth, 1), "yyyy-MM")}`}><ChevronLeft className="h-4 w-4" /></Link></Button>
-              <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0 border-slate-800"><Link href={`/manajemen/dinas?month=${format(addMonths(selectedMonth, 1), "yyyy-MM")}`}><ChevronRight className="h-4 w-4" /></Link></Button>
-            </div>
-          </div>
-          {isAdmin && (
-            <div className="text-[10px] font-bold text-slate-500 bg-slate-900/50 px-3 py-1.5 rounded-full border border-slate-800 animate-pulse">
-              💡 Tip: Klik dan tarik kursor untuk memblok banyak kolom sekaligus
-            </div>
-          )}
+          <div className="flex items-center gap-4"><h2 className="text-xl font-bold text-slate-100 capitalize" suppressHydrationWarning>{hasMounted ? format(selectedMonth, "MMMM yyyy", { locale: id }) : ""}</h2><div className="flex gap-1 print:hidden"><Button asChild variant="outline" size="sm" className="h-8 w-8 p-0 border-slate-800"><Link href={`/manajemen/dinas?month=${format(subMonths(selectedMonth, 1), "yyyy-MM")}`}><ChevronLeft className="h-4 w-4" /></Link></Button><Button asChild variant="outline" size="sm" className="h-8 w-8 p-0 border-slate-800"><Link href={`/manajemen/dinas?month=${format(addMonths(selectedMonth, 1), "yyyy-MM")}`}><ChevronRight className="h-4 w-4" /></Link></Button></div></div>
+          {isAdmin && <div className="text-[10px] font-bold text-slate-500 bg-slate-900/50 px-3 py-1.5 rounded-full border border-slate-800">💡 Tip: Klik dan tarik kursor untuk memblok banyak kolom sekaligus</div>}
         </div>
 
         <div className="rounded-xl border border-slate-800 bg-slate-950 overflow-x-auto shadow-2xl mb-8 select-none">
@@ -400,8 +261,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                 <th className="sticky left-0 z-20 bg-slate-950 p-3 text-left text-[10px] font-bold uppercase text-slate-500 border-r border-slate-800 min-w-[150px]">Personil</th>
                 {daysInMonth.map((d, idx) => (
                   <th key={d.toString()} className={`p-2 text-center text-[10px] font-bold border-r border-slate-800 min-w-[35px] ${isWeekend(d) ? "bg-red-500/5 text-red-400" : "text-slate-500"}`}>
-                    <div>{format(d, "EE", { locale: id })}</div>
-                    <div className="text-xs text-slate-300">{format(d, "dd")}</div>
+                    <div>{format(d, "EE", { locale: id })}</div><div className="text-xs text-slate-300">{format(d, "dd")}</div>
                   </th>
                 ))}
               </tr>
@@ -411,54 +271,35 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                 const isMe = p.id === currentUserId;
                 return (
                   <tr key={p.id} className={`border-b border-slate-800 transition-colors ${isMe ? "bg-amber-500/5" : "hover:bg-slate-900/30"}`}>
-                    <td className={`sticky left-0 z-10 p-3 border-r border-slate-800 ${isMe ? "bg-slate-900/90" : "bg-slate-950"}`}>
-                      <p className={`text-xs font-bold truncate ${isMe ? "text-amber-400" : "text-slate-200"}`}>{p.full_name}</p>
-                    </td>
+                    <td className={`sticky left-0 z-10 p-3 border-r border-slate-800 ${isMe ? "bg-slate-900/90" : "bg-slate-950"}`}><p className={`text-xs font-bold truncate ${isMe ? "text-amber-400" : "text-slate-200"}`}>{p.full_name}</p></td>
                     {daysInMonth.map((d, dIdx) => {
                       const dateStr = format(d, "yyyy-MM-dd");
                       const entry = localRosters.find(r => r.user_id === p.id && r.duty_date === dateStr);
                       const shift = entry ? [...localShifts, { code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' }, { code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' }].find(s => s.code === entry.shift_code) : null;
                       const active = isInRange(p.id, dIdx);
+                      const displayColor = getSafeColor(entry?.shift_code || '', shift?.color_code || null);
 
                       return (
-                        <td 
-                          key={dateStr} 
-                          className={`p-1 text-center border-r border-slate-800 transition-all ${isAdmin ? "cursor-crosshair" : ""} ${isToday(d) ? "bg-emerald-500/10" : ""} ${active ? "bg-blue-500/20 z-10 relative" : ""}`}
-                          onMouseDown={() => onMouseDown(p.id, dIdx)}
-                          onMouseEnter={() => onMouseEnter(p.id, dIdx)}
-                        >
+                        <td key={dateStr} className={`p-1 text-center border-r border-slate-800 transition-all ${isAdmin ? "cursor-crosshair" : ""} ${active ? "bg-blue-500/20 z-10 relative" : ""}`} onMouseDown={() => onMouseDown(p.id, dIdx)} onMouseEnter={() => onMouseEnter(p.id, dIdx)}>
                           <div className="relative">
                             {entry ? (
-                              <div className={`h-7 w-full flex items-center justify-center rounded text-[9px] font-bold ${active ? "opacity-50" : ""}`} style={{ backgroundColor: `${shift?.color_code || '#94a3b8'}20`, color: shift?.color_code || '#94a3b8', border: `1px solid ${shift?.color_code || '#94a3b8'}40` }}>{entry.shift_code}</div>
+                              <div className={`h-7 w-full flex items-center justify-center rounded text-[9px] font-bold`} style={{ backgroundColor: `${displayColor}20`, color: displayColor, border: `1px solid ${displayColor}40` }}>{entry.shift_code}</div>
                             ) : <div className="h-7 w-full" />}
 
-                            {/* DROPDOWN MENU (Single selection only) */}
                             {isAdmin && openDropdown?.userId === p.id && openDropdown?.dateStr === dateStr && (
                               <>
                                 <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); }} />
-                                <div 
-                                  className={`absolute top-full mt-1 z-[110] w-32 rounded-lg border border-slate-700 bg-slate-900/95 backdrop-blur-sm shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-100 ${
-                                    openDropdown.dayIdx > daysInMonth.length - 4 ? "right-0" : openDropdown.dayIdx < 3 ? "left-0" : "left-1/2 -translate-x-1/2"
-                                  }`} 
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {getAvailableShifts(p.id).map(s => (
-                                    <button
-                                      key={s.code}
-                                      onClick={(e) => { e.stopPropagation(); handleBulkAssign(s.code, { userIds: [p.id], dates: [dateStr] }); }}
-                                      className="w-full rounded-md px-2 py-1 text-[10px] font-bold text-left transition-all hover:bg-slate-800"
-                                      style={{ color: s.color_code || '#94a3b8' }}
-                                    >
-                                      {s.code}
-                                    </button>
-                                  ))}
+                                <div className={`absolute top-full mt-2 z-[110] w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150 ${openDropdown.dayIdx > daysInMonth.length - 4 ? "right-0" : openDropdown.dayIdx < 3 ? "left-0" : "left-1/2 -translate-x-1/2"}`} onClick={(e) => e.stopPropagation()}>
+                                  {getAvailableShifts(p.id).map(s => {
+                                    const clr = getSafeColor(s.code, s.color_code);
+                                    return (
+                                      <button key={s.code} onClick={(e) => { e.stopPropagation(); handleBulkAssign(s.code, { userIds: [p.id], dates: [dateStr] }); }} className="w-full flex items-center justify-center h-8 rounded-lg text-[10px] font-black transition-all hover:scale-105 active:scale-95" style={{ backgroundColor: `${clr}15`, color: clr, border: `1px solid ${clr}30` }}>
+                                        {s.code}
+                                      </button>
+                                    );
+                                  })}
                                   <div className="border-t border-slate-800 pt-1" />
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleBulkAssign(null, { userIds: [p.id], dates: [dateStr] }); }}
-                                    className="w-full rounded-md px-2 py-1 text-[10px] font-bold text-slate-500 hover:text-red-400 flex items-center gap-1"
-                                  >
-                                    <X className="w-3 h-3" /> Kosong
-                                  </button>
+                                  <button onClick={(e) => { e.stopPropagation(); handleBulkAssign(null, { userIds: [p.id], dates: [dateStr] }); }} className="w-full h-8 rounded-lg text-[10px] font-black text-slate-500 bg-slate-800/50 hover:bg-red-500/10 hover:text-red-400 transition-all flex items-center justify-center gap-1 border border-transparent hover:border-red-500/30"><X className="w-3 h-3" /> Kosong</button>
                                 </div>
                               </>
                             )}
@@ -469,83 +310,36 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                   </tr>
                 );
               })}
-              <tr className="border-b border-slate-800 bg-slate-900/20 print:hidden">
-                <td className="sticky left-0 z-10 p-3 border-r border-slate-800 bg-slate-900/40"><p className="text-[10px] font-black text-slate-500 uppercase">Daily Summary</p></td>
-                {daysInMonth.map(d => <td key={d.toString()} className="border-r border-slate-800" />)}
-              </tr>
-              {(() => {
-                const allShiftsForSummary = [...localShifts];
-                if (!allShiftsForSummary.some(s => s.code === 'APN7')) allShiftsForSummary.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' });
-                if (!allShiftsForSummary.some(s => s.code === 'APN8')) allShiftsForSummary.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' });
-                return allShiftsForSummary.filter(s => ['APBA', 'APBB', 'APN7', 'APN8', 'FREE'].includes(s.code)).map(s => (
-                  <tr key={s.code} className="border-b border-slate-800 bg-slate-900/10 print:hidden">
-                    <td className="sticky left-0 z-10 p-3 border-r border-slate-800 bg-slate-900/60"><div className="flex items-center gap-2"><span className="text-[10px] font-black text-slate-400">{s.code}</span></div></td>
-                    {daysInMonth.map(d => {
-                      const count = localRosters.filter(r => r.duty_date === format(d, "yyyy-MM-dd") && r.shift_code === s.code).length;
-                      return <td key={d.toString()} className="p-1 text-center border-r border-slate-800 text-[10px] font-bold text-slate-300">{count > 0 ? count : "-"}</td>;
-                    })}
-                  </tr>
-                ));
-              })()}
             </tbody>
           </table>
         </div>
 
-        {/* Legend */}
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center gap-3">
-            <div className="h-10 w-1 rounded-full bg-blue-500" />
-            <div className="flex-1">
-              <p className="text-xs font-bold text-slate-100 uppercase">APNZ</p>
-              <p className="text-[10px] text-slate-400 font-medium">Admin General</p>
-            </div>
-          </div>
-          {localShifts.map((s) => (
-            <div key={s.code} className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 flex items-center gap-3">
-              <div className="h-10 w-1 rounded-full" style={{ backgroundColor: s.color_code || '#64748b' }} />
-              <div className="flex-1">
-                <p className="text-xs font-bold text-slate-100 uppercase">{s.code}</p>
-                <p className="text-[10px] text-slate-400 font-medium">{s.name}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Bulk Assign Modal (For > 1 selection only) */}
+        {/* Modal Pilih Shift Masal */}
         <Dialog open={!!selectedRange} onOpenChange={(open) => !open && setSelectedRange(null)}>
           <DialogContent className="max-w-xs bg-slate-950 border-slate-800 p-0 overflow-hidden shadow-2xl">
-            <div className="p-4 border-b border-slate-800 bg-blue-500/10">
-              <h3 className="text-sm font-bold text-blue-400">Pilih Shift Masal</h3>
-              <p className="text-[10px] text-slate-400 mt-1 uppercase font-black tracking-widest">
-                {selectedRange?.userIds.length} Personil × {selectedRange?.dates.length} Hari terpilih
-              </p>
-            </div>
-            <div className="p-3 grid gap-2">
-              {selectedRange && getAvailableShifts(selectedRange.userIds[0]).map(s => (
-                <button
-                  key={s.code}
-                  onClick={() => handleBulkAssign(s.code)}
-                  className="flex items-center justify-between w-full rounded-xl px-4 py-3 hover:bg-slate-900 transition-all border border-transparent hover:border-slate-800"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-8 rounded-full" style={{ backgroundColor: s.color_code || '#94a3b8' }} />
-                    <div className="text-left">
-                      <p className="text-xs font-black" style={{ color: s.color_code || '#94a3b8' }}>{s.code}</p>
-                      <p className="text-[10px] text-slate-400">{s.name}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-              <div className="border-t border-slate-800 my-1" />
-              <button
-                onClick={() => handleBulkAssign(null)}
-                className="w-full rounded-xl px-4 py-3 text-xs font-bold text-slate-400 hover:bg-red-500/10 hover:text-red-400 flex items-center gap-3"
-              >
-                <X className="w-4 h-4" /> Hapus Jadwal Terpilih
-              </button>
+            <div className="p-4 border-b border-slate-800 bg-blue-500/10"><h3 className="text-sm font-bold text-blue-400">Pilih Shift Masal</h3><p className="text-[10px] text-slate-400 mt-1 uppercase font-black">{selectedRange?.userIds.length} Personil × {selectedRange?.dates.length} Hari</p></div>
+            <div className="p-3 grid grid-cols-2 gap-2">
+              {selectedRange && getAvailableShifts(selectedRange.userIds[0]).map(s => {
+                const clr = getSafeColor(s.code, s.color_code);
+                return (
+                  <button key={s.code} onClick={() => handleBulkAssign(s.code)} className="flex flex-col items-center justify-center h-14 rounded-xl transition-all hover:scale-105 border" style={{ backgroundColor: `${clr}10`, color: clr, borderColor: `${clr}30` }}><span className="text-xs font-black">{s.code}</span><span className="text-[8px] opacity-60 font-bold">{s.name}</span></button>
+                );
+              })}
+              <button onClick={() => handleBulkAssign(null)} className="col-span-2 h-10 rounded-xl text-xs font-bold text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all flex items-center justify-center gap-2 border border-slate-800"><X className="w-4 h-4" /> Hapus Jadwal</button>
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Legend */}
+        <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center gap-3"><div className="h-10 w-1 rounded-full bg-blue-500" /><div className="flex-1"><p className="text-xs font-bold text-slate-100 uppercase">APNZ</p><p className="text-[10px] text-slate-400 font-medium">Admin General</p></div></div>
+          {localShifts.map((s) => {
+            const clr = getSafeColor(s.code, s.color_code);
+            return (
+              <div key={s.code} className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 flex items-center gap-3"><div className="h-10 w-1 rounded-full" style={{ backgroundColor: clr }} /><div className="flex-1"><p className="text-xs font-bold text-slate-100 uppercase">{s.code}</p><p className="text-[10px] text-slate-400 font-medium">{s.name}</p></div></div>
+            );
+          })}
+        </div>
       </main>
     </div>
   );
