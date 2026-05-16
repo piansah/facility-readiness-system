@@ -297,15 +297,17 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     legendBody.push(['FREE', 'Libur', '-']);
 
     autoTable(doc, {
-      head: [['KODE', 'KETERANGAN', 'WAKTU']],
       body: legendBody,
       startY: currentY,
       theme: 'grid',
       margin: { left: 5 },
       tableWidth: 100,
-      styles: { fontSize: 7, cellPadding: 1.5, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1 },
-      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-      columnStyles: { 0: { cellWidth: 15, fontStyle: 'bold', halign: 'center' }, 1: { cellWidth: 40 }, 2: { cellWidth: 40, halign: 'center' } },
+      styles: { fontSize: 5.5, cellPadding: 1, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1 },
+      columnStyles: { 
+        0: { cellWidth: 12, fontStyle: 'bold', halign: 'center' }, 
+        1: { cellWidth: 35 },
+        2: { cellWidth: 35, halign: 'center' }
+      },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 0) {
           const code = data.cell.text[0];
