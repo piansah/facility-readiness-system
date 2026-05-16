@@ -105,7 +105,13 @@ export default async function UserManagementPage() {
                 : `Daftar personil dan rekan satu unit di ${isSuperAdmin ? "seluruh unit" : ((profile as any)?.units?.name || "Unit")}.`}
             </p>
           </div>
-          {canEdit && <UserFormModal units={allUnits || []} currentUserRole={profile?.role ?? 'petugas'} />}
+          {canEdit && (
+            <UserFormModal 
+              units={allUnits || []} 
+              currentUserRole={profile?.role ?? 'petugas'} 
+              currentUnitId={profile?.unit_id}
+            />
+          )}
         </div>
 
         {/* User Stats — berbeda untuk Super Admin vs Admin */}
@@ -232,7 +238,12 @@ export default async function UserManagementPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       {canEdit ? (
-                        <UserEditModal user={u} units={allUnits || []} currentUserRole={profile?.role ?? 'petugas'} />
+                        <UserEditModal 
+                          user={u} 
+                          units={allUnits || []} 
+                          currentUserRole={profile?.role ?? 'petugas'} 
+                          currentUnitId={profile?.unit_id}
+                        />
                       ) : (
                         <span className="text-[10px] text-slate-600 font-bold uppercase">Read Only</span>
                       )}

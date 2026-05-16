@@ -23,9 +23,18 @@ type EditableUser = {
   super_admin_unit_access?: { unit_id: string }[];
 };
 
-export function UserFormModal({ units, currentUserRole }: { units: Unit[]; currentUserRole: string }) {
+export function UserFormModal({ 
+  units, 
+  currentUserRole,
+  currentUnitId 
+}: { 
+  units: Unit[]; 
+  currentUserRole: string;
+  currentUnitId?: string | null;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState("petugas");
+  const adminUnit = units.find(u => u.id === currentUnitId) || units[0];
 
   const isSuperAdmin = currentUserRole === "super_admin";
   const roleOptions = isSuperAdmin
@@ -152,8 +161,8 @@ export function UserFormModal({ units, currentUserRole }: { units: Unit[]; curre
                 ) : (
                   <div className="flex h-10 w-full items-center rounded-md border border-slate-800 bg-slate-900/50 px-3 text-sm text-slate-400">
                     <Building2 className="mr-2 h-4 w-4 text-emerald-500" />
-                    {units[0] ? `${units[0].code} - ${units[0].name}` : "Unit Kerja Admin"}
-                    <input type="hidden" name="unit_id" value={units[0]?.id || ""} />
+                    {adminUnit ? `${adminUnit.code} - ${adminUnit.name}` : "Unit Kerja Admin"}
+                    <input type="hidden" name="unit_id" value={adminUnit?.id || ""} />
                   </div>
                 )}
               </div>
@@ -196,9 +205,20 @@ export function UserFormModal({ units, currentUserRole }: { units: Unit[]; curre
   );
 }
 
-export function UserEditModal({ user, units, currentUserRole }: { user: EditableUser; units: Unit[]; currentUserRole: string }) {
+export function UserEditModal({ 
+  user, 
+  units, 
+  currentUserRole,
+  currentUnitId 
+}: { 
+  user: EditableUser; 
+  units: Unit[]; 
+  currentUserRole: string;
+  currentUnitId?: string | null;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState(user.role);
+  const adminUnit = units.find(u => u.id === currentUnitId) || units[0];
 
   const isSuperAdmin = currentUserRole === "super_admin";
   const editRoleOptions = isSuperAdmin
@@ -317,8 +337,8 @@ export function UserEditModal({ user, units, currentUserRole }: { user: Editable
                 ) : (
                   <div className="flex h-10 w-full items-center rounded-md border border-slate-800 bg-slate-900/50 px-3 text-sm text-slate-400">
                     <Building2 className="mr-2 h-4 w-4 text-emerald-500" />
-                    {units.find(u => u.id === user.unit_id)?.name || units[0]?.name || "Unit Terkunci"}
-                    <input type="hidden" name="unit_id" value={user.unit_id || units[0]?.id || ""} />
+                    {units.find(u => u.id === user.unit_id)?.name || adminUnit?.name || "Unit Terkunci"}
+                    <input type="hidden" name="unit_id" value={user.unit_id || adminUnit?.id || ""} />
                   </div>
                 )}
               </div>

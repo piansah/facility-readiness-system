@@ -526,48 +526,57 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                         )}
                       </div>
                     </td>
-                    {daysInMonth.map(d => {
-                      const dateStr = format(d, "yyyy-MM-dd");
-                      const entry = localRosters.find(r => r.user_id === p.id && r.duty_date === dateStr);
-                      const shift = entry ? [...localShifts, { code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' }, { code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' }].find(s => s.code === entry.shift_code) : null;
-                      const menuKey = `${p.id}|${dateStr}`;
-                      const isMenuOpen = openMenu === menuKey;
+                      {daysInMonth.map((d, dayIdx) => {
+                        const dateStr = format(d, "yyyy-MM-dd");
+                        const entry = localRosters.find(r => r.user_id === p.id && r.duty_date === dateStr);
+                        const shift = entry ? [...localShifts, { code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' }, { code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' }].find(s => s.code === entry.shift_code) : null;
+                        const menuKey = `${p.id}|${dateStr}`;
+                        const isMenuOpen = openMenu === menuKey;
 
-                      return (
-                        <td
-                          key={dateStr}
-                          onMouseEnter={() => setHoveredCol(dateStr)}
-                          onMouseLeave={() => setHoveredCol(null)}
-                          className={`p-1 text-center border-r border-slate-800 transition-all relative ${isAdmin ? "cursor-pointer" : ""
-                            } ${hasMounted && isToday(d) ? "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/30" : ""} ${isWeekend(d) ? "bg-red-500/5" : ""
-                            } ${hoveredCol === dateStr ? "bg-blue-500/10" : ""
-                            } ${hoveredRow === p.id && hoveredCol === dateStr ? "ring-1 ring-inset ring-blue-500/50 bg-blue-500/10" : ""} ${isMe && !hoveredCol && !hoveredRow ? "bg-amber-500/[0.02]" : ""}`}
-                          onClick={() => { if (isAdmin) setOpenMenu(isMenuOpen ? null : menuKey); }}
-                        >
-                          {entry ? (() => {
-                            const isBlack = shift?.color_code === '#000000';
-                            const displayColor = isBlack ? '#3b82f6' : (shift?.color_code || '#94a3b8');
-                            return (
-                              <div
-                                className="h-7 w-full flex items-center justify-center rounded text-[9px] font-bold shadow-sm print:!bg-transparent print:!border-transparent print:!shadow-none"
-                                style={{
-                                  backgroundColor: `${displayColor}20`,
-                                  color: displayColor,
-                                  border: `1px solid ${displayColor}40`
-                                }}
-                              >
-                                {entry.shift_code}
-                              </div>
-                            );
-                          })() : (
-                            <div className="h-7 w-full" />
-                          )}
+                        // Calculate if we're near the edges of the horizontal scroll to prevent menu clipping
+                        const isNearEnd = dayIdx > daysInMonth.length - 4;
+                        const isNearStart = dayIdx < 3;
 
-                          {/* Dropdown Menu - Notion Style */}
-                          {isMenuOpen && isAdmin && (
-                            <>
-                              <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setOpenMenu(null); }} />
-                              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 w-32 rounded-lg border border-slate-700 bg-slate-900/95 backdrop-blur-sm shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-100" onClick={(e) => e.stopPropagation()}>
+                        return (
+                          <td
+                            key={dateStr}
+                            onMouseEnter={() => setHoveredCol(dateStr)}
+                            onMouseLeave={() => setHoveredCol(null)}
+                            className={`p-1 text-center border-r border-slate-800 transition-all relative ${isAdmin ? "cursor-pointer" : ""
+                              } ${hasMounted && isToday(d) ? "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500/30" : ""} ${isWeekend(d) ? "bg-red-500/5" : ""
+                              } ${hoveredCol === dateStr ? "bg-blue-500/10" : ""
+                              } ${hoveredRow === p.id && hoveredCol === dateStr ? "ring-1 ring-inset ring-blue-500/50 bg-blue-500/10" : ""} ${isMe && !hoveredCol && !hoveredRow ? "bg-amber-500/[0.02]" : ""}`}
+                            onClick={() => { if (isAdmin) setOpenMenu(isMenuOpen ? null : menuKey); }}
+                          >
+                            {entry ? (() => {
+                              const isBlack = shift?.color_code === '#000000';
+                              const displayColor = isBlack ? '#3b82f6' : (shift?.color_code || '#94a3b8');
+                              return (
+                                <div
+                                  className="h-7 w-full flex items-center justify-center rounded text-[9px] font-bold shadow-sm print:!bg-transparent print:!border-transparent print:!shadow-none"
+                                  style={{
+                                    backgroundColor: `${displayColor}20`,
+                                    color: displayColor,
+                                    border: `1px solid ${displayColor}40`
+                                  }}
+                                >
+                                  {entry.shift_code}
+                                </div>
+                              );
+                            })() : (
+                              <div className="h-7 w-full" />
+                            )}
+
+                            {/* Dropdown Menu - Notion Style */}
+                            {isMenuOpen && isAdmin && (
+                              <>
+                                <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setOpenMenu(null); }} />
+                                <div 
+                                  className={`absolute top-full mt-1 z-50 w-32 rounded-lg border border-slate-700 bg-slate-900/95 backdrop-blur-sm shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-100 ${
+                                    isNearEnd ? "right-0" : isNearStart ? "left-0" : "left-1/2 -translate-x-1/2"
+                                  }`} 
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                 {getAvailableShifts(p.id).map(s => {
                                   const isBlack = s.color_code === '#000000';
                                   const clr = isBlack ? '#3b82f6' : (s.color_code || '#94a3b8');
