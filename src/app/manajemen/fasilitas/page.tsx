@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FacilityCreatePanel } from "./facility-create-panel";
+import { CategoryListPanel } from "./category-list-panel";
+import { FacilityHeaderActions } from "./facility-header-actions";
 import { FacilityRowActions } from "./facility-row-actions";
-import { UnitManagementPanel } from "./unit-management-panel";
 import { canManageFacilities, canManageUnits } from "@/lib/auth/roles";
 
 type Unit = {
@@ -81,16 +81,9 @@ export default async function FacilityManagementPage({
     .returns<Category[]>();
 
   // Admin Unit: paksa ke unit sendiri. Super Admin: gunakan query param atau unit pertama.
-  const selectedUnitId = profile?.role === "admin"
+  const selectedUnitId = (profile?.role === "admin"
     ? profile.unit_id
-    : params.unit || units?.[0]?.id;
-
-  console.log("FACILITY DEBUG:", { 
-    role: profile?.role, 
-    profileUnitId: profile?.unit_id, 
-    selectedUnitId, 
-    totalUnits: units?.length || 0 
-  });
+    : params.unit || units?.[0]?.id) || "";
 
   // Fetch facilities for selected unit
   const { data: facilities } = await supabase
@@ -118,10 +111,17 @@ export default async function FacilityManagementPage({
             <h1 className="text-2xl font-bold text-slate-100">Manajemen Fasilitas</h1>
             <p className="text-sm text-slate-400">Konfigurasi unit, kategori, dan daftar aset operasional.</p>
           </div>
+
+          <FacilityHeaderActions 
+            units={units ?? []} 
+            categories={categories ?? []} 
+            selectedUnitId={selectedUnitId}
+            isSuperAdmin={isSuperAdmin}
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-          {/* Sisi Kiri (1 Kolom): Sidebar Unit (SA) atau Form Fasilitas (Admin) */}
+          {/* Sisi Kiri (1 Kolom): Sidebar Unit (SA) & Daftar Kategori */}
           <div className="space-y-6 lg:col-span-1">
             {isSuperAdmin && (
               <div className="space-y-4">
@@ -148,23 +148,11 @@ export default async function FacilityManagementPage({
               </div>
             )}
 
-            {/* Form Fasilitas & Kategori - Selalu di kiri agar layout rapi */}
-            <Card className="border-slate-800 bg-slate-900/40">
-              <CardHeader className="px-4 py-4">
-                <CardTitle className="text-base">Tambah Aset</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <FacilityCreatePanel
-                  key={selectedUnitId}
-                  units={isSuperAdmin ? (units ?? []) : (units ?? []).filter(u => u.id === selectedUnitId)}
-                  categories={categories ?? []}
-                  defaultUnitId={selectedUnitId ?? ""}
-                  canChooseUnit={isSuperAdmin}
-                />
-              </CardContent>
-            </Card>
-
-
+            {/* Daftar Kategori di Sidebar */}
+            <CategoryListPanel 
+              categories={categories ?? []} 
+              selectedUnitId={selectedUnitId} 
+            />
           </div>
 
           {/* Sisi Kanan (3 Kolom): Daftar Fasilitas */}
