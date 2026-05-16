@@ -6,7 +6,7 @@ export async function getProfile(supabase: SupabaseClient, userId: string) {
     .from("users")
     .select(`
       *,
-      units!users_unit_id_fkey (name)
+      assigned_unit:unit_id (name)
     `)
     .eq("id", userId)
     .single();
@@ -16,5 +16,12 @@ export async function getProfile(supabase: SupabaseClient, userId: string) {
     return { profile: null, error };
   }
 
-  return { profile: data, error: null };
+  // Normalisasi: Tangani jika assigned_unit adalah array atau objek
+  const rawUnit = (data as any).assigned_unit;
+  const unitData = Array.isArray(rawUnit) ? rawUnit[0] : rawUnit;
+
+  return { 
+    profile: { ...data, units: unitData } as AppProfile & { units: { name: string } | null }, 
+    error: null 
+  };
 }

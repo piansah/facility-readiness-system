@@ -73,10 +73,7 @@ async function DashboardContent() {
   const canReview = canReviewReports(profile?.role);  // true hanya untuk admin
   const isSuperAdmin = profile?.role === "super_admin";
 
-  const rawUnits = (profile as any)?.units;
-  const unitDisplayName = isSuperAdmin 
-    ? "Administrator Pusat" 
-    : (Array.isArray(rawUnits) ? rawUnits[0]?.name : rawUnits?.name) || (profile as any)?.["units!users_unit_id_fkey"]?.name || "Unit Tidak Diketahui";
+  const unitDisplayName = isSuperAdmin ? "Administrator Pusat" : (profile as any)?.units?.name || "Unit Tidak Diketahui";
 
   // Jendela Operasional: Tentukan tanggal dan shift yang relevan
   const now = new Date();
