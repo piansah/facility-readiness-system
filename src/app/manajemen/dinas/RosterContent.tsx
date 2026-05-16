@@ -163,7 +163,13 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       const targetUserIds = personnel.slice(startU, endU + 1).map(p => p.id);
       const targetDates = daysInMonth.slice(startD, endD + 1).map(d => format(d, "yyyy-MM-dd"));
       if (targetUserIds.length === 1 && targetDates.length === 1) {
-        setOpenDropdown({ userId: targetUserIds[0], dateStr: targetDates[0], fullName: personnel.find(p => p.id === targetUserIds[0])?.full_name || "", dayIdx: startD });
+        setOpenDropdown({ 
+          userId: targetUserIds[0], 
+          dateStr: targetDates[0], 
+          fullName: personnel.find(p => p.id === targetUserIds[0])?.full_name || "", 
+          dayIdx: startD,
+          rowIdx: startU // Track row index for positioning
+        });
       } else {
         setSelectedRange({ userIds: targetUserIds, dates: targetDates });
       }
@@ -289,7 +295,13 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                             {isAdmin && openDropdown?.userId === p.id && openDropdown?.dateStr === dateStr && (
                               <>
                                 <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); }} />
-                                <div className={`absolute top-full mt-2 z-[110] w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150 ${openDropdown.dayIdx > daysInMonth.length - 4 ? "right-0" : openDropdown.dayIdx < 3 ? "left-0" : "left-1/2 -translate-x-1/2"}`} onClick={(e) => e.stopPropagation()}>
+                                <div 
+                                  className={`absolute z-[110] w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150 
+                                    ${openDropdown.dayIdx > daysInMonth.length - 4 ? "right-0" : openDropdown.dayIdx < 3 ? "left-0" : "left-1/2 -translate-x-1/2"}
+                                    ${openDropdown.rowIdx !== undefined && openDropdown.rowIdx > personnel.length - 4 ? "bottom-full mb-2" : "top-full mt-2"}
+                                  `} 
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   {getAvailableShifts(p.id).map(s => {
                                     const clr = getSafeColor(s.code, s.color_code);
                                     return (
