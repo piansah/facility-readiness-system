@@ -14,9 +14,17 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
+  // Only cache manifest and icons to avoid breaking Next.js RSC/Navigation
+  const isStaticAsset = event.request.url.includes('/icon-') || 
+                       event.request.url.includes('manifest.webmanifest') ||
+                       event.request.url.includes('icon.png');
+
+  if (isStaticAsset) {
+    event.respondWith(
+      caches.match(event.request).then((response) => {
+        return response || fetch(event.request);
+      })
+    );
+  }
+  // Let everything else go through normally
 });

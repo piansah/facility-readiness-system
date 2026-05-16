@@ -457,7 +457,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
         <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-4">
           <h1 className="text-2xl font-black uppercase">Laporan Jadwal Dinas Personil</h1>
           <p className="text-sm font-bold text-slate-600">Periode: {format(selectedMonth, "MMMM yyyy", { locale: id })}</p>
-          <p className="text-[10px] text-slate-400 mt-1">Dicetak pada: {format(new Date(), "dd/MM/yyyy HH:mm")}</p>
+          <p className="text-[10px] text-slate-400 mt-1">Dicetak pada: {hasMounted ? format(new Date(), "dd/MM/yyyy HH:mm") : ""}</p>
         </div>
 
         {/* Month Selector */}
