@@ -77,7 +77,7 @@ export function UserFormModal({ units, currentUserRole }: { units: Unit[]; curre
   if (!isOpen) {
     return (
       <Button onClick={() => setIsOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
-        <UserPlus className="mr-2 h-4 w-4" /> Tambah User
+        <UserPlus className="mr-2 h-4 w-4" /> Tambah
       </Button>
     );
   }
