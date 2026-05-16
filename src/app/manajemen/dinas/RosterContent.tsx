@@ -184,36 +184,40 @@ export default function RosterContent({
     const { userIds, dates } = range;
 
     // OPTIMISTIC UPDATE: Langsung update UI agar terasa instan
-    let updatedRosters = [...localRosters];
-    userIds.forEach(uid => {
-      dates.forEach(date => {
-        if (shiftCode) {
-          // Tambah atau Update Shift
+    let updatedRosters = localRosters.filter(r => {
+      // Jika mode hapus, hilangkan roster yang ada dalam range (blok) yang dipilih
+      if (!shiftCode && userIds.includes(r.user_id) && dates.includes(r.duty_date)) return false;
+      return true;
+    });
+
+    if (shiftCode) {
+      userIds.forEach(uid => {
+        dates.forEach(date => {
           const idx = updatedRosters.findIndex(r => r.user_id === uid && r.duty_date === date);
           if (idx >= 0) updatedRosters[idx] = { ...updatedRosters[idx], shift_code: shiftCode };
           else updatedRosters.push({ user_id: uid, duty_date: date, shift_code: shiftCode });
-        } else {
-          // Hapus Shift
-          updatedRosters = updatedRosters.filter(r => !(r.user_id === uid && r.duty_date === date));
-        }
+        });
       });
-    });
+    }
+
     setLocalRosters(updatedRosters);
     setSelectedRange(null);
     setOpenDropdown(null);
 
     try {
-      const updates = userIds.flatMap(uid => dates.map(date => ({ user_id: uid, duty_date: date, shift_code: shiftCode })));
       if (shiftCode) {
+        const updates = userIds.flatMap(uid => dates.map(date => ({ user_id: uid, duty_date: date, shift_code: shiftCode })));
         for (const up of updates) {
           const { error } = await supabase.from("duty_rosters").upsert(up, { onConflict: "user_id, duty_date" });
           if (error) throw error;
         }
       } else {
-        for (const up of updates) {
-          const { error } = await supabase.from("duty_rosters").delete().eq("user_id", up.user_id).eq("duty_date", up.duty_date);
-          if (error) throw error;
-        }
+        // Hapus sekaligus menggunakan in() array untuk mencegah gagal karena terlalu banyak request berurutan
+        const { error } = await supabase.from("duty_rosters")
+          .delete()
+          .in("user_id", userIds)
+          .in("duty_date", dates);
+        if (error) throw error;
       }
       
       toast.success("Jadwal diperbarui");
