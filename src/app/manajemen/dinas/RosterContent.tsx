@@ -338,7 +338,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
           {localShifts.map((s) => {
             const clr = getSafeColor(s.code, s.color_code);
             return (
-              <div key={s.code} className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 flex items-center gap-3"><div className="h-10 w-1 rounded-full" style={{ backgroundColor: clr }} /><div className="flex-1"><p className="text-xs font-bold text-slate-100 uppercase">{s.code}</p><p className="text-[10px] text-slate-400 font-medium">{s.name}</p></div></div>
+              <div key={s.code} className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 flex items-center gap-3"><div className="h-10 w-1 rounded-full" style={{ backgroundColor: clr }} /><div className="flex-1"><p className="text-xs font-bold text-slate-100 uppercase">{s.code}</p><p className="text-[10px] text-slate-400 font-medium">{s.name}</p>{s.start_time && s.end_time && <p className="text-[9px] text-slate-500 font-mono mt-0.5">{s.start_time.substring(0, 5)} - {s.end_time.substring(0, 5)}</p>}</div></div>
             );
           })}
         </div>
@@ -360,42 +360,34 @@ function DropdownPortalContent({
   handleBulkAssign: (shiftCode: string | null, targetRange?: { userIds: string[]; dates: string[] }) => void;
 }) {
   const { userId, dateStr, anchorRect } = openDropdown;
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number; openUp: boolean }>({ top: 0, left: 0, openUp: false });
 
-  useEffect(() => {
-    const dropdownH = 280; // estimated max height
-    const dropdownW = 144; // w-36 = 9rem = 144px
+  // Calculate position synchronously so there's no flash at (0,0)
+  const pos = useMemo(() => {
+    const dropdownH = 280;
+    const dropdownW = 144;
     const viewH = window.innerHeight;
     const viewW = window.innerWidth;
 
-    // Decide vertical: open up or down
     const spaceBelow = viewH - anchorRect.bottom;
     const openUp = spaceBelow < dropdownH && anchorRect.top > dropdownH;
 
-    let top = openUp 
-      ? anchorRect.top - 8 // will use bottom positioning via transform
-      : anchorRect.bottom + 4;
-    
-    // Horizontal: center on cell, clamp to viewport
+    const top = openUp ? anchorRect.top - 4 : anchorRect.bottom + 4;
+
     let left = anchorRect.left + anchorRect.width / 2 - dropdownW / 2;
     left = Math.max(8, Math.min(left, viewW - dropdownW - 8));
 
-    setPos({ top, left, openUp });
+    return { top, left, openUp };
   }, [anchorRect]);
 
   const shifts = getAvailableShifts(userId);
 
   return (
     <div 
-      ref={dropdownRef}
-      className="fixed z-[9999] w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+      className="fixed z-[9999] w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-2 space-y-1"
       style={{ 
         left: pos.left, 
-        ...(pos.openUp 
-          ? { top: pos.top, transform: 'translateY(-100%)' } 
-          : { top: pos.top }
-        ),
+        top: pos.top,
+        ...(pos.openUp ? { transform: 'translateY(-100%)' } : {}),
       }}
       onClick={(e) => e.stopPropagation()}
     >
