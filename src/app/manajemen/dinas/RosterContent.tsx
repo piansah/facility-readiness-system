@@ -407,43 +407,35 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
           </div>
         </div>
 
-        {/* Modal Opsi Export PDF */}
+        {/* Modal Opsi Export PDF (Gaya Tambah Aset) */}
         <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
-          <DialogContent className="fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-[400px] translate-x-[-50%] translate-y-[-50%] gap-0 border border-slate-800 bg-slate-950 p-0 shadow-2xl duration-200 sm:rounded-2xl overflow-hidden">
-            <div className="p-6 border-b border-slate-800 bg-slate-900/50">
-              <DialogTitle className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                <Printer className="w-5 h-5 text-blue-500" /> Opsi Export PDF
-              </DialogTitle>
-              <p className="text-xs text-slate-400 mt-1">Pilih format jadwal yang ingin diunduh</p>
+          <DialogContent className="max-w-[400px] bg-slate-900/95 border-slate-800 p-0 overflow-hidden shadow-2xl z-[9999]">
+            <div className="p-6 text-center border-b border-slate-800/50 bg-slate-900/50">
+              <DialogTitle className="text-base font-bold text-slate-100">Pilih Mode Export</DialogTitle>
             </div>
-            <div className="p-6 space-y-3">
-              <Button 
-                variant="outline" 
+            
+            <div className="p-8 grid grid-cols-2 gap-4">
+              {/* Tombol Bulanan */}
+              <button 
                 onClick={() => handleExportPDF('full')}
-                className="w-full h-16 justify-start gap-4 border-slate-800 bg-slate-900/20 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all group p-4"
+                className="flex flex-col items-center justify-center gap-4 p-6 rounded-2xl bg-slate-800/40 border border-slate-700/50 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all group"
               >
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
-                  <Calendar className="w-5 h-5 text-blue-500" />
+                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                  <Calendar className="w-7 h-7 text-blue-500" />
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-bold text-slate-100">Jadwal Bulanan</p>
-                  <p className="text-[10px] text-slate-500 leading-tight">Periode 1 bulan penuh ({format(selectedMonth, "MMMM yyyy", { locale: id })})</p>
-                </div>
-              </Button>
+                <span className="text-xs font-bold text-slate-300">Jadwal Bulanan</span>
+              </button>
 
-              <Button 
-                variant="outline" 
+              {/* Tombol Laporan */}
+              <button 
                 onClick={() => handleExportPDF('report')}
-                className="w-full h-16 justify-start gap-4 border-slate-800 bg-slate-900/20 hover:bg-emerald-500/10 hover:border-emerald-500/50 transition-all group p-4"
+                className="flex flex-col items-center justify-center gap-4 p-6 rounded-2xl bg-slate-800/40 border border-slate-700/50 hover:bg-emerald-500/10 hover:border-emerald-500/50 transition-all group"
               >
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
-                  <FileText className="w-5 h-5 text-emerald-500" />
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                  <FileText className="w-7 h-7 text-emerald-500" />
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-bold text-slate-100">Jadwal Laporan (21-20)</p>
-                  <p className="text-[10px] text-slate-500 leading-tight">Periode tgl 21 bulan lalu s/d tgl 20 bulan ini</p>
-                </div>
-              </Button>
+                <span className="text-xs font-bold text-slate-300">Laporan (21-20)</span>
+              </button>
             </div>
           </DialogContent>
         </Dialog>
