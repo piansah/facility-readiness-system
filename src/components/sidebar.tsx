@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NAVIGATION_ITEMS } from "@/lib/constants/navigation";
 import { useFormStatus } from "react-dom";
-import { LogOut, AlertCircle, Loader2 } from "lucide-react";
+import { LogOut, AlertCircle, Loader2, Menu, ChevronLeft } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -36,27 +36,43 @@ function LogoutSubmitButton() {
 export function Sidebar({ unitName }: { unitName: string }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   return (
     <>
-      {/* Trigger Strip - tepi kiri layar, tipis */}
-      <div
-        className="fixed inset-y-0 left-0 w-3 z-[101] hidden sm:block"
-        onMouseEnter={() => setIsOpen(true)}
-      />
+      {/* Toggle Button - Hamburger Menu */}
+      <button
+        onClick={() => setIsPinned(!isPinned)}
+        className={cn(
+          "fixed top-4 left-4 z-[110] h-10 w-10 flex items-center justify-center rounded-xl border transition-all duration-300 backdrop-blur-md hidden sm:flex",
+          isPinned 
+            ? "bg-emerald-500 border-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 translate-x-52" 
+            : "bg-slate-950/50 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+        )}
+      >
+        {isPinned ? <ChevronLeft className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </button>
+
+      {/* Trigger Strip - tepi kiri layar, tipis (Hanya aktif jika tidak sedang dipin) */}
+      {!isPinned && (
+        <div
+          className="fixed inset-y-0 left-0 w-3 z-[101] hidden sm:block"
+          onMouseEnter={() => setIsOpen(true)}
+        />
+      )}
 
       {/* Sidebar + Backdrop */}
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-[100] hidden sm:flex",
-          isOpen ? "pointer-events-auto" : "pointer-events-none"
+          (isOpen || isPinned) ? "pointer-events-auto" : "pointer-events-none"
         )}
-        onMouseLeave={() => setIsOpen(false)}
+        onMouseLeave={() => !isPinned && setIsOpen(false)}
       >
         <aside className={cn(
           "flex flex-col w-64 h-full border-r border-slate-800 bg-slate-950/80 backdrop-blur-2xl transition-transform duration-300 ease-in-out shadow-2xl",
-          isOpen ? "translate-x-0" : "translate-x-[-100%]"
+          (isOpen || isPinned) ? "translate-x-0" : "translate-x-[-100%]"
         )}>
           <div className="p-6">
             <div className="flex items-center gap-3 mb-8">
@@ -147,7 +163,7 @@ export function Sidebar({ unitName }: { unitName: string }) {
       {/* Visual Indicator - glow di tepi */}
       <div className={cn(
         "fixed left-0 top-1/2 -translate-y-1/2 w-1 h-32 bg-emerald-500/20 rounded-r-full blur-sm transition-opacity z-[99] hidden sm:block",
-        isOpen ? "opacity-100" : "opacity-0"
+        (isOpen || isPinned) ? "opacity-0" : "opacity-100"
       )} />
     </>
   );

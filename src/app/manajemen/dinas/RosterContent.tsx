@@ -105,8 +105,10 @@ export default function RosterContent({
   };
 
   const getSafeColor = (code: string, dbColor: string | null) => {
+    // Paksa Biru untuk APNZ dan APBA di Web agar tidak hitam blok
+    if (code === 'APNZ' || code === 'APN7' || code === 'APN8' || code === 'APBA') return "#3b82f6";
+    
     if (dbColor) return dbColor;
-    if (code === 'APBA') return "#3b82f6";
     if (code === 'APBB') return "#10b981";
     if (code === 'FREE') return "#ef4444";
     if (code === 'AH') return "#f59e0b";
