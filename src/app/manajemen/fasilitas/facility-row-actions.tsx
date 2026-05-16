@@ -33,7 +33,6 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
 
   return (
     <div className="flex items-center justify-end gap-1 relative">
-      {/* Trigger Dropdown */}
       <div className="relative">
         <Button 
           variant="ghost" 
@@ -44,7 +43,6 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
           <MoreHorizontal className="h-4 w-4" />
         </Button>
 
-        {/* Custom Dropdown Menu */}
         {isMenuOpen && (
           <>
             <div 
@@ -104,17 +102,21 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
         )}
       </div>
 
-      {/* QR Modal Controlled */}
       <FacilityQRModal 
         facility={facility} 
         open={isQrOpen} 
         onOpenChange={setIsQrOpen} 
       />
 
-      {/* Edit Modal */}
       {isOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-xl border border-slate-800 bg-slate-950 p-6 text-left shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div 
+          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/80 px-4 py-6 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setIsOpen(false)}
+        >
+          <div 
+            className="w-full max-w-lg rounded-xl border border-slate-800 bg-slate-950 p-6 text-left shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="mb-6 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-bold text-slate-100">Edit Fasilitas</h2>
@@ -125,7 +127,13 @@ export function FacilityRowActions({ facility, categories }: { facility: Facilit
               </Button>
             </div>
             
-            <form action={updateFacility} className="grid gap-5">
+            <form 
+              action={async (formData) => {
+                await updateFacility(formData);
+                setIsOpen(false);
+              }} 
+              className="grid gap-5"
+            >
               <input type="hidden" name="id" value={facility.id} />
               <input type="hidden" name="is_active" value={String(isActive)} />
               

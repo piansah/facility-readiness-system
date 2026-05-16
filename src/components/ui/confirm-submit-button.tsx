@@ -38,13 +38,17 @@ export function ConfirmSubmitButton({
       </Button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 px-4 backdrop-blur-sm">
+        <div 
+          className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 px-4 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setIsOpen(false)}
+        >
           <div
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="confirm-dialog-title"
             aria-describedby="confirm-dialog-description"
-            className="w-full max-w-sm rounded-lg border border-slate-700 bg-slate-950 p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-lg border border-slate-700 bg-slate-950 p-5 shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
           >
             <h2 id="confirm-dialog-title" className="text-lg font-semibold text-slate-100">
               {title}
@@ -58,6 +62,7 @@ export function ConfirmSubmitButton({
               </Button>
               <Button
                 type="button"
+                className="bg-red-600 hover:bg-red-700 text-white"
                 onClick={() => {
                   setIsOpen(false);
                   buttonRef.current?.form?.requestSubmit(buttonRef.current);

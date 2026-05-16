@@ -58,7 +58,6 @@ export function UserFormModal({
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    // Append multi-unit access if super_admin
     if (role === "super_admin") {
       selectedUnits.forEach(uid => formData.append("assigned_units", uid));
     }
@@ -71,7 +70,6 @@ export function UserFormModal({
     } else {
       setIsOpen(false);
       setIsPending(false);
-      // Reset form
       setSelectedUnits([]);
       setRole("petugas");
     }
@@ -92,8 +90,14 @@ export function UserFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm">
-      <Card className="my-6 w-full max-w-lg border-slate-800 bg-slate-950 shadow-2xl">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={() => setIsOpen(false)}
+    >
+      <Card 
+        className="my-6 w-full max-w-lg border-slate-800 bg-slate-950 shadow-2xl animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <CardHeader className="flex flex-row items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-500">
@@ -271,8 +275,14 @@ export function UserEditModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm">
-      <Card className="my-6 w-full max-w-lg border-slate-800 bg-slate-950 shadow-2xl">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={() => setIsOpen(false)}
+    >
+      <Card 
+        className="my-6 w-full max-w-lg border-slate-800 bg-slate-950 shadow-2xl animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         <CardHeader className="flex flex-row items-center justify-between border-b border-slate-800 pb-4">
           <div>
             <CardTitle className="text-xl">Edit Pengguna</CardTitle>
