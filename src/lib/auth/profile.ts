@@ -1,26 +1,34 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 import type { AppProfile } from "./roles";
 
 export async function getProfile(supabase: SupabaseClient, userId: string) {
-  const { data, error } = await supabase
+  // Tahap 1: Ambil data profil dasar
+  const { data: userData, error: userError } = await supabase
     .from("users")
-    .select("*, units(name), units!users_unit_id_fkey(name)")
+    .select("*")
     .eq("id", userId)
     .single();
 
-  if (error || !data) {
-    console.error("GET PROFILE ERROR:", error);
-    return { profile: null, error };
+  if (userError || !userData) {
+    console.error("GET PROFILE ERROR:", userError);
+    return { profile: null, error: userError };
   }
 
-  // Normalisasi: Ambil nama unit dari salah satu relasi yang berhasil
-  const rawUnits = (data as any).units || (data as any)["units!users_unit_id_fkey"];
-  const unitObj = Array.isArray(rawUnits) ? rawUnits[0] : rawUnits;
+  // Tahap 2: Ambil data unit secara terpisah (Safe Fetch)
+  let unitName = null;
+  if (userData.unit_id) {
+    const { data: unitData } = await supabase
+      .from("units")
+      .select("name")
+      .eq("id", userData.unit_id)
+      .maybeSingle();
+    unitName = unitData?.name || null;
+  }
 
   return { 
     profile: {
-      ...data,
-      units: unitObj ? { name: unitObj.name } : null
+      ...userData,
+      units: unitName ? { name: unitName } : null
     } as AppProfile & { units: { name: string } | null }, 
     error: null 
   };
