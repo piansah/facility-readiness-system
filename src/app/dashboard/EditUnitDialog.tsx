@@ -60,10 +60,10 @@ export function EditUnitDialog({ unit }: EditUnitDialogProps) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>Edit Unit</DialogTitle>
-              <p className="text-sm text-slate-400 mt-1">
-                Perbarui informasi untuk unit kerja {unit.code}.
+            <DialogHeader className="text-left">
+              <DialogTitle className="text-xl font-bold">Edit Unit</DialogTitle>
+              <p className="text-sm text-slate-400">
+                Perbarui informasi untuk unit kerja <span className="text-blue-400 font-bold">{unit.code}</span>.
               </p>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -73,12 +73,16 @@ export function EditUnitDialog({ unit }: EditUnitDialogProps) {
                 </div>
               )}
               <div className="grid gap-2">
-                <Label htmlFor="edit-code" className="text-slate-300">Kode Unit</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edit-code" className="text-slate-300">Kode Unit</Label>
+                  <span className="text-[10px] text-slate-500 font-medium italic">Tidak dapat diubah</span>
+                </div>
                 <Input
                   id="edit-code"
                   name="code"
                   defaultValue={unit.code}
-                  className="bg-slate-950 border-slate-800 focus:border-blue-500"
+                  readOnly
+                  className="bg-slate-900 border-slate-800 text-slate-500 cursor-not-allowed"
                   required
                 />
               </div>

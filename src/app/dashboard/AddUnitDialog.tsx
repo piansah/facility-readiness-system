@@ -47,15 +47,15 @@ export function AddUnitDialog() {
         className="bg-emerald-600 hover:bg-emerald-700"
         onClick={() => setOpen(true)}
       >
-        <Plus className="mr-2 h-4 w-4" /> Tambah Unit
+        <Plus className="mr-2 h-4 w-4" /> Tambah
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-106.25">
+        <DialogContent className="sm:max-w-[425px]">
           <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>Tambah Unit Baru</DialogTitle>
-              <p className="text-sm text-slate-400 mt-1">
+            <DialogHeader className="text-left">
+              <DialogTitle className="text-xl font-bold">Tambah Unit Baru</DialogTitle>
+              <p className="text-sm text-slate-400">
                 Masukkan detail unit kerja baru untuk ditambahkan ke sistem.
               </p>
             </DialogHeader>

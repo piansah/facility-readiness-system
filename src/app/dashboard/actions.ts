@@ -40,7 +40,6 @@ export async function updateUnit(id: string, formData: FormData) {
   const { error } = await supabase
     .from("units")
     .update({ 
-      code: code.toUpperCase(), 
       name 
     })
     .eq("id", id);
