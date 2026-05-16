@@ -114,10 +114,6 @@ export default async function FacilityManagementPage({
           </div>
 
           <div className="flex items-center gap-3">
-            <BulkQRButton 
-              facilities={facilities ?? []} 
-              unitName={units?.find(u => u.id === selectedUnitId)?.name || ""} 
-            />
             <FacilityHeaderActions
               units={units ?? []}
               categories={categories ?? []}
@@ -165,13 +161,19 @@ export default async function FacilityManagementPage({
           <div className="space-y-4 lg:col-span-3">
             <Card className="border-slate-800 bg-slate-900/40 overflow-hidden">
               <CardHeader className="border-b border-slate-800/50 bg-slate-900/20 px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm sm:text-lg uppercase font-bold tracking-tight">
-                    DAFTAR ASET - {units?.find(u => u.id === selectedUnitId)?.name}
-                  </CardTitle>
-                  <Badge className="bg-slate-800 text-slate-400 text-[10px] whitespace-nowrap shrink-0 ml-2">
-                    {facilities?.length || 0} Aset
-                  </Badge>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-sm sm:text-lg uppercase font-bold tracking-tight">
+                      DAFTAR ASET - {units?.find(u => u.id === selectedUnitId)?.name}
+                    </CardTitle>
+                    <Badge className="bg-slate-800 text-slate-400 text-[10px] whitespace-nowrap shrink-0">
+                      {facilities?.length || 0} Aset
+                    </Badge>
+                  </div>
+                  <BulkQRButton 
+                    facilities={facilities ?? []} 
+                    unitName={units?.find(u => u.id === selectedUnitId)?.name || ""} 
+                  />
                 </div>
               </CardHeader>
               <CardContent className="p-0">
