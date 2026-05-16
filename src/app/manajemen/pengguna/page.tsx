@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 import { getProfile } from "@/lib/auth/profile";
+import { getAllUnitsSafe } from "@/lib/auth/units";
 import { redirect } from "next/navigation";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Users, Building2, ToggleLeft, ToggleRight } from "lucide-react";
@@ -67,23 +68,23 @@ export default async function UserManagementPage() {
     viewer: 3
   };
 
-  const users = ((usersData ?? []) as UserWithAccess[]).sort((a, b) => {
+  const users = ((usersData ?? []) as UserWithAccess[]).map(u => {
+    // Jika join unit gagal (karena RLS), ambil dari allUnits mapping
+    if (!u.units && u.unit_id) {
+      const mappedUnit = allUnits.find(unit => unit.id === u.unit_id);
+      if (mappedUnit) {
+        return { ...u, units: { code: mappedUnit.code, name: mappedUnit.name } };
+      }
+    }
+    return u;
+  }).sort((a, b) => {
     const priorityDiff = (rolePriority[a.role] ?? 99) - (rolePriority[b.role] ?? 99);
     if (priorityDiff !== 0) return priorityDiff;
     return a.full_name.localeCompare(b.full_name);
   });
 
-  // Fetch All Units for the form/mapping
-  let unitsQueryMapping = supabase
-    .from("units")
-    .select("id, code, name")
-    .eq("is_active", true);
-
-  if (profile?.role === "admin" && profile.unit_id) {
-    unitsQueryMapping = unitsQueryMapping.eq("id", profile.unit_id);
-  }
-
-  const { data: allUnits } = await unitsQueryMapping.order("code");
+  // Fetch All Units safely to bypass RLS for mapping
+  const allUnits = await getAllUnitsSafe();
 
   return (
     <main className="min-h-dvh bg-slate-950 px-4 py-8">

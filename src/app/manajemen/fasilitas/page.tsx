@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 import { getProfile } from "@/lib/auth/profile";
+import { getUnitSafe } from "@/lib/auth/units";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Box, Search } from "lucide-react";
@@ -109,10 +110,16 @@ export default async function FacilityManagementPage({
   // Robustly get unit name from profile if the direct unit query fails
   const profileUnitName = (profile as any)?.units?.name;
   
-  // Prioritaskan nama unit dari profil jika bukan super_admin
-  const currentUnitName = isSuperAdmin 
-    ? (selectedUnitRes.data?.name || "Seluruh Unit")
-    : (profileUnitName || "Unit");
+  // Fetch selected unit name safely if it's different from user's unit or for super admin
+  let selectedUnitName = null;
+  if (isSuperAdmin && selectedUnitId) {
+    const unitData = await getUnitSafe(selectedUnitId);
+    selectedUnitName = unitData?.name;
+  } else if (!isSuperAdmin) {
+    selectedUnitName = profileUnitName;
+  }
+
+  const currentUnitName = selectedUnitName || "Unit";
 
   const selectedUnitCategories = (categories ?? []).filter((category) => category.unit_id === selectedUnitId);
 
