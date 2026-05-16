@@ -228,6 +228,29 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       })
     ]);
 
+    // Tambah baris kosong pemisah
+    body.push([{ content: '', colSpan: daysInMonth.length + 2, styles: { fillColor: [255, 255, 255], minCellHeight: 2, lineWidth: 0 } }]);
+
+    // Tambah hitungan harian (Counts)
+    const codesToCount = [
+      { code: 'APBA', label: 'PAGI (APBA)' },
+      { code: 'APBB', label: 'MALAM (APBB)' },
+      { code: 'FREE', label: 'LIBUR (FREE)' }
+    ];
+
+    codesToCount.forEach(target => {
+      body.push([
+        '', 
+        { content: target.label, styles: { halign: 'left' as const, fontStyle: 'bold' as const } },
+        ...daysInMonth.map(d => {
+          const count = localRosters.filter(r => 
+            r.duty_date === format(d, "yyyy-MM-dd") && r.shift_code === target.code
+          ).length;
+          return { content: count > 0 ? count.toString() : "0", styles: { halign: 'center' as const } };
+        })
+      ]);
+    });
+
     autoTable(doc, {
       head, body, 
       startY: 30, 
@@ -237,6 +260,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       headStyles: { textColor: [0, 0, 0], fontStyle: 'bold' }, 
       columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 45 } }, 
       didParseCell: (data) => {
+        // Warnai teks kode shift di dalam tabel roster
         if (data.section === 'body' && data.column.index > 1 && data.row.index < personnel.length) {
           const code = data.cell.text[0]; 
           if (code) { 
@@ -252,11 +276,11 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
     let currentY = (doc as any).lastAutoTable.finalY + 10;
 
-    // Legend Table (3 Columns)
+    // Legend Table (3 Columns) dengan GRID dan WARNA
     const legendBody: any[] = [];
     
     // Group APNZ
-    const apnzShift = localShifts.find(s => s.code === 'APNZ') || { code: 'APNZ', name: 'Admin General', start_time: '07:30:00', end_time: '16:30:00' };
+    const apnzShift = localShifts.find(s => s.code === 'APNZ') || { code: 'APNZ', name: 'Admin General', start_time: '07:30:00', end_time: '16:30:00', color_code: '#3b82f6' };
     legendBody.push([
       'APNZ', 
       'Admin General', 
@@ -270,16 +294,28 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     legendBody.push(['FREE', 'Libur', '-']);
 
     autoTable(doc, {
+      head: [['KODE', 'KETERANGAN', 'WAKTU']],
       body: legendBody,
       startY: currentY,
-      theme: 'plain',
+      theme: 'grid',
       margin: { left: 5 },
       tableWidth: 100,
-      styles: { fontSize: 7, cellPadding: 1, textColor: [0, 0, 0] },
+      styles: { fontSize: 7, cellPadding: 1.5, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1 },
+      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
       columnStyles: { 
-        0: { cellWidth: 15, fontStyle: 'bold' }, 
+        0: { cellWidth: 15, fontStyle: 'bold', halign: 'center' }, 
         1: { cellWidth: 40 },
-        2: { cellWidth: 40 }
+        2: { cellWidth: 40, halign: 'center' }
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 0) {
+          const code = data.cell.text[0];
+          const shift = localShifts.find(s => s.code === (code === 'APNZ' ? 'APNZ' : code)) || (code === 'APNZ' ? apnzShift : null);
+          if (shift && shift.color_code) {
+            const hex = shift.color_code.replace('#', '');
+            data.cell.styles.textColor = [parseInt(hex.substring(0, 2), 16), parseInt(hex.substring(2, 4), 16), parseInt(hex.substring(4, 6), 16)];
+          }
+        }
       }
     });
 
@@ -433,7 +469,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                   <div className="flex-1">
                     <p className="text-xs font-bold text-slate-100 uppercase">APNZ</p>
                     <p className="text-[10px] text-slate-400 font-medium">Admin General</p>
-                    <p className="text-[9px] text-slate-500 font-mono mt-0.5">
+                    <p className="text-[10px] text-slate-400 font-medium">
                       {apnzFromDb?.start_time?.substring(0, 5) || '07:30'} - {apnzFromDb?.end_time?.substring(0, 5) || '16:30'}
                     </p>
                   </div>
@@ -457,7 +493,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                     <p className="text-xs font-bold text-slate-100 uppercase">{s.code}</p>
                     <p className="text-[10px] text-slate-400 font-medium">{s.name}</p>
                     {s.start_time && s.end_time && (
-                      <p className="text-[9px] text-slate-500 font-mono mt-0.5">
+                      <p className="text-[10px] text-slate-400 font-medium">
                         {s.start_time.substring(0, 5)} - {s.end_time.substring(0, 5)}
                       </p>
                     )}
