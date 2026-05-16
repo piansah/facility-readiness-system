@@ -10,7 +10,7 @@ import {
 import { id } from "date-fns/locale";
 import {
   ArrowLeft, ChevronLeft, ChevronRight,
-  Save, Loader2, Settings2, Printer, X
+  Save, Loader2, Settings2, Printer, X, Calendar, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -71,6 +71,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
   // Menu States
   const [selectedRange, setSelectedRange] = useState<{ userIds: string[]; dates: string[] } | null>(null);
   const [openDropdown, setOpenDropdown] = useState<{ userId: string; dateStr: string; anchorRect: DOMRect } | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   useEffect(() => {
     setHasMounted(true);
@@ -193,27 +194,40 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     } catch (e) { toast.error("Gagal menyimpan pengaturan shift."); } finally { setIsSaving(false); }
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = (mode: 'full' | 'report') => {
     const doc = new jsPDF('l', 'mm', 'a4');
-    const monthYear = format(selectedMonth, "MMMM yyyy", { locale: id });
     const pageWidth = doc.internal.pageSize.getWidth();
+    
+    let daysToExport: Date[];
+    let periodLabel: string;
+
+    if (mode === 'full') {
+      daysToExport = daysInMonth;
+      periodLabel = format(selectedMonth, "MMMM yyyy", { locale: id });
+    } else {
+      // Periode Laporan: 21 Bulan Lalu - 20 Bulan Ini
+      const start = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 21);
+      const end = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 20);
+      daysToExport = eachDayOfInterval({ start, end });
+      periodLabel = `${format(start, "dd MMM yyyy", { locale: id })} - ${format(end, "dd MMM yyyy", { locale: id })}`;
+    }
 
     // Header
     doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.text(`JADWAL DINAS ${unitName?.toUpperCase() || "PERSONIL"}`, pageWidth / 2, 15, { align: 'center' });
     doc.setFontSize(11); doc.text(`BANDARA INTERNASIONAL JAWA BARAT`, pageWidth / 2, 21, { align: 'center' });
-    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.text(`Periode: ${monthYear}`, pageWidth / 2, 27, { align: 'center' });
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.text(`Periode: ${periodLabel}`, pageWidth / 2, 27, { align: 'center' });
 
     // Main Roster Table
     const head = [
       [
         { content: 'NO', rowSpan: 2, styles: { valign: 'middle' as const, fillColor: [146, 208, 80] as [number, number, number] } }, 
         { content: 'NAMA', rowSpan: 2, styles: { valign: 'middle' as const, fillColor: [146, 208, 80] as [number, number, number] } }, 
-        ...daysInMonth.map(d => ({ 
+        ...daysToExport.map(d => ({ 
           content: ['MG', 'SN', 'SL', 'RB', 'KM', 'JM', 'SB'][d.getDay()], 
           styles: { fillColor: (d.getDay() === 0 || d.getDay() === 6 ? [255, 204, 0] : [146, 208, 80]) as [number, number, number] } 
         }))
       ],
-      [...daysInMonth.map(d => ({ 
+      [...daysToExport.map(d => ({ 
         content: format(d, "dd"), 
         styles: { fillColor: (d.getDay() === 0 || d.getDay() === 6 ? [255, 204, 0] : [146, 208, 80]) as [number, number, number] } 
       }))]
@@ -222,14 +236,14 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     const body: any[] = personnel.map((p, i) => [
       (i + 1).toString(), 
       p.full_name, 
-      ...daysInMonth.map(d => { 
+      ...daysToExport.map(d => { 
         const entry = localRosters.find(r => r.user_id === p.id && r.duty_date === format(d, "yyyy-MM-dd")); 
         return entry ? entry.shift_code : ""; 
       })
     ]);
 
     // Tambah baris kosong pemisah
-    body.push([{ content: '', colSpan: daysInMonth.length + 2, styles: { fillColor: [255, 255, 255], minCellHeight: 2, lineWidth: 0 } }]);
+    body.push([{ content: '', colSpan: daysToExport.length + 2, styles: { fillColor: [255, 255, 255], minCellHeight: 2, lineWidth: 0 } }]);
 
     // Tambah hitungan harian (Counts)
     const codesToCount = [
@@ -242,7 +256,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       body.push([
         '', 
         { content: target.label, styles: { halign: 'left' as const, fontStyle: 'bold' as const } },
-        ...daysInMonth.map(d => {
+        ...daysToExport.map(d => {
           const count = localRosters.filter(r => 
             r.duty_date === format(d, "yyyy-MM-dd") && r.shift_code === target.code
           ).length;
@@ -260,7 +274,6 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       headStyles: { textColor: [0, 0, 0], fontStyle: 'bold' }, 
       columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 45 } }, 
       didParseCell: (data) => {
-        // Warnai teks kode shift di dalam tabel roster
         if (data.section === 'body' && data.column.index > 1 && data.row.index < personnel.length) {
           const code = data.cell.text[0]; 
           if (code) { 
@@ -275,22 +288,12 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     });
 
     let currentY = (doc as any).lastAutoTable.finalY + 10;
-
-    // Legend Table (3 Columns) dengan GRID dan WARNA
     const legendBody: any[] = [];
-    
-    // Group APNZ
     const apnzShift = localShifts.find(s => s.code === 'APNZ') || { code: 'APNZ', name: 'Admin General', start_time: '07:30:00', end_time: '16:30:00', color_code: '#3b82f6' };
-    legendBody.push([
-      'APNZ', 
-      'Admin General', 
-      `${apnzShift.start_time?.substring(0, 5) || '07:30'} - ${apnzShift.end_time?.substring(0, 5) || '16:30'}`
-    ]);
-
+    legendBody.push(['APNZ', 'Admin General', `${apnzShift.start_time?.substring(0, 5) || '07:30'} - ${apnzShift.end_time?.substring(0, 5) || '16:30'}`]);
     localShifts.filter(s => !['APN7', 'APN8', 'APNZ', 'FREE'].includes(s.code)).forEach(s => {
       legendBody.push([s.code, s.name || '', `${s.start_time?.substring(0, 5) || '--'} - ${s.end_time?.substring(0, 5) || '--'}`]);
     });
-    
     legendBody.push(['FREE', 'Libur', '-']);
 
     autoTable(doc, {
@@ -302,11 +305,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       tableWidth: 100,
       styles: { fontSize: 7, cellPadding: 1.5, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1 },
       headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
-      columnStyles: { 
-        0: { cellWidth: 15, fontStyle: 'bold', halign: 'center' }, 
-        1: { cellWidth: 40 },
-        2: { cellWidth: 40, halign: 'center' }
-      },
+      columnStyles: { 0: { cellWidth: 15, fontStyle: 'bold', halign: 'center' }, 1: { cellWidth: 40 }, 2: { cellWidth: 40, halign: 'center' } },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 0) {
           const code = data.cell.text[0];
@@ -319,7 +318,6 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       }
     });
 
-    // Signature
     const sigY = (doc as any).lastAutoTable.finalY + 15;
     const rightAlignX = pageWidth - 60;
     doc.setFontSize(9);
@@ -328,7 +326,8 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     doc.setFont("helvetica", "bold");
     doc.text(`( ${adminName || '..........................'} )`, rightAlignX, sigY + 25);
 
-    doc.save(`Jadwal_Dinas_${format(selectedMonth, "MMMM_yyyy")}.pdf`);
+    doc.save(`Jadwal_Dinas_${mode === 'full' ? 'Bulanan' : 'Laporan'}_${format(selectedMonth, "MMMM_yyyy")}.pdf`);
+    setIsExportModalOpen(false);
   };
 
   return (
@@ -373,8 +372,58 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4 px-4 py-3 sm:py-4">
           <div className="flex items-center gap-4"><Button asChild variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 sm:inline-flex"><Link href="/dashboard"><ArrowLeft className="h-5 w-5" /></Link></Button><div><h1 className="text-lg font-bold text-slate-100 tracking-tight">Jadwal Dinas Personil</h1><p className="text-[10px] font-bold uppercase tracking-wider text-blue-500 mt-0.5">Shift Roster Matrix</p></div></div>
-          <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={handleExportPDF} className="h-10 bg-slate-900 border border-slate-800 text-slate-300 font-bold px-4 no-print flex items-center gap-2"><Printer className="h-4 w-4" /> <span className="hidden sm:inline">PDF</span></Button>{isAdmin && <Button variant="outline" size="sm" className="h-10 border-slate-800 text-blue-400 font-bold px-4 no-print flex items-center gap-2" onClick={() => { setTempShifts([...localShifts]); setIsSettingOpen(true); }}><Settings2 className="h-4 w-4" /> <span className="hidden sm:inline">Settings</span></Button>}</div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsExportModalOpen(true)} className="h-10 bg-slate-900 border border-slate-800 text-slate-300 font-bold px-4 no-print flex items-center gap-2">
+              <Printer className="h-4 w-4" /> <span className="hidden sm:inline">PDF</span>
+            </Button>
+            {isAdmin && (
+              <Button variant="outline" size="sm" className="h-10 border-slate-800 text-blue-400 font-bold px-4 no-print flex items-center gap-2" onClick={() => { setTempShifts([...localShifts]); setIsSettingOpen(true); }}>
+                <Settings2 className="h-4 w-4" /> <span className="hidden sm:inline">Settings</span>
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Modal Opsi Export PDF */}
+        <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
+          <DialogContent className="sm:max-w-[400px] bg-slate-950 border-slate-800 p-0 overflow-hidden shadow-2xl z-[9999]">
+            <div className="p-6 border-b border-slate-800 bg-slate-900/50">
+              <DialogTitle className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                <Printer className="w-5 h-5 text-blue-500" /> Opsi Export PDF
+              </DialogTitle>
+              <p className="text-xs text-slate-400 mt-1">Pilih format jadwal yang ingin diunduh</p>
+            </div>
+            <div className="p-6 space-y-3">
+              <Button 
+                variant="outline" 
+                onClick={() => handleExportPDF('full')}
+                className="w-full h-16 justify-start gap-4 border-slate-800 bg-slate-900/20 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all group p-4"
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                  <Calendar className="w-5 h-5 text-blue-500" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-slate-100">Jadwal Bulanan</p>
+                  <p className="text-[10px] text-slate-500 leading-tight">Periode 1 bulan penuh ({format(selectedMonth, "MMMM yyyy", { locale: id })})</p>
+                </div>
+              </Button>
+
+              <Button 
+                variant="outline" 
+                onClick={() => handleExportPDF('report')}
+                className="w-full h-16 justify-start gap-4 border-slate-800 bg-slate-900/20 hover:bg-emerald-500/10 hover:border-emerald-500/50 transition-all group p-4"
+              >
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                  <FileText className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-slate-100">Jadwal Laporan (21-20)</p>
+                  <p className="text-[10px] text-slate-500 leading-tight">Periode tgl 21 bulan lalu s/d tgl 20 bulan ini</p>
+                </div>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
