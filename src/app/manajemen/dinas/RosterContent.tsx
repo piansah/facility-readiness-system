@@ -182,6 +182,26 @@ export default function RosterContent({
     const range = targetRange || selectedRange;
     if (!range) return;
     const { userIds, dates } = range;
+
+    // OPTIMISTIC UPDATE: Langsung update UI agar terasa instan
+    let updatedRosters = [...localRosters];
+    userIds.forEach(uid => {
+      dates.forEach(date => {
+        if (shiftCode) {
+          // Tambah atau Update Shift
+          const idx = updatedRosters.findIndex(r => r.user_id === uid && r.duty_date === date);
+          if (idx >= 0) updatedRosters[idx] = { ...updatedRosters[idx], shift_code: shiftCode };
+          else updatedRosters.push({ user_id: uid, duty_date: date, shift_code: shiftCode });
+        } else {
+          // Hapus Shift
+          updatedRosters = updatedRosters.filter(r => !(r.user_id === uid && r.duty_date === date));
+        }
+      });
+    });
+    setLocalRosters(updatedRosters);
+    setSelectedRange(null);
+    setOpenDropdown(null);
+
     try {
       const updates = userIds.flatMap(uid => dates.map(date => ({ user_id: uid, duty_date: date, shift_code: shiftCode })));
       if (shiftCode) {
@@ -195,11 +215,13 @@ export default function RosterContent({
         }
       }
       
-      setSelectedRange(null);
-      setOpenDropdown(null);
       toast.success("Jadwal diperbarui");
       router.refresh();
-    } catch (e) { toast.error("Gagal memperbarui jadwal"); }
+    } catch (e) { 
+      toast.error("Gagal memperbarui jadwal"); 
+      // Rollback jika error
+      setLocalRosters(initialRosters);
+    }
   };
 
   const handleSaveShifts = async () => {
