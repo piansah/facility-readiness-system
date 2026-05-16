@@ -206,7 +206,7 @@ export default function RosterContent({
 
     try {
       if (shiftCode) {
-        const updates = userIds.flatMap(uid => dates.map(date => ({ user_id: uid, duty_date: date, shift_code: shiftCode })));
+        const updates = userIds.flatMap(uid => dates.map(date => ({ user_id: uid, duty_date: date, shift_code: shiftCode, unit_id: unitId })));
         for (const up of updates) {
           const { error } = await supabase.from("duty_rosters").upsert(up, { onConflict: "user_id, duty_date" });
           if (error) throw error;
