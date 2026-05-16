@@ -39,6 +39,7 @@ interface Personnel {
   id: string;
   full_name: string;
   unit_id: string;
+  role: string;
 }
 
 export default function RosterContent({ 
@@ -94,7 +95,7 @@ export default function RosterContent({
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const { data: pData } = await supabase.from("profiles").select("id, full_name, unit_id").eq("unit_id", unitId).order("full_name");
+      const { data: pData } = await supabase.from("profiles").select("id, full_name, unit_id, role").eq("unit_id", unitId).order("full_name");
       const { data: sData } = await supabase.from("shift_configs").select("*").eq("unit_id", unitId);
       const { data: rData } = await supabase.from("rosters").select("*").filter("duty_date", "gte", format(startOfMonth(selectedMonth), "yyyy-MM-01")).filter("duty_date", "lte", format(endOfMonth(selectedMonth), "yyyy-MM-dd"));
       
@@ -169,8 +170,18 @@ export default function RosterContent({
   };
 
   const getAvailableShifts = (userId: string) => {
-    const defaultShifts = [{ code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' }, { code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' }];
-    return [...localShifts, ...defaultShifts, { code: 'FREE', name: 'Libur', color_code: '#ef4444' }];
+    const targetUser = personnel.find(p => p.id === userId);
+    const isAdminUser = targetUser?.role === 'admin' || targetUser?.role === 'superadmin';
+
+    // Hapus APNZ dari pilihan manapun
+    const shifts = localShifts.filter(s => s.code !== 'APNZ');
+    
+    // Siapkan default APN untuk Admin
+    const adminShifts = isAdminUser 
+      ? [{ code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' }, { code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' }]
+      : [];
+
+    return [...shifts, ...adminShifts, { code: 'FREE', name: 'Libur', color_code: '#ef4444' }];
   };
 
   const handleBulkAssign = async (shiftCode: string | null, targetRange?: { userIds: string[]; dates: string[] }) => {

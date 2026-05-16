@@ -46,7 +46,7 @@ export function Sidebar({ unitName }: { unitName: string }) {
         onClick={() => setIsPinned(!isPinned)}
         className={cn(
           "fixed top-4 left-4 z-[110] h-10 w-10 flex items-center justify-center rounded-xl border transition-all duration-300 backdrop-blur-md hidden sm:flex",
-          isPinned 
+          (isPinned || isOpen)
             ? "bg-emerald-500 border-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 translate-x-52" 
             : "bg-slate-950/50 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-100"
         )}
