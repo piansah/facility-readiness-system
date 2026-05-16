@@ -59,7 +59,7 @@ export default async function FacilityManagementPage({
     redirect("/dashboard");
   }
 
-  const isSuperAdmin = canManageUnits(profile?.role);
+  const isSuperAdmin = profile?.role === "super_admin";
   const canEdit = isSuperAdmin || profile?.role === "admin";
 
   // Fetch all units for sidebar/filter

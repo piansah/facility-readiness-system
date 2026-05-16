@@ -207,8 +207,8 @@ export default async function UserManagementPage() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <form action={async () => { 
-                        if (!canEdit) return;
                         "use server"; 
+                        if (!canEdit) return;
                         await toggleUserStatus(u.id, u.is_active); 
                       }}>
                         <button type="submit" className={!canEdit ? "cursor-default" : "focus:outline-none"} disabled={!canEdit}>
