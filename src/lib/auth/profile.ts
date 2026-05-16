@@ -2,26 +2,32 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppProfile } from "./roles";
 
 export async function getProfile(supabase: SupabaseClient, userId: string) {
-  const { data, error } = await supabase
+  const { data: userData, error: userError } = await supabase
     .from("users")
-    .select(`
-      *,
-      assigned_unit:unit_id (name)
-    `)
+    .select("*")
     .eq("id", userId)
     .single();
 
-  if (error) {
-    console.error("GET PROFILE ERROR:", error);
-    return { profile: null, error };
+  if (userError || !userData) {
+    console.error("GET PROFILE ERROR:", userError);
+    return { profile: null, error: userError };
   }
 
-  // Normalisasi: Tangani jika assigned_unit adalah array atau objek
-  const rawUnit = (data as any).assigned_unit;
-  const unitData = Array.isArray(rawUnit) ? rawUnit[0] : rawUnit;
+  let unitName = null;
+  if (userData.unit_id) {
+    const { data: unitData } = await supabase
+      .from("units")
+      .select("name")
+      .eq("id", userData.unit_id)
+      .maybeSingle();
+    unitName = unitData?.name || null;
+  }
 
   return { 
-    profile: { ...data, units: unitData } as AppProfile & { units: { name: string } | null }, 
+    profile: { 
+      ...userData, 
+      units: unitName ? { name: unitName } : null 
+    } as AppProfile & { units: { name: string } | null }, 
     error: null 
   };
 }

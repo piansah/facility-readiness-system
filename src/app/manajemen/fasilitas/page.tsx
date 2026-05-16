@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+export const dynamic = "force-dynamic";
 import { getProfile } from "@/lib/auth/profile";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

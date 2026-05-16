@@ -1,4 +1,5 @@
 import React, { Suspense } from "react";
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { CheckCircle2, Wrench, AlertTriangle, LogOut, BarChart3, ClipboardList, Clock3, Camera, Server, Calendar, Users, BookOpen, User } from "lucide-react";
 import { redirect } from "next/navigation";

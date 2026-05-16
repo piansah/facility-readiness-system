@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,7 +31,9 @@ async function ProfilContent() {
   const { profile: userData } = await getProfile(supabase, user.id);
 
   const isSuperAdmin = userData?.role === "super_admin";
-  const unitName = isSuperAdmin ? "Global / Pusat" : (userData as any)?.units?.name;
+  const unitName = isSuperAdmin 
+    ? "Global / Pusat" 
+    : (userData as any)?.units?.name || (userData as any)?.assigned_unit?.name || (userData as any)?.["units!users_unit_id_fkey"]?.name;
 
   const formatUnitName = (name?: string) => {
     if (isSuperAdmin) return "Global / Pusat";
