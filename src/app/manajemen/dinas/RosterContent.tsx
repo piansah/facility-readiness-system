@@ -197,29 +197,101 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     const doc = new jsPDF('l', 'mm', 'a4');
     const monthYear = format(selectedMonth, "MMMM yyyy", { locale: id });
     const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Header
     doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.text(`JADWAL DINAS ${unitName?.toUpperCase() || "PERSONIL"}`, pageWidth / 2, 15, { align: 'center' });
     doc.setFontSize(11); doc.text(`BANDARA INTERNASIONAL JAWA BARAT`, pageWidth / 2, 21, { align: 'center' });
     doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.text(`Periode: ${monthYear}`, pageWidth / 2, 27, { align: 'center' });
+
+    // Main Roster Table
     const head = [
-      [{ content: 'NO', rowSpan: 2, styles: { valign: 'middle' as const, fillColor: [146, 208, 80] as [number, number, number] } }, { content: 'NAMA', rowSpan: 2, styles: { valign: 'middle' as const, fillColor: [146, 208, 80] as [number, number, number] } }, ...daysInMonth.map(d => ({ content: ['MG', 'SN', 'SL', 'RB', 'KM', 'JM', 'SB'][d.getDay()], styles: { fillColor: (d.getDay() === 0 || d.getDay() === 6 ? [255, 204, 0] : [146, 208, 80]) as [number, number, number] } }))],
-      [...daysInMonth.map(d => ({ content: format(d, "dd"), styles: { fillColor: (d.getDay() === 0 || d.getDay() === 6 ? [255, 204, 0] : [146, 208, 80]) as [number, number, number] } }))]
+      [
+        { content: 'NO', rowSpan: 2, styles: { valign: 'middle' as const, fillColor: [146, 208, 80] as [number, number, number] } }, 
+        { content: 'NAMA', rowSpan: 2, styles: { valign: 'middle' as const, fillColor: [146, 208, 80] as [number, number, number] } }, 
+        ...daysInMonth.map(d => ({ 
+          content: ['MG', 'SN', 'SL', 'RB', 'KM', 'JM', 'SB'][d.getDay()], 
+          styles: { fillColor: (d.getDay() === 0 || d.getDay() === 6 ? [255, 204, 0] : [146, 208, 80]) as [number, number, number] } 
+        }))
+      ],
+      [...daysInMonth.map(d => ({ 
+        content: format(d, "dd"), 
+        styles: { fillColor: (d.getDay() === 0 || d.getDay() === 6 ? [255, 204, 0] : [146, 208, 80]) as [number, number, number] } 
+      }))]
     ];
-    const body: any[] = personnel.map((p, i) => [(i + 1).toString(), p.full_name, ...daysInMonth.map(d => { const entry = localRosters.find(r => r.user_id === p.id && r.duty_date === format(d, "yyyy-MM-dd")); return entry ? entry.shift_code : ""; })]);
-    body.push([{ content: '', colSpan: daysInMonth.length + 2, styles: { fillColor: [255, 255, 255], minCellHeight: 2, lineWidth: 0 } }]);
-    const allShiftsForPDF = [...shifts];
-    if (!allShiftsForPDF.some(s => s.code === 'APN7')) allShiftsForPDF.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' });
-    if (!allShiftsForPDF.some(s => s.code === 'APN8')) allShiftsForPDF.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' });
-    allShiftsForPDF.filter(s => ['APBA', 'APBB', 'APN7', 'APN8', 'FREE'].includes(s.code)).forEach(s => {
-      let label = s.code === 'APBA' ? 'PAGI' : s.code === 'APBB' ? 'MALAM' : s.code === 'FREE' ? 'LIBUR' : s.code;
-      body.push([{ content: s.code, styles: { fontStyle: 'bold' as const, halign: 'center' as const } }, { content: `: ${label}`, styles: { fontStyle: 'bold' as const, halign: 'left' as const } }, ...daysInMonth.map(d => { const count = localRosters.filter(r => r.duty_date === format(d, "yyyy-MM-dd") && r.shift_code === s.code).length; return { content: count > 0 ? count.toString() : "0", styles: { halign: 'center' as const } }; })]);
-    });
+
+    const body: any[] = personnel.map((p, i) => [
+      (i + 1).toString(), 
+      p.full_name, 
+      ...daysInMonth.map(d => { 
+        const entry = localRosters.find(r => r.user_id === p.id && r.duty_date === format(d, "yyyy-MM-dd")); 
+        return entry ? entry.shift_code : ""; 
+      })
+    ]);
+
     autoTable(doc, {
-      head, body, startY: 30, theme: 'grid', margin: { left: 5, right: 5 }, styles: { fontSize: 5.5, cellPadding: 0.5, halign: 'center', textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.2, fontStyle: 'bold', overflow: 'hidden' }, headStyles: { textColor: [0, 0, 0], fontStyle: 'bold' }, columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 45 } }, didParseCell: (data) => {
+      head, body, 
+      startY: 30, 
+      theme: 'grid', 
+      margin: { left: 5, right: 5 }, 
+      styles: { fontSize: 5.5, cellPadding: 0.5, halign: 'center', textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.2, fontStyle: 'bold', overflow: 'hidden' }, 
+      headStyles: { textColor: [0, 0, 0], fontStyle: 'bold' }, 
+      columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 45 } }, 
+      didParseCell: (data) => {
         if (data.section === 'body' && data.column.index > 1 && data.row.index < personnel.length) {
-          const code = data.cell.text[0]; if (code) { const shift = localShifts.find(s => s.code === code); if (shift && shift.color_code) { const hex = shift.color_code.replace('#', ''); data.cell.styles.textColor = [parseInt(hex.substring(0, 2), 16), parseInt(hex.substring(2, 4), 16), parseInt(hex.substring(4, 6), 16)]; } }
+          const code = data.cell.text[0]; 
+          if (code) { 
+            const shift = localShifts.find(s => s.code === code); 
+            if (shift && shift.color_code) { 
+              const hex = shift.color_code.replace('#', ''); 
+              data.cell.styles.textColor = [parseInt(hex.substring(0, 2), 16), parseInt(hex.substring(2, 4), 16), parseInt(hex.substring(4, 6), 16)]; 
+            } 
+          }
         }
       }
     });
+
+    let currentY = (doc as any).lastAutoTable.finalY + 10;
+
+    // Legend Table (3 Columns)
+    const legendBody: any[] = [];
+    
+    // Group APNZ
+    const apnzShift = localShifts.find(s => s.code === 'APNZ') || { code: 'APNZ', name: 'Admin General', start_time: '07:30:00', end_time: '16:30:00' };
+    legendBody.push([
+      'APNZ', 
+      'Admin General', 
+      `${apnzShift.start_time?.substring(0, 5) || '07:30'} - ${apnzShift.end_time?.substring(0, 5) || '16:30'}`
+    ]);
+
+    localShifts.filter(s => !['APN7', 'APN8', 'APNZ', 'FREE'].includes(s.code)).forEach(s => {
+      legendBody.push([s.code, s.name || '', `${s.start_time?.substring(0, 5) || '--'} - ${s.end_time?.substring(0, 5) || '--'}`]);
+    });
+    
+    legendBody.push(['FREE', 'Libur', '-']);
+
+    autoTable(doc, {
+      body: legendBody,
+      startY: currentY,
+      theme: 'plain',
+      margin: { left: 5 },
+      tableWidth: 100,
+      styles: { fontSize: 7, cellPadding: 1, textColor: [0, 0, 0] },
+      columnStyles: { 
+        0: { cellWidth: 15, fontStyle: 'bold' }, 
+        1: { cellWidth: 40 },
+        2: { cellWidth: 40 }
+      }
+    });
+
+    // Signature
+    const sigY = (doc as any).lastAutoTable.finalY + 15;
+    const rightAlignX = pageWidth - 60;
+    doc.setFontSize(9);
+    doc.text(`Majalengka, ${format(new Date(), "dd MMMM yyyy", { locale: id })}`, rightAlignX, sigY);
+    doc.text(`Admin ${unitName || ''}`, rightAlignX, sigY + 5);
+    doc.setFont("helvetica", "bold");
+    doc.text(`( ${adminName || '..........................'} )`, rightAlignX, sigY + 25);
+
     doc.save(`Jadwal_Dinas_${format(selectedMonth, "MMMM_yyyy")}.pdf`);
   };
 
@@ -233,15 +305,26 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
             </div>
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto scrollbar-hide bg-slate-950">
               {tempShifts.map((s, idx) => (
-                <div key={idx} className="p-4 rounded-xl border border-slate-800 bg-slate-900/20 grid grid-cols-12 gap-6 items-center transition-all hover:bg-slate-900/40">
-                  <div className="col-span-2"><Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Kode</Label><Input value={s.code} onChange={(e) => { const n = [...tempShifts]; n[idx].code = e.target.value.toUpperCase(); setTempShifts(n); }} className="h-11 font-bold bg-slate-950 border-slate-800 text-center" /></div>
+                <div key={idx} className="p-4 rounded-xl border border-slate-800 bg-slate-900/20 grid grid-cols-12 gap-6 items-center transition-all hover:bg-slate-900/40 relative group">
+                  <div className="col-span-2"><Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Kode</Label><Input value={s.code} onChange={(e) => { const n = [...tempShifts]; n[idx].code = e.target.value.toUpperCase(); setTempShifts(n); }} className="h-11 font-bold bg-slate-950 border-slate-800 text-center uppercase" /></div>
                   <div className="col-span-5"><Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Nama Shift</Label><Input value={s.name || ''} onChange={(e) => { const n = [...tempShifts]; n[idx].name = e.target.value; setTempShifts(n); }} className="h-11 bg-slate-950 border-slate-800" /></div>
-                  <div className="col-span-5 grid grid-cols-2 gap-4">
-                    <div><Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Jam Mulai</Label><Input type="time" value={s.start_time ? s.start_time.substring(0, 5) : ''} onChange={(e) => { const n = [...tempShifts]; n[idx].start_time = e.target.value ? e.target.value + ":00" : null; setTempShifts(n); }} className="h-11 bg-slate-950 border-slate-800" /></div>
-                    <div><Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Jam Selesai</Label><Input type="time" value={s.end_time ? s.end_time.substring(0, 5) : ''} onChange={(e) => { const n = [...tempShifts]; n[idx].end_time = e.target.value ? e.target.value + ":00" : null; setTempShifts(n); }} className="h-11 bg-slate-950 border-slate-800" /></div>
+                  <div className="col-span-4 grid grid-cols-2 gap-4">
+                    <div><Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Mulai</Label><Input type="time" value={s.start_time ? s.start_time.substring(0, 5) : ''} onChange={(e) => { const n = [...tempShifts]; n[idx].start_time = e.target.value ? e.target.value + ":00" : null; setTempShifts(n); }} className="h-11 bg-slate-950 border-slate-800" /></div>
+                    <div><Label className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 block font-semibold">Selesai</Label><Input type="time" value={s.end_time ? s.end_time.substring(0, 5) : ''} onChange={(e) => { const n = [...tempShifts]; n[idx].end_time = e.target.value ? e.target.value + ":00" : null; setTempShifts(n); }} className="h-11 bg-slate-950 border-slate-800" /></div>
+                  </div>
+                  <div className="col-span-1 flex justify-end pt-6">
+                    <Button variant="ghost" size="sm" onClick={() => setTempShifts(tempShifts.filter((_, i) => i !== idx))} className="h-11 w-11 p-0 text-red-500 hover:bg-red-500/10"><X className="h-4 w-4" /></Button>
                   </div>
                 </div>
               ))}
+              
+              <Button 
+                variant="outline" 
+                onClick={() => setTempShifts([...tempShifts, { code: '', name: '', start_time: '08:00:00', end_time: '17:00:00', color_code: '#94a3b8' }])}
+                className="w-full h-12 border-dashed border-slate-800 bg-slate-900/10 text-slate-500 hover:text-slate-300 hover:bg-slate-900/30"
+              >
+                + Tambah Shift Baru
+              </Button>
             </div>
             <div className="p-6 flex justify-end gap-3 border-t border-slate-800 bg-slate-900/50">
               <Button variant="ghost" onClick={() => setIsSettingOpen(false)} className="text-slate-400">Batal</Button>
@@ -336,13 +419,55 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
         {/* Legend */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center gap-3"><div className="h-10 w-1 rounded-full bg-blue-500" /><div className="flex-1"><p className="text-xs font-bold text-slate-100 uppercase">APNZ</p><p className="text-[10px] text-slate-400 font-medium">Admin General</p></div></div>
-          {localShifts.map((s) => {
-            const clr = getSafeColor(s.code, s.color_code);
-            return (
-              <div key={s.code} className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 flex items-center gap-3"><div className="h-10 w-1 rounded-full" style={{ backgroundColor: clr }} /><div className="flex-1"><p className="text-xs font-bold text-slate-100 uppercase">{s.code}</p><p className="text-[10px] text-slate-400 font-medium">{s.name}</p></div></div>
-            );
-          })}
+          {(() => {
+            const displayedCodes = new Set();
+            const legendItems = [];
+
+            // Group APN codes into one APNZ item
+            const apnShifts = localShifts.filter(s => s.code === 'APN7' || s.code === 'APN8' || s.code === 'APNZ');
+            if (apnShifts.length > 0) {
+              const apnzFromDb = apnShifts.find(s => s.code === 'APNZ');
+              legendItems.push(
+                <div key="APNZ-GROUP" className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center gap-3">
+                  <div className="h-10 w-1 rounded-full bg-blue-500" />
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-slate-100 uppercase">APNZ</p>
+                    <p className="text-[10px] text-slate-400 font-medium">Admin General</p>
+                    <p className="text-[9px] text-slate-500 font-mono mt-0.5">
+                      {apnzFromDb?.start_time?.substring(0, 5) || '07:30'} - {apnzFromDb?.end_time?.substring(0, 5) || '16:30'}
+                    </p>
+                  </div>
+                </div>
+              );
+              displayedCodes.add('APN7');
+              displayedCodes.add('APN8');
+              displayedCodes.add('APNZ');
+            }
+
+            // Map the rest
+            localShifts.forEach((s) => {
+              if (displayedCodes.has(s.code)) return;
+              displayedCodes.add(s.code);
+              
+              const clr = getSafeColor(s.code, s.color_code);
+              legendItems.push(
+                <div key={s.code} className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 flex items-center gap-3">
+                  <div className="h-10 w-1 rounded-full" style={{ backgroundColor: clr }} />
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-slate-100 uppercase">{s.code}</p>
+                    <p className="text-[10px] text-slate-400 font-medium">{s.name}</p>
+                    {s.start_time && s.end_time && (
+                      <p className="text-[9px] text-slate-500 font-mono mt-0.5">
+                        {s.start_time.substring(0, 5)} - {s.end_time.substring(0, 5)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            });
+
+            return legendItems;
+          })()}
         </div>
       </main>
     </div>
@@ -362,42 +487,34 @@ function DropdownPortalContent({
   handleBulkAssign: (shiftCode: string | null, targetRange?: { userIds: string[]; dates: string[] }) => void;
 }) {
   const { userId, dateStr, anchorRect } = openDropdown;
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number; openUp: boolean }>({ top: 0, left: 0, openUp: false });
 
-  useEffect(() => {
-    const dropdownH = 280; // estimated max height
-    const dropdownW = 144; // w-36 = 9rem = 144px
+  // Hitung posisi secara sinkron agar tidak ada flash/flying effect
+  const pos = useMemo(() => {
+    const dropdownH = 280;
+    const dropdownW = 144;
     const viewH = window.innerHeight;
     const viewW = window.innerWidth;
 
-    // Decide vertical: open up or down
     const spaceBelow = viewH - anchorRect.bottom;
     const openUp = spaceBelow < dropdownH && anchorRect.top > dropdownH;
 
-    let top = openUp
-      ? anchorRect.top - 8 // will use bottom positioning via transform
-      : anchorRect.bottom + 4;
+    const top = openUp ? anchorRect.top - 4 : anchorRect.bottom + 4;
 
-    // Horizontal: center on cell, clamp to viewport
     let left = anchorRect.left + anchorRect.width / 2 - dropdownW / 2;
     left = Math.max(8, Math.min(left, viewW - dropdownW - 8));
 
-    setPos({ top, left, openUp });
+    return { top, left, openUp };
   }, [anchorRect]);
 
   const shifts = getAvailableShifts(userId);
 
   return (
     <div
-      ref={dropdownRef}
-      className="fixed z-[9999] w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+      className="fixed z-[9999] w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-2 space-y-1"
       style={{
         left: pos.left,
-        ...(pos.openUp
-          ? { top: pos.top, transform: 'translateY(-100%)' }
-          : { top: pos.top }
-        ),
+        top: pos.top,
+        ...(pos.openUp ? { transform: 'translateY(-100%)' } : {}),
       }}
       onClick={(e) => e.stopPropagation()}
     >
