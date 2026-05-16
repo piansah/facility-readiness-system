@@ -41,13 +41,26 @@ interface Personnel {
   unit_id: string;
 }
 
-export default function RosterContent({ unitId, unitName, currentUserId, isAdmin, adminName }: { unitId: string; unitName: string | null; currentUserId: string; isAdmin: boolean; adminName?: string }) {
+export default function RosterContent({ 
+  unitId, unitName, currentUserId, isAdmin, adminName,
+  personnel: initialPersonnel, shifts: initialShifts, rosters: initialRosters, selectedMonth: initialMonth 
+}: { 
+  unitId: string; 
+  unitName: string | null; 
+  currentUserId: string; 
+  isAdmin: boolean; 
+  adminName?: string;
+  personnel: Personnel[];
+  shifts: ShiftConfig[];
+  rosters: RosterEntry[];
+  selectedMonth: Date;
+}) {
   const supabase = createClient();
   const [hasMounted, setHasMounted] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
-  const [personnel, setPersonnel] = useState<Personnel[]>([]);
-  const [localShifts, setLocalShifts] = useState<ShiftConfig[]>([]);
-  const [localRosters, setLocalRosters] = useState<RosterEntry[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
+  const [personnel, setPersonnel] = useState<Personnel[]>(initialPersonnel);
+  const [localShifts, setLocalShifts] = useState<ShiftConfig[]>(initialShifts);
+  const [localRosters, setLocalRosters] = useState<RosterEntry[]>(initialRosters);
   const [isSettingOpen, setIsSettingOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [tempShifts, setTempShifts] = useState<ShiftConfig[]>([]);

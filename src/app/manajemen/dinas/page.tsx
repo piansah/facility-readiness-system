@@ -119,7 +119,7 @@ async function DinasContent({ searchParams }: { searchParams: { month?: string }
       shifts={shifts || []}
       rosters={rosters || []}
       selectedMonth={selectedMonth}
-      unitId={profile.unit_id}
+      unitId={profile.unit_id || ""}
       unitName={unitName}
       adminName={profile.full_name || "Admin"}
       isAdmin={profile.role === 'admin' || isSuperAdmin}
