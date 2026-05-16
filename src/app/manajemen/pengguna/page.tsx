@@ -5,7 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Shield, Users, Building2, ToggleLeft, ToggleRight } from "lucide-react";
 import { toggleUserStatus } from "./actions";
 import { UserEditModal, UserFormModal } from "./UserForm";
-import { canManageUsers } from "@/lib/auth/roles";
+import { canAccessManagement, canManageUsers } from "@/lib/auth/roles";
 
 // Types for the page
 type UserWithAccess = {
@@ -27,12 +27,13 @@ export default async function UserManagementPage() {
 
   const { profile } = await getProfile(supabase, user.id);
 
-  // Gating: hanya super_admin dan admin yang bisa akses
-  if (!canManageUsers(profile?.role)) {
+  // Gating: super_admin, admin, dan petugas bisa akses
+  if (!canAccessManagement(profile?.role)) {
     redirect("/dashboard");
   }
 
   const isSuperAdmin = profile?.role === "super_admin";
+  const canEdit = isSuperAdmin || profile?.role === "admin";
 
   // Super Admin: lihat semua user kecuali super_admin lain
   // Admin Unit: hanya lihat user di unit sendiri (tidak tampilkan super_admin)
@@ -56,7 +57,20 @@ export default async function UserManagementPage() {
   }
 
   const { data: usersData } = await usersQuery;
-  const users = (usersData ?? []) as UserWithAccess[];
+  
+  // Sort manually to put admins first: super_admin > admin > petugas > viewer
+  const rolePriority: Record<string, number> = {
+    super_admin: 0,
+    admin: 1,
+    petugas: 2,
+    viewer: 3
+  };
+
+  const users = ((usersData ?? []) as UserWithAccess[]).sort((a, b) => {
+    const priorityDiff = (rolePriority[a.role] ?? 99) - (rolePriority[b.role] ?? 99);
+    if (priorityDiff !== 0) return priorityDiff;
+    return a.full_name.localeCompare(b.full_name);
+  });
 
   // Fetch All Units for the form/mapping
   let unitsQueryMapping = supabase
@@ -80,10 +94,14 @@ export default async function UserManagementPage() {
               <Shield className="h-4 w-4" />
               <span className="text-[10px] font-bold uppercase tracking-widest">Administrator</span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-100">Manajemen Pengguna</h1>
-            <p className="text-sm text-slate-400">Kelola akses, role, dan pembagian unit operasional.</p>
+            <h1 className="text-2xl font-bold text-slate-100">
+              {canEdit ? "Manajemen Pengguna" : "Daftar Pengguna"}
+            </h1>
+            <p className="text-sm text-slate-400">
+              {canEdit ? "Kelola akses, role, dan pembagian unit operasional." : "Daftar personil dan rekan satu unit operasional."}
+            </p>
           </div>
-          <UserFormModal units={allUnits || []} currentUserRole={profile?.role ?? 'petugas'} />
+          {canEdit && <UserFormModal units={allUnits || []} currentUserRole={profile?.role ?? 'petugas'} />}
         </div>
 
         {/* User Stats — berbeda untuk Super Admin vs Admin */}
@@ -188,8 +206,12 @@ export default async function UserManagementPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <form action={async () => { "use server"; await toggleUserStatus(u.id, u.is_active); }}>
-                        <button type="submit" className="focus:outline-none">
+                      <form action={async () => { 
+                        if (!canEdit) return;
+                        "use server"; 
+                        await toggleUserStatus(u.id, u.is_active); 
+                      }}>
+                        <button type="submit" className={!canEdit ? "cursor-default" : "focus:outline-none"} disabled={!canEdit}>
                           {u.is_active ? (
                             <div className="flex items-center justify-center gap-1 text-emerald-400">
                               <ToggleRight className="h-6 w-6" />
@@ -205,7 +227,11 @@ export default async function UserManagementPage() {
                       </form>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <UserEditModal user={u} units={allUnits || []} currentUserRole={profile?.role ?? 'petugas'} />
+                      {canEdit ? (
+                        <UserEditModal user={u} units={allUnits || []} currentUserRole={profile?.role ?? 'petugas'} />
+                      ) : (
+                        <span className="text-[10px] text-slate-600 font-bold uppercase">Read Only</span>
+                      )}
                     </td>
                   </tr>
                 ))}

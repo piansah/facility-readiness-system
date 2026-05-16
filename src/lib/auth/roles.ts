@@ -24,9 +24,9 @@ export function canReviewReports(role?: UserRole) {
   return role === "admin";
 }
 
-/** Super Admin dan Admin bisa akses halaman manajemen (beda level) */
+/** Super Admin, Admin, dan Petugas bisa akses halaman manajemen (beda level/aksi) */
 export function canAccessManagement(role?: UserRole) {
-  return role === "super_admin" || role === "admin";
+  return role === "super_admin" || role === "admin" || role === "petugas";
 }
 
 /** Hanya Super Admin yang bisa kelola Unit (tambah/edit/hapus unit bandara) */

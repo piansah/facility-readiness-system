@@ -1,4 +1,4 @@
-import { Home, QrCode, User, Calendar, LayoutList } from "lucide-react";
+import { Home, QrCode, User, Calendar, LayoutList, Users, Shield } from "lucide-react";
 
 export const NAVIGATION_ITEMS = [
   {
@@ -7,14 +7,24 @@ export const NAVIGATION_ITEMS = [
     href: "/dashboard",
   },
   {
-    label: "Jadwal Maintenance",
-    icon: Calendar,
-    href: "/manajemen/jadwal",
-  },
-  {
     label: "SCAN QR",
     icon: QrCode,
     href: "/scan",
+  },
+  {
+    label: "Aset & Fasilitas",
+    icon: Shield,
+    href: "/manajemen/fasilitas",
+  },
+  {
+    label: "Daftar Pengguna",
+    icon: Users,
+    href: "/manajemen/pengguna",
+  },
+  {
+    label: "Jadwal Maintenance",
+    icon: Calendar,
+    href: "/manajemen/jadwal",
   },
   {
     label: "Jadwal Dinas",

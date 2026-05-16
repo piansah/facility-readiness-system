@@ -71,7 +71,19 @@ async function DinasContent({ searchParams }: { searchParams: { month?: string }
       return <div>Database Error</div>;
     }
 
-    personnel = pRes.data;
+    // Sort manually: Admin first, then Petugas, then alphabetical by name
+    const rolePriority: Record<string, number> = {
+      admin: 0,
+      petugas: 1,
+      viewer: 2
+    };
+
+    personnel = (pRes.data || []).sort((a, b) => {
+      const priorityDiff = (rolePriority[a.role] ?? 99) - (rolePriority[b.role] ?? 99);
+      if (priorityDiff !== 0) return priorityDiff;
+      return a.full_name.localeCompare(b.full_name);
+    });
+
     shifts = sRes.data;
     rosters = rRes.data;
 

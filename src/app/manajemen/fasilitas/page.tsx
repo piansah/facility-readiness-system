@@ -12,7 +12,7 @@ import { CategoryListPanel } from "./category-list-panel";
 import { FacilityHeaderActions } from "./facility-header-actions";
 import { FacilityRowActions } from "./facility-row-actions";
 import { BulkQRButton } from "./bulk-qr-button";
-import { canManageFacilities, canManageUnits } from "@/lib/auth/roles";
+import { canAccessManagement, canManageFacilities, canManageUnits } from "@/lib/auth/roles";
 
 type Unit = {
   id: string;
@@ -54,12 +54,13 @@ export default async function FacilityManagementPage({
 
   const { profile } = await getProfile(supabase, user.id);
 
-  // Allow Super Admin and Unit Admin — but with different access levels
-  if (!canManageFacilities(profile?.role)) {
+  // Gating: super_admin, admin, dan petugas bisa akses
+  if (!canAccessManagement(profile?.role)) {
     redirect("/dashboard");
   }
 
   const isSuperAdmin = canManageUnits(profile?.role);
+  const canEdit = isSuperAdmin || profile?.role === "admin";
 
   // Fetch all units for sidebar/filter
   let unitsQuery = supabase
@@ -109,17 +110,23 @@ export default async function FacilityManagementPage({
               <Building2 className="h-4 w-4" />
               <span className="text-[10px] font-bold uppercase tracking-widest">Infrastruktur</span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-100">Manajemen Fasilitas</h1>
-            <p className="text-sm text-slate-400">Konfigurasi unit, kategori, dan daftar aset operasional.</p>
+            <h1 className="text-2xl font-bold text-slate-100">
+              {canEdit ? "Manajemen Fasilitas" : "Daftar Aset"}
+            </h1>
+            <p className="text-sm text-slate-400">
+              {canEdit ? "Konfigurasi unit, kategori, dan daftar aset operasional." : "Daftar aset operasional dan informasi penempatan."}
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <FacilityHeaderActions
-              units={units ?? []}
-              categories={categories ?? []}
-              selectedUnitId={selectedUnitId}
-              isSuperAdmin={isSuperAdmin}
-            />
+            {canEdit && (
+              <FacilityHeaderActions
+                units={units ?? []}
+                categories={categories ?? []}
+                selectedUnitId={selectedUnitId}
+                isSuperAdmin={isSuperAdmin}
+              />
+            )}
           </div>
         </div>
 
