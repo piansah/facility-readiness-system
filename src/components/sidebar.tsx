@@ -5,10 +5,33 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NAVIGATION_ITEMS } from "@/lib/constants/navigation";
-import { LogOut, AlertCircle } from "lucide-react";
+import { useFormStatus } from "react-dom";
+import { LogOut, AlertCircle, Loader2 } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+
+function LogoutSubmitButton() {
+  const { pending } = useFormStatus();
+  
+  return (
+    <Button 
+      type="submit"
+      variant="destructive" 
+      disabled={pending}
+      className="w-full bg-red-600 hover:bg-red-500 font-bold"
+    >
+      {pending ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Mengeluarkan...
+        </>
+      ) : (
+        "Ya, Logout Sekarang"
+      )}
+    </Button>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -108,13 +131,7 @@ export function Sidebar() {
           </div>
           <div className="flex flex-col gap-2">
             <form action={logout}>
-              <Button 
-                type="submit"
-                variant="destructive" 
-                className="w-full bg-red-600 hover:bg-red-500 font-bold"
-              >
-                Ya, Logout Sekarang
-              </Button>
+              <LogoutSubmitButton />
             </form>
             <Button 
               variant="ghost" 

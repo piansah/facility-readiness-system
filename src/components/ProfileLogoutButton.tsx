@@ -1,10 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { LogOut, AlertCircle } from "lucide-react";
+import { useFormStatus } from "react-dom";
+import { LogOut, AlertCircle, Loader2 } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+function LogoutSubmitButton() {
+  const { pending } = useFormStatus();
+  
+  return (
+    <Button 
+      type="submit"
+      variant="destructive" 
+      disabled={pending}
+      className="w-full bg-red-600 hover:bg-red-500 font-bold"
+    >
+      {pending ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Mengeluarkan...
+        </>
+      ) : (
+        "Ya, Logout Sekarang"
+      )}
+    </Button>
+  );
+}
 
 export function ProfileLogoutButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,13 +60,7 @@ export function ProfileLogoutButton() {
           </div>
           <div className="flex flex-col gap-2">
             <form action={logout} className="w-full">
-              <Button 
-                type="submit"
-                variant="destructive" 
-                className="w-full bg-red-600 hover:bg-red-500 font-bold"
-              >
-                Ya, Logout Sekarang
-              </Button>
+              <LogoutSubmitButton />
             </form>
             <Button 
               variant="ghost" 

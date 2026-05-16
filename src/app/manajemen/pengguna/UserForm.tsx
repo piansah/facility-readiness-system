@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, UserPlus, Shield, Check } from "lucide-react";
+import { X, UserPlus, Shield, Check, Building2 } from "lucide-react";
 import { createUser, updateUser } from "./actions";
 
 type Unit = {
@@ -138,16 +138,24 @@ export function UserFormModal({ units, currentUserRole }: { units: Unit[]; curre
             {role !== "super_admin" ? (
               <div className="grid gap-2">
                 <Label htmlFor="unit_id">Unit Kerja</Label>
-                <select 
-                  id="unit_id" 
-                  name="unit_id" 
-                  className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                >
-                  <option value="">Pilih Unit...</option>
-                  {units.map(u => (
-                    <option key={u.id} value={u.id}>{u.code} - {u.name}</option>
-                  ))}
-                </select>
+                {isSuperAdmin ? (
+                  <select 
+                    id="unit_id" 
+                    name="unit_id" 
+                    className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                  >
+                    <option value="">Pilih Unit...</option>
+                    {units.map(u => (
+                      <option key={u.id} value={u.id}>{u.code} - {u.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="flex h-10 w-full items-center rounded-md border border-slate-800 bg-slate-900/50 px-3 text-sm text-slate-400">
+                    <Building2 className="mr-2 h-4 w-4 text-emerald-500" />
+                    {units[0] ? `${units[0].code} - ${units[0].name}` : "Unit Kerja Admin"}
+                    <input type="hidden" name="unit_id" value={units[0]?.id || ""} />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="grid gap-2">
@@ -292,19 +300,27 @@ export function UserEditModal({ user, units, currentUserRole }: { user: Editable
             {role !== "super_admin" ? (
               <div className="grid gap-2">
                 <Label htmlFor={`unit_id_${user.id}`}>Unit Kerja</Label>
-                <select
-                  id={`unit_id_${user.id}`}
-                  name="unit_id"
-                  defaultValue={user.unit_id ?? ""}
-                  className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                >
-                  <option value="">Lintas Unit / Belum Dipilih</option>
-                  {units.map((unit) => (
-                    <option key={unit.id} value={unit.id}>
-                      {unit.code} - {unit.name}
-                    </option>
-                  ))}
-                </select>
+                {isSuperAdmin ? (
+                  <select
+                    id={`unit_id_${user.id}`}
+                    name="unit_id"
+                    defaultValue={user.unit_id ?? ""}
+                    className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                  >
+                    <option value="">Lintas Unit / Belum Dipilih</option>
+                    {units.map((unit) => (
+                      <option key={unit.id} value={unit.id}>
+                        {unit.code} - {unit.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="flex h-10 w-full items-center rounded-md border border-slate-800 bg-slate-900/50 px-3 text-sm text-slate-400">
+                    <Building2 className="mr-2 h-4 w-4 text-emerald-500" />
+                    {units.find(u => u.id === user.unit_id)?.name || units[0]?.name || "Unit Terkunci"}
+                    <input type="hidden" name="unit_id" value={user.unit_id || units[0]?.id || ""} />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="grid gap-2">
