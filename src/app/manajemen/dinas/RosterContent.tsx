@@ -206,12 +206,13 @@ export default function RosterContent({
       const updates = userIds.flatMap(uid => dates.map(date => ({ user_id: uid, duty_date: date, shift_code: shiftCode })));
       if (shiftCode) {
         for (const up of updates) {
-          const { error } = await supabase.from("rosters").upsert(up, { onConflict: "user_id, duty_date" });
+          const { error } = await supabase.from("duty_rosters").upsert(up, { onConflict: "user_id, duty_date" });
           if (error) throw error;
         }
       } else {
         for (const up of updates) {
-          await supabase.from("rosters").delete().eq("user_id", up.user_id).eq("duty_date", up.duty_date);
+          const { error } = await supabase.from("duty_rosters").delete().eq("user_id", up.user_id).eq("duty_date", up.duty_date);
+          if (error) throw error;
         }
       }
       
