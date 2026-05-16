@@ -102,7 +102,7 @@ export default async function FacilityManagementPage({
     <main className="min-h-dvh bg-slate-950 px-4 py-8">
       <div className="mx-auto max-w-6xl space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-emerald-500 mb-1">
               <Building2 className="h-4 w-4" />

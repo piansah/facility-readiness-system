@@ -48,10 +48,10 @@ export function FacilityHeaderActions({
     <>
       <Button 
         onClick={() => setShowChoiceModal(true)}
-        className="h-10 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-full shadow-lg shadow-emerald-900/20 transition-all active:scale-95 flex items-center gap-2"
+        className="bg-emerald-600 hover:bg-emerald-700"
       >
-        <Plus className="h-5 w-5" />
-        <span className="hidden sm:inline">Tambah</span>
+        <Plus className="mr-2 h-4 w-4" /> 
+        <span>Tambah</span>
       </Button>
 
       {/* Choice Modal (Bottom Sheet style on mobile if possible, but centered for now) */}
