@@ -33,7 +33,7 @@ function LogoutSubmitButton() {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ unitName }: { unitName: string }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
@@ -65,7 +65,7 @@ export function Sidebar() {
               </div>
               <div>
                 <h1 className="text-sm font-black text-slate-100 leading-tight">FRS System</h1>
-                <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">BIJB Kertajati</p>
+                <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">{unitName}</p>
               </div>
             </div>
 

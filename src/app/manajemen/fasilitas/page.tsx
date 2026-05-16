@@ -82,10 +82,8 @@ export default async function FacilityManagementPage({
     .order("sort_order")
     .returns<Category[]>();
 
-  // Admin Unit: paksa ke unit sendiri. Super Admin: gunakan query param atau unit pertama.
-  const selectedUnitId = (profile?.role === "admin"
-    ? profile.unit_id
-    : params.unit || units?.[0]?.id) || "";
+  // Admin/Petugas: default ke unit sendiri. Super Admin: gunakan query param atau unit pertama.
+  const selectedUnitId = params.unit || (profile?.role !== "super_admin" ? profile?.unit_id : units?.[0]?.id) || "";
 
   // Fetch facilities for selected unit
   const { data: facilities } = await supabase

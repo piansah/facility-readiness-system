@@ -55,7 +55,7 @@ export default function DashboardPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
           <div>
             <h1 className="text-xl font-bold text-slate-100 tracking-tight">Facility <span className="text-emerald-500">Readiness System</span></h1>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500 mt-1">Operational Dashboard</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500 mt-1">{unitDisplayName}</p>
           </div>
         </div>
       </header>
@@ -81,6 +81,8 @@ async function DashboardContent() {
   const isAdmin = canAccessManagement(profile?.role); // true untuk super_admin dan admin
   const canReview = canReviewReports(profile?.role);  // true hanya untuk admin
   const isSuperAdmin = profile?.role === "super_admin";
+
+  const unitDisplayName = isSuperAdmin ? "Administrator Pusat" : (profile as any)?.units?.name || "Unit Tidak Diketahui";
 
   // Jendela Operasional: Tentukan tanggal dan shift yang relevan
   const now = new Date();

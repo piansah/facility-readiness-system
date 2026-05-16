@@ -29,12 +29,14 @@ async function ProfilContent() {
 
   const { profile: userData } = await getProfile(supabase, user.id);
 
+  const isSuperAdmin = userData?.role === "super_admin";
+  const unitName = isSuperAdmin ? "Global / Pusat" : (userData as any)?.units?.name;
+
   const formatUnitName = (name?: string) => {
+    if (isSuperAdmin) return "Global / Pusat";
     if (!name) return "Unit Tidak Diketahui";
     return name.toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
   };
-
-  const unitName = (userData as any)?.units?.name;
 
   const roleLabel = (role?: string) => {
     switch (role) {

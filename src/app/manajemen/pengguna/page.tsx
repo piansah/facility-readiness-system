@@ -98,7 +98,9 @@ export default async function UserManagementPage() {
               {canEdit ? "Manajemen Pengguna" : "Daftar Pengguna"}
             </h1>
             <p className="text-sm text-slate-400">
-              {canEdit ? "Kelola akses, role, dan pembagian unit operasional." : "Daftar personil dan rekan satu unit operasional."}
+              {canEdit 
+                ? "Kelola akses, role, dan pembagian unit operasional." 
+                : `Daftar personil dan rekan satu unit di ${isSuperAdmin ? "seluruh unit" : ((profile as any)?.units?.name || "Unit")}.`}
             </p>
           </div>
           {canEdit && <UserFormModal units={allUnits || []} currentUserRole={profile?.role ?? 'petugas'} />}
@@ -200,7 +202,7 @@ export default async function UserManagementPage() {
                         <div className="flex items-center gap-2 text-slate-300">
                           <Building2 className="h-3 w-3 text-slate-500" />
                           <span className="text-xs font-medium">
-                            {u.units?.code || 'ELBAN'}
+                            {u.units?.code || '-'}
                           </span>
                         </div>
                       )}

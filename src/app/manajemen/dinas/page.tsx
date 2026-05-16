@@ -107,11 +107,9 @@ async function DinasContent({ searchParams }: { searchParams: { month?: string }
     redirect(`/manajemen/dinas?month=${selectedMonthStr}`);
   }
 
-  const { data: unitData } = await supabase
-    .from("units")
-    .select("name")
-    .eq("id", profile.unit_id)
-    .single();
+  const unitName = isSuperAdmin 
+    ? "Pusat / Global" 
+    : (profile as any)?.units?.name || "Unit Tidak Diketahui";
 
   return (
     <RosterContent 
@@ -120,7 +118,7 @@ async function DinasContent({ searchParams }: { searchParams: { month?: string }
       rosters={rosters || []}
       selectedMonth={selectedMonth}
       unitId={profile.unit_id}
-      unitName={unitData?.name || "Unit"}
+      unitName={unitName}
       adminName={profile.full_name || "Admin"}
       isAdmin={profile.role === 'admin' || isSuperAdmin}
       currentUserId={user.id}

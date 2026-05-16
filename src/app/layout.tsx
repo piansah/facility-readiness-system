@@ -33,6 +33,16 @@ export default async function RootLayout({
 }>) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  
+  let unitName = "BIJB KERTAJATI";
+  if (user) {
+    const { profile } = await getProfile(supabase, user.id);
+    if (profile?.role === "super_admin") {
+      unitName = "Administrator Pusat";
+    } else if ((profile as any)?.units?.name) {
+      unitName = (profile as any).units.name;
+    }
+  }
 
   return (
     <html
@@ -49,7 +59,7 @@ export default async function RootLayout({
         <PwaInstallPrompt />
         
         {/* Desktop Sidebar - Only show if logged in */}
-        {user && <Sidebar />}
+        {user && <Sidebar unitName={unitName} />}
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 pb-20 sm:pb-0">
