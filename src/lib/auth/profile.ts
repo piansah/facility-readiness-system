@@ -4,9 +4,9 @@ import type { AppProfile } from "./roles";
 export async function getProfile(supabase: SupabaseClient, userId: string) {
   const { data, error } = await supabase
     .from("users")
-    .select("*, units!users_unit_id_fkey(name)")
+    .select("*, units(name)")
     .eq("id", userId)
-    .single<AppProfile & { units: { name: string } }>();
+    .single<AppProfile & { units: { name: string } | null }>();
 
   if (error) {
     console.error("GET PROFILE ERROR:", error);

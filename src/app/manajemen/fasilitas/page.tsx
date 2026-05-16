@@ -86,15 +86,25 @@ export default async function FacilityManagementPage({
   const selectedUnitId = params.unit || (profile?.role !== "super_admin" ? profile?.unit_id : units?.[0]?.id) || "";
 
   // Fetch facilities for selected unit
-  const { data: facilities } = await supabase
-    .from("facilities")
-    .select(`
-      *,
-      facility_categories (name, icon)
-    `)
-    .eq("unit_id", selectedUnitId)
-    .order("name")
-    .returns<Facility[]>();
+  const [facilitiesRes, selectedUnitRes] = await Promise.all([
+    supabase
+      .from("facilities")
+      .select(`
+        *,
+        facility_categories (name, icon)
+      `)
+      .eq("unit_id", selectedUnitId)
+      .order("name")
+      .returns<Facility[]>(),
+    supabase
+      .from("units")
+      .select("name")
+      .eq("id", selectedUnitId)
+      .single()
+  ]);
+
+  const facilities = facilitiesRes.data;
+  const currentUnitName = selectedUnitRes.data?.name || "Unit";
 
   const selectedUnitCategories = (categories ?? []).filter((category) => category.unit_id === selectedUnitId);
 
@@ -169,7 +179,7 @@ export default async function FacilityManagementPage({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-sm sm:text-lg uppercase font-bold tracking-tight">
-                      DAFTAR ASET - {units?.find(u => u.id === selectedUnitId)?.name}
+                      DAFTAR ASET - {currentUnitName}
                     </CardTitle>
                     <Badge className="bg-slate-800 text-slate-400 text-[10px] whitespace-nowrap shrink-0">
                       {facilities?.length || 0} Aset
@@ -177,7 +187,7 @@ export default async function FacilityManagementPage({
                   </div>
                   <BulkQRButton 
                     facilities={facilities ?? []} 
-                    unitName={units?.find(u => u.id === selectedUnitId)?.name || ""} 
+                    unitName={currentUnitName} 
                   />
                 </div>
               </CardHeader>
