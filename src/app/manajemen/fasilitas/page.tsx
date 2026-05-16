@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { CategoryListPanel } from "./category-list-panel";
 import { FacilityHeaderActions } from "./facility-header-actions";
 import { FacilityRowActions } from "./facility-row-actions";
+import { BulkQRButton } from "./bulk-qr-button";
 import { canManageFacilities, canManageUnits } from "@/lib/auth/roles";
 
 type Unit = {
@@ -112,12 +113,18 @@ export default async function FacilityManagementPage({
             <p className="text-sm text-slate-400">Konfigurasi unit, kategori, dan daftar aset operasional.</p>
           </div>
 
-          <FacilityHeaderActions
-            units={units ?? []}
-            categories={categories ?? []}
-            selectedUnitId={selectedUnitId}
-            isSuperAdmin={isSuperAdmin}
-          />
+          <div className="flex items-center gap-3">
+            <BulkQRButton 
+              facilities={facilities ?? []} 
+              unitName={units?.find(u => u.id === selectedUnitId)?.name || ""} 
+            />
+            <FacilityHeaderActions
+              units={units ?? []}
+              categories={categories ?? []}
+              selectedUnitId={selectedUnitId}
+              isSuperAdmin={isSuperAdmin}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
