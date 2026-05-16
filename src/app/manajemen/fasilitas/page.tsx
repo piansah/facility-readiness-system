@@ -14,6 +14,7 @@ import { CategoryListPanel } from "./category-list-panel";
 import { FacilityHeaderActions } from "./facility-header-actions";
 import { FacilityRowActions } from "./facility-row-actions";
 import { BulkQRButton } from "./bulk-qr-button";
+import { FacilityTable } from "./facility-table";
 import { canAccessManagement, canManageFacilities, canManageUnits } from "@/lib/auth/roles";
 
 type Unit = {
@@ -207,43 +208,10 @@ export default async function FacilityManagementPage({
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      <tr>
-                        <th className="px-6 py-4">Nama Aset</th>
-                        <th className="px-6 py-4">Kategori</th>
-                        <th className="px-6 py-4">Tempat/Lokasi</th>
-                        <th className="px-6 py-4 text-right">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800">
-                      {facilities?.map((f) => (
-                        <tr key={f.id} className="hover:bg-slate-900/30 transition-colors">
-                          <td className="px-6 py-4 font-medium text-slate-200">
-                            {f.name}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-xs text-slate-400">{f.facility_categories?.name}</span>
-                          </td>
-                          <td className="px-6 py-4 text-xs text-slate-500 italic">
-                            {f.location_detail || "-"}
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <FacilityRowActions facility={f} categories={selectedUnitCategories} />
-                          </td>
-                        </tr>
-                      ))}
-                      {(!facilities || facilities.length === 0) && (
-                        <tr>
-                          <td colSpan={4} className="px-6 py-12 text-center text-slate-500 italic">
-                            Belum ada fasilitas terdaftar di unit ini.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                <FacilityTable 
+                  facilities={facilities ?? []} 
+                  categories={selectedUnitCategories ?? []} 
+                />
               </CardContent>
             </Card>
           </div>
