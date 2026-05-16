@@ -62,12 +62,12 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
   const [isSettingOpen, setIsSettingOpen] = useState(false);
   const [tempShifts, setTempShifts] = useState<any[]>(shifts);
   const [hasMounted, setHasMounted] = useState(false);
-  
+
   // Selection State
   const [dragStart, setDragStart] = useState<{ userId: string; dateIdx: number } | null>(null);
   const [dragEnd, setDragEnd] = useState<{ userId: string; dateIdx: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  
+
   // Menu States
   const [selectedRange, setSelectedRange] = useState<{ userIds: string[]; dates: string[] } | null>(null);
   const [openDropdown, setOpenDropdown] = useState<{ userId: string; dateStr: string; anchorRect: DOMRect } | null>(null);
@@ -114,7 +114,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
   const handleBulkAssign = async (shiftCode: string | null, targetRange?: { userIds: string[]; dates: string[] }) => {
     const range = targetRange || selectedRange;
     if (!range) return;
-    
+
     const { userIds, dates } = range;
     setSelectedRange(null);
     setOpenDropdown(null);
@@ -167,9 +167,9 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
         // Get the cell element that was clicked for positioning
         const cell = (e.target as HTMLElement).closest('td');
         const rect = cell?.getBoundingClientRect() || new DOMRect(e.clientX, e.clientY, 0, 0);
-        setOpenDropdown({ 
-          userId: targetUserIds[0], 
-          dateStr: targetDates[0], 
+        setOpenDropdown({
+          userId: targetUserIds[0],
+          dateStr: targetDates[0],
           anchorRect: rect,
         });
       } else {
@@ -213,11 +213,13 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       let label = s.code === 'APBA' ? 'PAGI' : s.code === 'APBB' ? 'MALAM' : s.code === 'FREE' ? 'LIBUR' : s.code;
       body.push([{ content: s.code, styles: { fontStyle: 'bold' as const, halign: 'center' as const } }, { content: `: ${label}`, styles: { fontStyle: 'bold' as const, halign: 'left' as const } }, ...daysInMonth.map(d => { const count = localRosters.filter(r => r.duty_date === format(d, "yyyy-MM-dd") && r.shift_code === s.code).length; return { content: count > 0 ? count.toString() : "0", styles: { halign: 'center' as const } }; })]);
     });
-    autoTable(doc, { head, body, startY: 30, theme: 'grid', margin: { left: 5, right: 5 }, styles: { fontSize: 5.5, cellPadding: 0.5, halign: 'center', textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.2, fontStyle: 'bold', overflow: 'hidden' }, headStyles: { textColor: [0, 0, 0], fontStyle: 'bold' }, columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 45 } }, didParseCell: (data) => {
-      if (data.section === 'body' && data.column.index > 1 && data.row.index < personnel.length) {
-        const code = data.cell.text[0]; if (code) { const shift = localShifts.find(s => s.code === code); if (shift && shift.color_code) { const hex = shift.color_code.replace('#', ''); data.cell.styles.textColor = [parseInt(hex.substring(0, 2), 16), parseInt(hex.substring(2, 4), 16), parseInt(hex.substring(4, 6), 16)]; } }
+    autoTable(doc, {
+      head, body, startY: 30, theme: 'grid', margin: { left: 5, right: 5 }, styles: { fontSize: 5.5, cellPadding: 0.5, halign: 'center', textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.2, fontStyle: 'bold', overflow: 'hidden' }, headStyles: { textColor: [0, 0, 0], fontStyle: 'bold' }, columnStyles: { 0: { cellWidth: 8 }, 1: { cellWidth: 45 } }, didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index > 1 && data.row.index < personnel.length) {
+          const code = data.cell.text[0]; if (code) { const shift = localShifts.find(s => s.code === code); if (shift && shift.color_code) { const hex = shift.color_code.replace('#', ''); data.cell.styles.textColor = [parseInt(hex.substring(0, 2), 16), parseInt(hex.substring(2, 4), 16), parseInt(hex.substring(4, 6), 16)]; } }
+        }
       }
-    }});
+    });
     doc.save(`Jadwal_Dinas_${format(selectedMonth, "MMMM_yyyy")}.pdf`);
   };
 
@@ -334,35 +336,13 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
         {/* Legend */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {/* Tampilkan APNZ sebagai perwakilan APN7/APN8 jika salah satunya ada */}
-          {localShifts.some(s => s.code === 'APN7' || s.code === 'APN8') && (
-            <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center gap-3">
-              <div className="h-10 w-1 rounded-full bg-blue-500" />
-              <div className="flex-1">
-                <p className="text-xs font-bold text-slate-100 uppercase">APNZ</p>
-                <p className="text-[10px] text-slate-400 font-medium">Admin General</p>
-                <p className="text-[9px] text-slate-500 font-mono mt-0.5">07:30 - 16:30</p>
-              </div>
-            </div>
-          )}
-
-          {localShifts
-            .filter(s => s.code !== 'APN7' && s.code !== 'APN8') // Sembunyikan APN7 & APN8 asli di legend
-            .map((s) => {
-              const clr = getSafeColor(s.code, s.color_code);
-              return (
-                <div key={s.code} className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 flex items-center gap-3">
-                  <div className="h-10 w-1 rounded-full" style={{ backgroundColor: clr }} />
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-slate-100 uppercase">{s.code}</p>
-                    <p className="text-[10px] text-slate-400 font-medium">{s.name}</p>
-                    {s.start_time && s.end_time && (
-                      <p className="text-[9px] text-slate-500 font-mono mt-0.5">{s.start_time.substring(0, 5)} - {s.end_time.substring(0, 5)}</p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center gap-3"><div className="h-10 w-1 rounded-full bg-blue-500" /><div className="flex-1"><p className="text-xs font-bold text-slate-100 uppercase">APNZ</p><p className="text-[10px] text-slate-400 font-medium">Admin General</p></div></div>
+          {localShifts.map((s) => {
+            const clr = getSafeColor(s.code, s.color_code);
+            return (
+              <div key={s.code} className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 flex items-center gap-3"><div className="h-10 w-1 rounded-full" style={{ backgroundColor: clr }} /><div className="flex-1"><p className="text-xs font-bold text-slate-100 uppercase">{s.code}</p><p className="text-[10px] text-slate-400 font-medium">{s.name}</p></div></div>
+            );
+          })}
         </div>
       </main>
     </div>
@@ -370,56 +350,64 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 }
 
 // Portal-based dropdown that renders at document.body level
-function DropdownPortalContent({ 
-  openDropdown, 
-  getAvailableShifts, 
-  getSafeColor, 
-  handleBulkAssign 
-}: { 
+function DropdownPortalContent({
+  openDropdown,
+  getAvailableShifts,
+  getSafeColor,
+  handleBulkAssign
+}: {
   openDropdown: { userId: string; dateStr: string; anchorRect: DOMRect };
   getAvailableShifts: (userId: string) => { code: string; name: string | null; color_code: string | null }[];
   getSafeColor: (code: string, dbColor: string | null) => string;
   handleBulkAssign: (shiftCode: string | null, targetRange?: { userIds: string[]; dates: string[] }) => void;
 }) {
   const { userId, dateStr, anchorRect } = openDropdown;
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; openUp: boolean }>({ top: 0, left: 0, openUp: false });
 
-  // Calculate position synchronously so there's no flash at (0,0)
-  const pos = useMemo(() => {
-    const dropdownH = 280;
-    const dropdownW = 144;
+  useEffect(() => {
+    const dropdownH = 280; // estimated max height
+    const dropdownW = 144; // w-36 = 9rem = 144px
     const viewH = window.innerHeight;
     const viewW = window.innerWidth;
 
+    // Decide vertical: open up or down
     const spaceBelow = viewH - anchorRect.bottom;
     const openUp = spaceBelow < dropdownH && anchorRect.top > dropdownH;
 
-    const top = openUp ? anchorRect.top - 4 : anchorRect.bottom + 4;
+    let top = openUp
+      ? anchorRect.top - 8 // will use bottom positioning via transform
+      : anchorRect.bottom + 4;
 
+    // Horizontal: center on cell, clamp to viewport
     let left = anchorRect.left + anchorRect.width / 2 - dropdownW / 2;
     left = Math.max(8, Math.min(left, viewW - dropdownW - 8));
 
-    return { top, left, openUp };
+    setPos({ top, left, openUp });
   }, [anchorRect]);
 
   const shifts = getAvailableShifts(userId);
 
   return (
-    <div 
-      className="fixed z-[9999] w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-2 space-y-1"
-      style={{ 
-        left: pos.left, 
-        top: pos.top,
-        ...(pos.openUp ? { transform: 'translateY(-100%)' } : {}),
+    <div
+      ref={dropdownRef}
+      className="fixed z-[9999] w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+      style={{
+        left: pos.left,
+        ...(pos.openUp
+          ? { top: pos.top, transform: 'translateY(-100%)' }
+          : { top: pos.top }
+        ),
       }}
       onClick={(e) => e.stopPropagation()}
     >
       {shifts.map(s => {
         const clr = getSafeColor(s.code, s.color_code);
         return (
-          <button 
-            key={s.code} 
-            onClick={() => handleBulkAssign(s.code, { userIds: [userId], dates: [dateStr] })} 
-            className="w-full flex items-center justify-center h-8 rounded-lg text-[10px] font-black transition-all hover:scale-105 active:scale-95" 
+          <button
+            key={s.code}
+            onClick={() => handleBulkAssign(s.code, { userIds: [userId], dates: [dateStr] })}
+            className="w-full flex items-center justify-center h-8 rounded-lg text-[10px] font-black transition-all hover:scale-105 active:scale-95"
             style={{ backgroundColor: `${clr}15`, color: clr, border: `1px solid ${clr}30` }}
           >
             {s.code}
@@ -427,8 +415,8 @@ function DropdownPortalContent({
         );
       })}
       <div className="border-t border-slate-800 pt-1" />
-      <button 
-        onClick={() => handleBulkAssign(null, { userIds: [userId], dates: [dateStr] })} 
+      <button
+        onClick={() => handleBulkAssign(null, { userIds: [userId], dates: [dateStr] })}
         className="w-full h-8 rounded-lg text-[10px] font-black text-slate-500 bg-slate-800/50 hover:bg-red-500/10 hover:text-red-400 transition-all flex items-center justify-center gap-1 border border-transparent hover:border-red-500/30"
       >
         <X className="w-3 h-3" /> Kosong
