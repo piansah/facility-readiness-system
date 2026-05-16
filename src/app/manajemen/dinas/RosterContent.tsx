@@ -334,13 +334,35 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
         {/* Legend */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center gap-3"><div className="h-10 w-1 rounded-full bg-blue-500" /><div className="flex-1"><p className="text-xs font-bold text-slate-100 uppercase">APNZ</p><p className="text-[10px] text-slate-400 font-medium">Admin General</p></div></div>
-          {localShifts.map((s) => {
-            const clr = getSafeColor(s.code, s.color_code);
-            return (
-              <div key={s.code} className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 flex items-center gap-3"><div className="h-10 w-1 rounded-full" style={{ backgroundColor: clr }} /><div className="flex-1"><p className="text-xs font-bold text-slate-100 uppercase">{s.code}</p><p className="text-[10px] text-slate-400 font-medium">{s.name}</p>{s.start_time && s.end_time && <p className="text-[9px] text-slate-500 font-mono mt-0.5">{s.start_time.substring(0, 5)} - {s.end_time.substring(0, 5)}</p>}</div></div>
-            );
-          })}
+          {/* Tampilkan APNZ sebagai perwakilan APN7/APN8 jika salah satunya ada */}
+          {localShifts.some(s => s.code === 'APN7' || s.code === 'APN8') && (
+            <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center gap-3">
+              <div className="h-10 w-1 rounded-full bg-blue-500" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-slate-100 uppercase">APNZ</p>
+                <p className="text-[10px] text-slate-400 font-medium">Admin General</p>
+                <p className="text-[9px] text-slate-500 font-mono mt-0.5">07:30 - 16:30</p>
+              </div>
+            </div>
+          )}
+
+          {localShifts
+            .filter(s => s.code !== 'APN7' && s.code !== 'APN8') // Sembunyikan APN7 & APN8 asli di legend
+            .map((s) => {
+              const clr = getSafeColor(s.code, s.color_code);
+              return (
+                <div key={s.code} className="p-3 rounded-xl border border-slate-800 bg-slate-900/40 flex items-center gap-3">
+                  <div className="h-10 w-1 rounded-full" style={{ backgroundColor: clr }} />
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-slate-100 uppercase">{s.code}</p>
+                    <p className="text-[10px] text-slate-400 font-medium">{s.name}</p>
+                    {s.start_time && s.end_time && (
+                      <p className="text-[9px] text-slate-500 font-mono mt-0.5">{s.start_time.substring(0, 5)} - {s.end_time.substring(0, 5)}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
         </div>
       </main>
     </div>
