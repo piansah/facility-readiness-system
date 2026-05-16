@@ -195,6 +195,8 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
   };
 
   const handleExportPDF = (mode: 'full' | 'report') => {
+    setIsExportModalOpen(false); // Tutup modal segera agar tidak "ngegantung"
+    
     const doc = new jsPDF('l', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     
@@ -245,25 +247,27 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     // Tambah baris kosong pemisah
     body.push([{ content: '', colSpan: daysToExport.length + 2, styles: { fillColor: [255, 255, 255], minCellHeight: 2, lineWidth: 0 } }]);
 
-    // Tambah hitungan harian (Counts)
-    const codesToCount = [
-      { code: 'APBA', label: 'PAGI (APBA)' },
-      { code: 'APBB', label: 'MALAM (APBB)' },
-      { code: 'FREE', label: 'LIBUR (FREE)' }
-    ];
+    // Tambah hitungan harian (Counts) - HANYA UNTUK MODE BULANAN
+    if (mode === 'full') {
+      const codesToCount = [
+        { code: 'APBA', label: 'PAGI (APBA)' },
+        { code: 'APBB', label: 'MALAM (APBB)' },
+        { code: 'FREE', label: 'LIBUR (FREE)' }
+      ];
 
-    codesToCount.forEach(target => {
-      body.push([
-        '', 
-        { content: target.label, styles: { halign: 'left' as const, fontStyle: 'bold' as const } },
-        ...daysToExport.map(d => {
-          const count = localRosters.filter(r => 
-            r.duty_date === format(d, "yyyy-MM-dd") && r.shift_code === target.code
-          ).length;
-          return { content: count > 0 ? count.toString() : "0", styles: { halign: 'center' as const } };
-        })
-      ]);
-    });
+      codesToCount.forEach(target => {
+        body.push([
+          '', 
+          { content: target.label, styles: { halign: 'left' as const, fontStyle: 'bold' as const } },
+          ...daysToExport.map(d => {
+            const count = localRosters.filter(r => 
+              r.duty_date === format(d, "yyyy-MM-dd") && r.shift_code === target.code
+            ).length;
+            return { content: count > 0 ? count.toString() : "0", styles: { halign: 'center' as const } };
+          })
+        ]);
+      });
+    }
 
     autoTable(doc, {
       head, body, 
@@ -287,13 +291,23 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       }
     });
 
-    let currentY = (doc as any).lastAutoTable.finalY + 10;
+    let currentY = (doc as any).lastAutoTable.finalY + 7;
     const legendBody: any[] = [];
-    const apnzShift = localShifts.find(s => s.code === 'APNZ') || { code: 'APNZ', name: 'Admin General', start_time: '07:30:00', end_time: '16:30:00', color_code: '#3b82f6' };
-    legendBody.push(['APNZ', 'Admin General', `${apnzShift.start_time?.substring(0, 5) || '07:30'} - ${apnzShift.end_time?.substring(0, 5) || '16:30'}`]);
-    localShifts.filter(s => !['APN7', 'APN8', 'APNZ', 'FREE'].includes(s.code)).forEach(s => {
-      legendBody.push([s.code, s.name || '', `${s.start_time?.substring(0, 5) || '--'} - ${s.end_time?.substring(0, 5) || '--'}`]);
-    });
+    const findShift = (code: string) => localShifts.find(s => s.code === code);
+
+    // Urutan: AH, APNZ, APBA, APBB, FREE
+    const ahS = findShift('AH');
+    if (ahS) legendBody.push(['AH', ahS.name, `${ahS.start_time?.substring(0, 5)} - ${ahS.end_time?.substring(0, 5)}`]);
+
+    const apnzS = findShift('APNZ') || { code: 'APNZ', name: 'Admin General', start_time: '07:30:00', end_time: '16:30:00', color_code: '#000000' };
+    legendBody.push(['APNZ', 'Admin General', `${apnzS.start_time?.substring(0, 5)} - ${apnzS.end_time?.substring(0, 5)}`]);
+
+    const apbaS = findShift('APBA');
+    if (apbaS) legendBody.push(['APBA', apbaS.name, `${apbaS.start_time?.substring(0, 5)} - ${apbaS.end_time?.substring(0, 5)}`]);
+
+    const apbbS = findShift('APBB');
+    if (apbbS) legendBody.push(['APBB', apbbS.name, `${apbbS.start_time?.substring(0, 5)} - ${apbbS.end_time?.substring(0, 5)}`]);
+
     legendBody.push(['FREE', 'Libur', '-']);
 
     autoTable(doc, {
@@ -301,21 +315,28 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       startY: currentY,
       theme: 'grid',
       margin: { left: 5 },
-      tableWidth: 100,
+      tableWidth: 150,
       styles: { fontSize: 5.5, cellPadding: 1, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1 },
       columnStyles: { 
-        0: { cellWidth: 12, fontStyle: 'bold', halign: 'center' }, 
-        1: { cellWidth: 35 },
-        2: { cellWidth: 35, halign: 'center' }
+        0: { cellWidth: 20, fontStyle: 'bold', halign: 'center' }, 
+        1: { cellWidth: 65, halign: 'center' }, 
+        2: { cellWidth: 65, halign: 'center' } 
       },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 0) {
           const code = data.cell.text[0];
-          const shift = localShifts.find(s => s.code === (code === 'APNZ' ? 'APNZ' : code)) || (code === 'APNZ' ? apnzShift : null);
-          if (shift && shift.color_code) {
-            const hex = shift.color_code.replace('#', '');
-            data.cell.styles.textColor = [parseInt(hex.substring(0, 2), 16), parseInt(hex.substring(2, 4), 16), parseInt(hex.substring(4, 6), 16)];
+          // Force APNZ to Black, others follow DB or defaults
+          let color = '#000000';
+          if (code !== 'APNZ') {
+            const shift = findShift(code);
+            if (shift && shift.color_code) color = shift.color_code;
+            else if (code === 'APBA') color = '#3b82f6';
+            else if (code === 'APBB') color = '#10b981';
+            else if (code === 'FREE') color = '#ef4444';
+            else if (code === 'AH') color = '#f59e0b';
           }
+          const hex = color.replace('#', '');
+          data.cell.styles.textColor = [parseInt(hex.substring(0, 2), 16), parseInt(hex.substring(2, 4), 16), parseInt(hex.substring(4, 6), 16)];
         }
       }
     });
@@ -388,7 +409,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
         {/* Modal Opsi Export PDF */}
         <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
-          <DialogContent className="sm:max-w-[400px] bg-slate-950 border-slate-800 p-0 overflow-hidden shadow-2xl z-[9999]">
+          <DialogContent className="sm:max-w-[400px] bg-slate-950 border-slate-800 p-0 overflow-hidden shadow-2xl z-[9999] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <div className="p-6 border-b border-slate-800 bg-slate-900/50">
               <DialogTitle className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 <Printer className="w-5 h-5 text-blue-500" /> Opsi Export PDF
