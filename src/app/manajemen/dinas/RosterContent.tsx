@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { createClient } from "@/lib/supabase/client";
@@ -56,6 +57,7 @@ export default function RosterContent({
   rosters: RosterEntry[];
   selectedMonth: Date;
 }) {
+  const router = useRouter();
   const supabase = createClient();
   const [hasMounted, setHasMounted] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
@@ -85,25 +87,11 @@ export default function RosterContent({
 
   useEffect(() => { 
     setHasMounted(true); 
-    if (hasMounted && unitId) fetchData();
-  }, [unitId, selectedMonth]);
+  }, []);
 
   const daysInMonth = useMemo(() => {
     return eachDayOfInterval({ start: startOfMonth(selectedMonth), end: endOfMonth(selectedMonth) });
   }, [selectedMonth]);
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const { data: pData } = await supabase.from("profiles").select("id, full_name, unit_id, role").eq("unit_id", unitId).order("full_name");
-      const { data: sData } = await supabase.from("shift_configs").select("*").eq("unit_id", unitId);
-      const { data: rData } = await supabase.from("rosters").select("*").filter("duty_date", "gte", format(startOfMonth(selectedMonth), "yyyy-MM-01")).filter("duty_date", "lte", format(endOfMonth(selectedMonth), "yyyy-MM-dd"));
-      
-      setPersonnel(pData || []);
-      setLocalShifts(sData || []);
-      setLocalRosters(rData || []);
-    } catch (e) { toast.error("Gagal memuat data"); } finally { setIsLoading(false); }
-  };
 
   const getSafeColor = (code: string, dbColor: string | null) => {
     // Paksa Biru untuk APNZ dan APBA di Web agar tidak hitam blok
@@ -206,10 +194,11 @@ export default function RosterContent({
           await supabase.from("rosters").delete().eq("user_id", up.user_id).eq("duty_date", up.duty_date);
         }
       }
-      fetchData();
+      
       setSelectedRange(null);
       setOpenDropdown(null);
       toast.success("Jadwal diperbarui");
+      router.refresh();
     } catch (e) { toast.error("Gagal memperbarui jadwal"); }
   };
 
@@ -221,8 +210,8 @@ export default function RosterContent({
         if (error) throw error;
       }
       setIsSettingOpen(false);
-      fetchData();
       toast.success("Pengaturan shift disimpan");
+      router.refresh();
     } catch (e) { toast.error("Gagal menyimpan pengaturan shift."); } finally { setIsSaving(false); }
   };
 
