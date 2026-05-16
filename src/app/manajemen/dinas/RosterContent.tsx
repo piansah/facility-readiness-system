@@ -173,15 +173,21 @@ export default function RosterContent({
     const targetUser = personnel.find(p => p.id === userId);
     const isAdminUser = targetUser?.role === 'admin' || targetUser?.role === 'superadmin';
 
-    // Hapus APNZ dari pilihan manapun
-    const shifts = localShifts.filter(s => s.code !== 'APNZ');
+    // Hapus APNZ dari pilihan manapun (karena hanya untuk laporan/PDF)
+    const available = [...localShifts].filter(s => s.code !== 'APNZ');
     
-    // Siapkan default APN untuk Admin
-    const adminShifts = isAdminUser 
-      ? [{ code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' }, { code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' }]
-      : [];
+    // Tambahkan shift default APN untuk Admin jika belum dikonfigurasi di DB
+    if (isAdminUser) {
+      if (!available.some(s => s.code === 'APN7')) available.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8', start_time: null, end_time: null });
+      if (!available.some(s => s.code === 'APN8')) available.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8', start_time: null, end_time: null });
+    }
 
-    return [...shifts, ...adminShifts, { code: 'FREE', name: 'Libur', color_code: '#ef4444' }];
+    // Tambahkan shift default FREE jika belum dikonfigurasi di DB
+    if (!available.some(s => s.code === 'FREE')) {
+      available.push({ code: 'FREE', name: 'Libur', color_code: '#ef4444', start_time: null, end_time: null });
+    }
+
+    return available;
   };
 
   const handleBulkAssign = async (shiftCode: string | null, targetRange?: { userIds: string[]; dates: string[] }) => {
