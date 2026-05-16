@@ -66,7 +66,10 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
   const [dragStart, setDragStart] = useState<{ userId: string; dateIdx: number } | null>(null);
   const [dragEnd, setDragEnd] = useState<{ userId: string; dateIdx: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  
+  // Menu States
   const [selectedRange, setSelectedRange] = useState<{ userIds: string[]; dates: string[] } | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<{ userId: string; dateStr: string; fullName: string; dayIdx: number } | null>(null);
 
   useEffect(() => {
     setHasMounted(true);
@@ -86,11 +89,6 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     if (isTargetAdmin) {
       if (!available.some(s => s.code === 'APN7')) available.push({ code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' });
       if (!available.some(s => s.code === 'APN8')) available.push({ code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' });
-      available = available.map(s => {
-        if (s.code === 'APN7' && (!s.color_code || s.color_code === '#000000')) return { ...s, color_code: '#94a3b8' };
-        if (s.code === 'APN8' && (!s.color_code || s.color_code === '#000000')) return { ...s, color_code: '#94a3b8' };
-        return s;
-      });
     }
     return available.filter(s => {
       if (['APN7', 'APN8'].includes(s.code)) return isTargetAdmin;
@@ -98,13 +96,15 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     });
   };
 
-  const handleBulkAssign = async (shiftCode: string | null) => {
-    if (!selectedRange) return;
-    const { userIds, dates } = selectedRange;
+  const handleBulkAssign = async (shiftCode: string | null, targetRange?: { userIds: string[]; dates: string[] }) => {
+    const range = targetRange || selectedRange;
+    if (!range) return;
+    
+    const { userIds, dates } = range;
     setSelectedRange(null);
+    setOpenDropdown(null);
 
     let updatedRosters = [...localRosters];
-    
     userIds.forEach(uId => {
       dates.forEach(dStr => {
         updatedRosters = updatedRosters.filter(r => !(r.user_id === uId && r.duty_date === dStr));
@@ -118,7 +118,6 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     setIsSaving(true);
     try {
       await updateRoster(updatedRosters, unitId);
-      toast.success("Jadwal berhasil diperbarui");
     } catch (e) {
       toast.error("Gagal menyimpan jadwal");
     } finally {
@@ -142,20 +141,28 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
   const onMouseUp = () => {
     if (isDragging && dragStart && dragEnd) {
-      // Calculate range
       const userIdx1 = personnel.findIndex(p => p.id === dragStart.userId);
       const userIdx2 = personnel.findIndex(p => p.id === dragEnd.userId);
-      
       const startU = Math.min(userIdx1, userIdx2);
       const endU = Math.max(userIdx1, userIdx2);
-      
       const startD = Math.min(dragStart.dateIdx, dragEnd.dateIdx);
       const endD = Math.max(dragStart.dateIdx, dragEnd.dateIdx);
 
       const targetUserIds = personnel.slice(startU, endU + 1).map(p => p.id);
       const targetDates = daysInMonth.slice(startD, endD + 1).map(d => format(d, "yyyy-MM-dd"));
 
-      setSelectedRange({ userIds: targetUserIds, dates: targetDates });
+      // Jika hanya satu kolom terpilih, tampilkan dropdown
+      if (targetUserIds.length === 1 && targetDates.length === 1) {
+        const person = personnel.find(p => p.id === targetUserIds[0]);
+        setOpenDropdown({
+          userId: targetUserIds[0],
+          dateStr: targetDates[0],
+          fullName: person?.full_name || "",
+          dayIdx: startD
+        });
+      } else {
+        setSelectedRange({ userIds: targetUserIds, dates: targetDates });
+      }
     }
     setIsDragging(false);
     setDragStart(null);
@@ -164,17 +171,13 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
   const isInRange = (userId: string, dateIdx: number) => {
     if (!dragStart || !dragEnd) return false;
-    
     const userIdx1 = personnel.findIndex(p => p.id === dragStart.userId);
     const userIdx2 = personnel.findIndex(p => p.id === dragEnd.userId);
     const currentU = personnel.findIndex(p => p.id === userId);
-    
     const startU = Math.min(userIdx1, userIdx2);
     const endU = Math.max(userIdx1, userIdx2);
-    
     const startD = Math.min(dragStart.dateIdx, dragEnd.dateIdx);
     const endD = Math.max(dragStart.dateIdx, dragEnd.dateIdx);
-
     return currentU >= startU && currentU <= endU && dateIdx >= startD && dateIdx <= endD;
   };
 
@@ -404,7 +407,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
               </tr>
             </thead>
             <tbody>
-              {personnel.map((p, pIdx) => {
+              {personnel.map((p) => {
                 const isMe = p.id === currentUserId;
                 return (
                   <tr key={p.id} className={`border-b border-slate-800 transition-colors ${isMe ? "bg-amber-500/5" : "hover:bg-slate-900/30"}`}>
@@ -420,13 +423,46 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                       return (
                         <td 
                           key={dateStr} 
-                          className={`p-1 text-center border-r border-slate-800 transition-all ${isAdmin ? "cursor-crosshair" : ""} ${isToday(d) ? "bg-emerald-500/10" : ""} ${active ? "bg-blue-500/30 ring-2 ring-inset ring-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.5)] z-10 relative" : ""}`}
+                          className={`p-1 text-center border-r border-slate-800 transition-all ${isAdmin ? "cursor-crosshair" : ""} ${isToday(d) ? "bg-emerald-500/10" : ""} ${active ? "bg-blue-500/20 z-10 relative" : ""}`}
                           onMouseDown={() => onMouseDown(p.id, dIdx)}
                           onMouseEnter={() => onMouseEnter(p.id, dIdx)}
                         >
-                          {entry ? (
-                            <div className={`h-7 w-full flex items-center justify-center rounded text-[9px] font-bold ${active ? "opacity-50" : ""}`} style={{ backgroundColor: `${shift?.color_code || '#94a3b8'}20`, color: shift?.color_code || '#94a3b8', border: `1px solid ${shift?.color_code || '#94a3b8'}40` }}>{entry.shift_code}</div>
-                          ) : <div className="h-7 w-full" />}
+                          <div className="relative">
+                            {entry ? (
+                              <div className={`h-7 w-full flex items-center justify-center rounded text-[9px] font-bold ${active ? "opacity-50" : ""}`} style={{ backgroundColor: `${shift?.color_code || '#94a3b8'}20`, color: shift?.color_code || '#94a3b8', border: `1px solid ${shift?.color_code || '#94a3b8'}40` }}>{entry.shift_code}</div>
+                            ) : <div className="h-7 w-full" />}
+
+                            {/* DROPDOWN MENU (Single selection only) */}
+                            {isAdmin && openDropdown?.userId === p.id && openDropdown?.dateStr === dateStr && (
+                              <>
+                                <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); }} />
+                                <div 
+                                  className={`absolute top-full mt-1 z-[110] w-32 rounded-lg border border-slate-700 bg-slate-900/95 backdrop-blur-sm shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-100 ${
+                                    openDropdown.dayIdx > daysInMonth.length - 4 ? "right-0" : openDropdown.dayIdx < 3 ? "left-0" : "left-1/2 -translate-x-1/2"
+                                  }`} 
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {getAvailableShifts(p.id).map(s => (
+                                    <button
+                                      key={s.code}
+                                      onClick={(e) => { e.stopPropagation(); handleBulkAssign(s.code, { userIds: [p.id], dates: [dateStr] }); }}
+                                      className="w-full rounded-md px-2 py-1 text-[10px] font-bold text-left transition-all hover:bg-slate-800"
+                                      style={{ color: s.color_code || '#94a3b8' }}
+                                    >
+                                      {s.code}
+                                    </button>
+                                  ))}
+                                  <div className="border-t border-slate-800 pt-1" />
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleBulkAssign(null, { userIds: [p.id], dates: [dateStr] }); }}
+                                    className="w-full rounded-md px-2 py-1 text-[10px] font-bold text-slate-500 hover:text-red-400 flex items-center gap-1"
+                                  >
+                                    <X className="w-3 h-3" /> Kosong
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </td>
                       );
                     })}
@@ -475,19 +511,16 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
           ))}
         </div>
 
-        {/* Shift Selector Dialog (BULK) */}
+        {/* Bulk Assign Modal (For > 1 selection only) */}
         <Dialog open={!!selectedRange} onOpenChange={(open) => !open && setSelectedRange(null)}>
           <DialogContent className="max-w-xs bg-slate-950 border-slate-800 p-0 overflow-hidden shadow-2xl">
             <div className="p-4 border-b border-slate-800 bg-blue-500/10">
-              <h3 className="text-sm font-bold text-blue-400 flex items-center gap-2">
-                Pilih Shift untuk Area Blok
-              </h3>
+              <h3 className="text-sm font-bold text-blue-400">Pilih Shift Masal</h3>
               <p className="text-[10px] text-slate-400 mt-1 uppercase font-black tracking-widest">
                 {selectedRange?.userIds.length} Personil × {selectedRange?.dates.length} Hari terpilih
               </p>
             </div>
             <div className="p-3 grid gap-2">
-              {/* Gunakan shifts dari user pertama di range sebagai referensi (biasanya sama) */}
               {selectedRange && getAvailableShifts(selectedRange.userIds[0]).map(s => (
                 <button
                   key={s.code}
@@ -497,7 +530,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-8 rounded-full" style={{ backgroundColor: s.color_code || '#94a3b8' }} />
                     <div className="text-left">
-                      <p className="text-xs font-black">{s.code}</p>
+                      <p className="text-xs font-black" style={{ color: s.color_code || '#94a3b8' }}>{s.code}</p>
                       <p className="text-[10px] text-slate-400">{s.name}</p>
                     </div>
                   </div>
@@ -508,7 +541,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
                 onClick={() => handleBulkAssign(null)}
                 className="w-full rounded-xl px-4 py-3 text-xs font-bold text-slate-400 hover:bg-red-500/10 hover:text-red-400 flex items-center gap-3"
               >
-                <X className="w-4 h-4" /> Hapus Jadwal di Area Terpilih
+                <X className="w-4 h-4" /> Hapus Jadwal Terpilih
               </button>
             </div>
           </DialogContent>
