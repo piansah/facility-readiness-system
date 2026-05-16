@@ -5,6 +5,7 @@ import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { MobileNav } from "@/components/mobile-nav";
 import { Sidebar } from "@/components/sidebar";
 import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/auth/profile";
 
 export const metadata: Metadata = {
   title: "Facility Readiness System",
