@@ -63,9 +63,18 @@ export default function RosterContent({
   const [localRosters, setLocalRosters] = useState<RosterEntry[]>(initialRosters);
   const [isSettingOpen, setIsSettingOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [tempShifts, setTempShifts] = useState<ShiftConfig[]>([]);
+  const [tempShifts, setTempShifts] = useState<ShiftConfig[]>(initialShifts);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Sync state with props when month or data changes
+  useEffect(() => {
+    setPersonnel(initialPersonnel);
+    setLocalShifts(initialShifts);
+    setLocalRosters(initialRosters);
+    setSelectedMonth(initialMonth);
+    setTempShifts(initialShifts);
+  }, [initialPersonnel, initialShifts, initialRosters, initialMonth]);
 
   // Drag selection state
   const [dragStart, setDragStart] = useState<{ userId: string; dayIdx: number } | null>(null);
@@ -73,7 +82,10 @@ export default function RosterContent({
   const [selectedRange, setSelectedRange] = useState<{ userIds: string[]; dates: string[] } | null>(null);
   const [openDropdown, setOpenDropdown] = useState<{ userId: string; dateStr: string; anchorRect: DOMRect } | null>(null);
 
-  useEffect(() => { setHasMounted(true); fetchData(); }, [unitId, selectedMonth]);
+  useEffect(() => { 
+    setHasMounted(true); 
+    if (hasMounted && unitId) fetchData();
+  }, [unitId, selectedMonth]);
 
   const daysInMonth = useMemo(() => {
     return eachDayOfInterval({ start: startOfMonth(selectedMonth), end: endOfMonth(selectedMonth) });
@@ -267,11 +279,11 @@ export default function RosterContent({
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 0) {
           const code = data.cell.text[0];
+          // Force APNZ & APBA to Black in PDF, others follow DB or defaults
           let color = '#000000';
-          if (code !== 'APNZ') {
+          if (code !== 'APNZ' && code !== 'APBA') {
             const shift = findS(code);
             if (shift && shift.color_code) color = shift.color_code;
-            else if (code === 'APBA') color = '#3b82f6';
             else if (code === 'APBB') color = '#10b981';
             else if (code === 'FREE') color = '#ef4444';
             else if (code === 'AH') color = '#f59e0b';
