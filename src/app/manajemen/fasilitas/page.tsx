@@ -194,10 +194,7 @@ export default async function FacilityManagementPage({
                             {f.name}
                           </td>
                           <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <Box className="h-3 w-3 text-emerald-500" />
-                              <span className="text-xs text-slate-400">{f.facility_categories?.name}</span>
-                            </div>
+                            <span className="text-xs text-slate-400">{f.facility_categories?.name}</span>
                           </td>
                           <td className="px-6 py-4 text-xs text-slate-500 italic">
                             {f.location_detail || "-"}
