@@ -109,7 +109,10 @@ export default async function FacilityManagementPage({
   // Robustly get unit name from profile if the direct unit query fails
   const profileUnitName = (profile as any)?.units?.name;
   
-  const currentUnitName = selectedUnitRes.data?.name || (profile?.role !== "super_admin" ? profileUnitName : "") || "Unit";
+  // Prioritaskan nama unit dari profil jika bukan super_admin
+  const currentUnitName = isSuperAdmin 
+    ? (selectedUnitRes.data?.name || "Seluruh Unit")
+    : (profileUnitName || "Unit");
 
   const selectedUnitCategories = (categories ?? []).filter((category) => category.unit_id === selectedUnitId);
 
