@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
@@ -69,7 +70,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
   
   // Menu States
   const [selectedRange, setSelectedRange] = useState<{ userIds: string[]; dates: string[] } | null>(null);
-  const [openDropdown, setOpenDropdown] = useState<{ userId: string; dateStr: string; fullName: string; dayIdx: number } | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<{ userId: string; dateStr: string; anchorRect: DOMRect } | null>(null);
 
   useEffect(() => {
     setHasMounted(true);
@@ -152,7 +153,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
     }
   };
 
-  const onMouseUp = () => {
+  const onMouseUp = (e: React.MouseEvent) => {
     if (isDragging && dragStart && dragEnd) {
       const userIdx1 = personnel.findIndex(p => p.id === dragStart.userId);
       const userIdx2 = personnel.findIndex(p => p.id === dragEnd.userId);
@@ -163,12 +164,13 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       const targetUserIds = personnel.slice(startU, endU + 1).map(p => p.id);
       const targetDates = daysInMonth.slice(startD, endD + 1).map(d => format(d, "yyyy-MM-dd"));
       if (targetUserIds.length === 1 && targetDates.length === 1) {
+        // Get the cell element that was clicked for positioning
+        const cell = (e.target as HTMLElement).closest('td');
+        const rect = cell?.getBoundingClientRect() || new DOMRect(e.clientX, e.clientY, 0, 0);
         setOpenDropdown({ 
           userId: targetUserIds[0], 
           dateStr: targetDates[0], 
-          fullName: personnel.find(p => p.id === targetUserIds[0])?.full_name || "", 
-          dayIdx: startD,
-          rowIdx: startU // Track row index for positioning
+          anchorRect: rect,
         });
       } else {
         setSelectedRange({ userIds: targetUserIds, dates: targetDates });
@@ -287,35 +289,9 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
                       return (
                         <td key={dateStr} className={`p-1 text-center border-r border-slate-800 transition-all ${isAdmin ? "cursor-crosshair" : ""} ${active ? "bg-blue-500/20 z-10 relative" : ""}`} onMouseDown={() => onMouseDown(p.id, dIdx)} onMouseEnter={() => onMouseEnter(p.id, dIdx)}>
-                          <div className="relative">
-                            {entry ? (
-                              <div className={`h-7 w-full flex items-center justify-center rounded text-[9px] font-bold`} style={{ backgroundColor: `${displayColor}20`, color: displayColor, border: `1px solid ${displayColor}40` }}>{entry.shift_code}</div>
-                            ) : <div className="h-7 w-full" />}
-
-                            {isAdmin && openDropdown?.userId === p.id && openDropdown?.dateStr === dateStr && (
-                              <>
-                                <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); }} />
-                                <div 
-                                  className={`absolute z-[110] w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150 
-                                    ${openDropdown.dayIdx > daysInMonth.length - 4 ? "right-0" : openDropdown.dayIdx < 3 ? "left-0" : "left-1/2 -translate-x-1/2"}
-                                    ${openDropdown.rowIdx !== undefined && openDropdown.rowIdx > personnel.length - 4 ? "bottom-full mb-2" : "top-full mt-2"}
-                                  `} 
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {getAvailableShifts(p.id).map(s => {
-                                    const clr = getSafeColor(s.code, s.color_code);
-                                    return (
-                                      <button key={s.code} onClick={(e) => { e.stopPropagation(); handleBulkAssign(s.code, { userIds: [p.id], dates: [dateStr] }); }} className="w-full flex items-center justify-center h-8 rounded-lg text-[10px] font-black transition-all hover:scale-105 active:scale-95" style={{ backgroundColor: `${clr}15`, color: clr, border: `1px solid ${clr}30` }}>
-                                        {s.code}
-                                      </button>
-                                    );
-                                  })}
-                                  <div className="border-t border-slate-800 pt-1" />
-                                  <button onClick={(e) => { e.stopPropagation(); handleBulkAssign(null, { userIds: [p.id], dates: [dateStr] }); }} className="w-full h-8 rounded-lg text-[10px] font-black text-slate-500 bg-slate-800/50 hover:bg-red-500/10 hover:text-red-400 transition-all flex items-center justify-center gap-1 border border-transparent hover:border-red-500/30"><X className="w-3 h-3" /> Kosong</button>
-                                </div>
-                              </>
-                            )}
-                          </div>
+                          {entry ? (
+                            <div className="h-7 w-full flex items-center justify-center rounded text-[9px] font-bold" style={{ backgroundColor: `${displayColor}20`, color: displayColor, border: `1px solid ${displayColor}40` }}>{entry.shift_code}</div>
+                          ) : <div className="h-7 w-full" />}
                         </td>
                       );
                     })}
@@ -325,6 +301,20 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
             </tbody>
           </table>
         </div>
+
+        {/* Portal Dropdown for single cell */}
+        {isAdmin && openDropdown && hasMounted && createPortal(
+          <>
+            <div className="fixed inset-0 z-[9998]" onClick={() => setOpenDropdown(null)} />
+            <DropdownPortalContent
+              openDropdown={openDropdown}
+              getAvailableShifts={getAvailableShifts}
+              getSafeColor={getSafeColor}
+              handleBulkAssign={handleBulkAssign}
+            />
+          </>,
+          document.body
+        )}
 
         {/* Modal Pilih Shift Masal */}
         <Dialog open={!!selectedRange} onOpenChange={(open) => !open && setSelectedRange(null)}>
@@ -353,6 +343,82 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
           })}
         </div>
       </main>
+    </div>
+  );
+}
+
+// Portal-based dropdown that renders at document.body level
+function DropdownPortalContent({ 
+  openDropdown, 
+  getAvailableShifts, 
+  getSafeColor, 
+  handleBulkAssign 
+}: { 
+  openDropdown: { userId: string; dateStr: string; anchorRect: DOMRect };
+  getAvailableShifts: (userId: string) => { code: string; name: string | null; color_code: string | null }[];
+  getSafeColor: (code: string, dbColor: string | null) => string;
+  handleBulkAssign: (shiftCode: string | null, targetRange?: { userIds: string[]; dates: string[] }) => void;
+}) {
+  const { userId, dateStr, anchorRect } = openDropdown;
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; openUp: boolean }>({ top: 0, left: 0, openUp: false });
+
+  useEffect(() => {
+    const dropdownH = 280; // estimated max height
+    const dropdownW = 144; // w-36 = 9rem = 144px
+    const viewH = window.innerHeight;
+    const viewW = window.innerWidth;
+
+    // Decide vertical: open up or down
+    const spaceBelow = viewH - anchorRect.bottom;
+    const openUp = spaceBelow < dropdownH && anchorRect.top > dropdownH;
+
+    let top = openUp 
+      ? anchorRect.top - 8 // will use bottom positioning via transform
+      : anchorRect.bottom + 4;
+    
+    // Horizontal: center on cell, clamp to viewport
+    let left = anchorRect.left + anchorRect.width / 2 - dropdownW / 2;
+    left = Math.max(8, Math.min(left, viewW - dropdownW - 8));
+
+    setPos({ top, left, openUp });
+  }, [anchorRect]);
+
+  const shifts = getAvailableShifts(userId);
+
+  return (
+    <div 
+      ref={dropdownRef}
+      className="fixed z-[9999] w-36 rounded-xl border border-slate-800 bg-slate-900/95 backdrop-blur-md shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+      style={{ 
+        left: pos.left, 
+        ...(pos.openUp 
+          ? { top: pos.top, transform: 'translateY(-100%)' } 
+          : { top: pos.top }
+        ),
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {shifts.map(s => {
+        const clr = getSafeColor(s.code, s.color_code);
+        return (
+          <button 
+            key={s.code} 
+            onClick={() => handleBulkAssign(s.code, { userIds: [userId], dates: [dateStr] })} 
+            className="w-full flex items-center justify-center h-8 rounded-lg text-[10px] font-black transition-all hover:scale-105 active:scale-95" 
+            style={{ backgroundColor: `${clr}15`, color: clr, border: `1px solid ${clr}30` }}
+          >
+            {s.code}
+          </button>
+        );
+      })}
+      <div className="border-t border-slate-800 pt-1" />
+      <button 
+        onClick={() => handleBulkAssign(null, { userIds: [userId], dates: [dateStr] })} 
+        className="w-full h-8 rounded-lg text-[10px] font-black text-slate-500 bg-slate-800/50 hover:bg-red-500/10 hover:text-red-400 transition-all flex items-center justify-center gap-1 border border-transparent hover:border-red-500/30"
+      >
+        <X className="w-3 h-3" /> Kosong
+      </button>
     </div>
   );
 }
