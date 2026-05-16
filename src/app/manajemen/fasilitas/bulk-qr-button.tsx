@@ -90,7 +90,7 @@ export function BulkQRButton({ facilities, unitName }: { facilities: Facility[];
         className="border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-100 h-10 px-4 transition-all active:scale-95 flex items-center gap-2"
       >
         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-        <span>Cetak QR Massal</span>
+        <span>Cetak QR Semua Aset</span>
       </Button>
 
       {/* Hidden container for rendering all QRs to capture them */}
