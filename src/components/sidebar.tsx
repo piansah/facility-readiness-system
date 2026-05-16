@@ -107,13 +107,15 @@ export function Sidebar() {
             </p>
           </div>
           <div className="flex flex-col gap-2">
-            <Button 
-              variant="destructive" 
-              onClick={() => logout()}
-              className="w-full bg-red-600 hover:bg-red-500 font-bold"
-            >
-              Ya, Logout Sekarang
-            </Button>
+            <form action={logout}>
+              <Button 
+                type="submit"
+                variant="destructive" 
+                className="w-full bg-red-600 hover:bg-red-500 font-bold"
+              >
+                Ya, Logout Sekarang
+              </Button>
+            </form>
             <Button 
               variant="ghost" 
               onClick={() => setIsLogoutDialogOpen(false)}

@@ -94,15 +94,15 @@ export async function createUser(formData: FormData) {
 
   const userId = authUser.user.id;
 
-  // 2. Create Profile in public.users
-  const { error: profileError } = await adminClient.from("users").insert({
+  // 2. Create/Update Profile in public.users
+  const { error: profileError } = await adminClient.from("users").upsert({
     id: userId,
     email,
     full_name: fullName,
     role,
     unit_id: role === "super_admin" ? null : (unitId || null),
     is_active: true,
-  });
+  }, { onConflict: 'id' });
 
   if (profileError) {
     // Cleanup auth user if profile fails
