@@ -212,7 +212,7 @@ export default function RosterContent({
           if (error) throw error;
         }
       } else {
-        // Hapus sekaligus menggunakan in() array untuk mencegah gagal karena terlalu banyak request berurutan
+        // Eksekusi delete langsung ke database sesuai baris yang diblok
         const { error } = await supabase.from("duty_rosters")
           .delete()
           .in("user_id", userIds)
@@ -221,10 +221,9 @@ export default function RosterContent({
       }
       
       toast.success("Jadwal diperbarui");
-      router.refresh();
     } catch (e) { 
       toast.error("Gagal memperbarui jadwal"); 
-      // Rollback jika error
+      console.error(e);
       setLocalRosters(initialRosters);
     }
   };
