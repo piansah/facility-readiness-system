@@ -315,12 +315,12 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
       startY: currentY,
       theme: 'grid',
       margin: { left: 5 },
-      tableWidth: 150,
+      tableWidth: 100, // Kecilkan lebar total (100mm)
       styles: { fontSize: 5.5, cellPadding: 1, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1 },
       columnStyles: { 
-        0: { cellWidth: 20, fontStyle: 'bold', halign: 'center' }, 
-        1: { cellWidth: 65, halign: 'center' }, 
-        2: { cellWidth: 65, halign: 'center' } 
+        0: { cellWidth: 15, fontStyle: 'bold', halign: 'center' }, 
+        1: { cellWidth: 42.5, halign: 'center' }, 
+        2: { cellWidth: 42.5, halign: 'center' } 
       },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 0) {
@@ -409,7 +409,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
 
         {/* Modal Opsi Export PDF */}
         <Dialog open={isExportModalOpen} onOpenChange={setIsExportModalOpen}>
-          <DialogContent className="sm:max-w-[400px] bg-slate-950 border-slate-800 p-0 overflow-hidden shadow-2xl z-[9999] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <DialogContent className="fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-[400px] translate-x-[-50%] translate-y-[-50%] gap-0 border border-slate-800 bg-slate-950 p-0 shadow-2xl duration-200 sm:rounded-2xl overflow-hidden">
             <div className="p-6 border-b border-slate-800 bg-slate-900/50">
               <DialogTitle className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 <Printer className="w-5 h-5 text-blue-500" /> Opsi Export PDF
