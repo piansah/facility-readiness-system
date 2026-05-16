@@ -100,11 +100,16 @@ export default async function FacilityManagementPage({
       .from("units")
       .select("name")
       .eq("id", selectedUnitId)
-      .single()
+      .maybeSingle()
   ]);
 
   const facilities = facilitiesRes.data;
-  const currentUnitName = selectedUnitRes.data?.name || "Unit";
+  
+  // Robustly get unit name from profile if the direct unit query fails
+  const rawProfileUnits = (profile as any)?.units || (profile as any)?.["units!users_unit_id_fkey"];
+  const profileUnitName = (Array.isArray(rawProfileUnits) ? rawProfileUnits[0]?.name : rawProfileUnits?.name);
+  
+  const currentUnitName = selectedUnitRes.data?.name || (profile?.role !== "super_admin" ? profileUnitName : "") || "Unit";
 
   const selectedUnitCategories = (categories ?? []).filter((category) => category.unit_id === selectedUnitId);
 

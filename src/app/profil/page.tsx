@@ -30,7 +30,10 @@ async function ProfilContent() {
   const { profile: userData } = await getProfile(supabase, user.id);
 
   const isSuperAdmin = userData?.role === "super_admin";
-  const unitName = isSuperAdmin ? "Global / Pusat" : (userData as any)?.units?.name;
+  const rawUnits = (userData as any)?.units;
+  const unitName = isSuperAdmin 
+    ? "Global / Pusat" 
+    : (Array.isArray(rawUnits) ? rawUnits[0]?.name : rawUnits?.name) || (userData as any)?.["units!users_unit_id_fkey"]?.name;
 
   const formatUnitName = (name?: string) => {
     if (isSuperAdmin) return "Global / Pusat";

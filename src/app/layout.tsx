@@ -40,8 +40,9 @@ export default async function RootLayout({
     const { profile } = await getProfile(supabase, user.id);
     if (profile?.role === "super_admin") {
       unitName = "Administrator Pusat";
-    } else if ((profile as any)?.units?.name) {
-      unitName = (profile as any).units.name;
+    } else {
+      const rawUnits = (profile as any)?.units;
+      unitName = (Array.isArray(rawUnits) ? rawUnits[0]?.name : rawUnits?.name) || (profile as any)?.["units!users_unit_id_fkey"]?.name || "Unit Tidak Diketahui";
     }
   }
 

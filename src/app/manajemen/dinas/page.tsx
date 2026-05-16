@@ -107,9 +107,12 @@ async function DinasContent({ searchParams }: { searchParams: { month?: string }
     redirect(`/manajemen/dinas?month=${selectedMonthStr}`);
   }
 
+  const rawProfileUnits = (profile as any)?.units || (profile as any)?.["units!users_unit_id_fkey"];
+  const profileUnitName = (Array.isArray(rawProfileUnits) ? rawProfileUnits[0]?.name : rawProfileUnits?.name);
+
   const unitName = isSuperAdmin 
     ? "Pusat / Global" 
-    : (profile as any)?.units?.name || "Unit Tidak Diketahui";
+    : profileUnitName || "Unit Tidak Diketahui";
 
   return (
     <RosterContent 
