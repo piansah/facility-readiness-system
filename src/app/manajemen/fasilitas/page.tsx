@@ -48,7 +48,7 @@ export default async function FacilityManagementPage({
   const params = await searchParams;
   const supabase = await createClient();
   const { user } = await (await supabase.auth.getUser()).data;
-  
+
   if (!user) redirect("/login");
 
   const { profile } = await getProfile(supabase, user.id);
@@ -112,9 +112,9 @@ export default async function FacilityManagementPage({
             <p className="text-sm text-slate-400">Konfigurasi unit, kategori, dan daftar aset operasional.</p>
           </div>
 
-          <FacilityHeaderActions 
-            units={units ?? []} 
-            categories={categories ?? []} 
+          <FacilityHeaderActions
+            units={units ?? []}
+            categories={categories ?? []}
             selectedUnitId={selectedUnitId}
             isSuperAdmin={isSuperAdmin}
           />
@@ -134,11 +134,10 @@ export default async function FacilityManagementPage({
                     <Link
                       key={u.id}
                       href={`/manajemen/fasilitas?unit=${u.id}`}
-                      className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
-                        selectedUnitId === u.id 
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                        : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border border-transparent'
-                      }`}
+                      className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${selectedUnitId === u.id
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border border-transparent'
+                        }`}
                     >
                       <span className="font-medium">{u.code}</span>
                       <span className="text-[10px] opacity-50">{u.name}</span>
@@ -149,9 +148,9 @@ export default async function FacilityManagementPage({
             )}
 
             {/* Daftar Kategori di Sidebar */}
-            <CategoryListPanel 
-              categories={categories ?? []} 
-              selectedUnitId={selectedUnitId} 
+            <CategoryListPanel
+              categories={categories ?? []}
+              selectedUnitId={selectedUnitId}
             />
           </div>
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, Users, CheckCircle2, AlertCircle, BarChart3, PieChart as PieChartIcon } from "lucide-react";
+import { ArrowLeft, TrendingUp, Users, CheckCircle2, AlertCircle, BarChart3, PieChart as PieChartIcon, Calendar } from "lucide-react";
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type IncidentData = {
   id: string;
@@ -33,6 +34,8 @@ const COLORS = {
 };
 
 export default function StatistikContent({ initialData, unitName }: Props) {
+  const [range, setRange] = useState<7 | 30>(7);
+
   // 1. Process Data for Result Pie Chart
   const resultData = useMemo(() => {
     const counts = initialData.reduce((acc, curr) => {
@@ -80,9 +83,9 @@ export default function StatistikContent({ initialData, unitName }: Props) {
     })).sort((a, b) => b.rate - a.rate);
   }, [initialData]);
 
-  // 4. Process Trends (last 30 days for monthly report)
+  // 4. Process Trends (dynamic range)
   const trendData = useMemo(() => {
-    const last30Days = Array.from({ length: 30 }, (_, i) => {
+    const dateList = Array.from({ length: range }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - i);
       return d.toISOString().split("T")[0];
@@ -94,11 +97,11 @@ export default function StatistikContent({ initialData, unitName }: Props) {
       return acc;
     }, {} as Record<string, number>);
 
-    return last30Days.map(date => ({
+    return dateList.map(date => ({
       date: new Date(date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
       jumlah: dailyCounts[date] || 0
     }));
-  }, [initialData]);
+  }, [initialData, range]);
 
   // 4. Calculate KPIs
   const kpis = useMemo(() => {
@@ -151,30 +154,51 @@ export default function StatistikContent({ initialData, unitName }: Props) {
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Trend Chart */}
           <Card className="border-slate-800 bg-slate-900/40 lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-emerald-400" />
-                Tren Insiden (30 Hari Terakhir)
-              </CardTitle>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-emerald-400" />
+                  Tren Insiden ({range} Hari Terakhir)
+                </CardTitle>
+                <CardDescription className="text-slate-500 text-xs">Visualisasi frekuensi kejadian berdasarkan waktu.</CardDescription>
+              </div>
+              <Tabs 
+                value={range.toString()} 
+                onValueChange={(v) => setRange(Number(v) as 7 | 30)}
+                className="w-full sm:w-auto"
+              >
+                <TabsList className="bg-slate-950 border border-slate-800 h-9">
+                  <TabsTrigger value="7" className="text-[10px] uppercase font-bold tracking-wider data-[state=active]:bg-emerald-500 data-[state=active]:text-white">7 Hari</TabsTrigger>
+                  <TabsTrigger value="30" className="text-[10px] uppercase font-bold tracking-wider data-[state=active]:bg-emerald-500 data-[state=active]:text-white">30 Hari</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </CardHeader>
-            <CardContent className="h-[300px]">
+            <CardContent className="h-[300px] pt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                   <XAxis 
                     dataKey="date" 
                     stroke="#64748b" 
-                    fontSize={12} 
+                    fontSize={10} 
                     tickLine={false} 
                     axisLine={false} 
-                    minTickGap={40}
+                    minTickGap={range === 30 ? 40 : 10}
                   />
-                  <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px" }}
-                    itemStyle={{ color: "#10b981" }}
+                    contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #1e293b", borderRadius: "12px", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.5)" }}
+                    itemStyle={{ color: "#10b981", fontSize: "12px", fontWeight: "bold" }}
+                    labelStyle={{ color: "#94a3b8", marginBottom: "4px" }}
                   />
-                  <Line type="monotone" dataKey="jumlah" stroke="#10b981" strokeWidth={3} dot={{ fill: "#10b981", r: 4 }} activeDot={{ r: 6 }} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="jumlah" 
+                    stroke="#10b981" 
+                    strokeWidth={3} 
+                    dot={{ fill: "#10b981", strokeWidth: 2, r: range === 30 ? 2 : 4 }} 
+                    activeDot={{ r: 6, strokeWidth: 0 }} 
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>

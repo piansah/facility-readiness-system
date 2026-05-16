@@ -435,7 +435,7 @@ export default function RosterContent({ personnel, shifts, rosters, selectedMont
               onClick={handleExportPDF}
               className="h-10 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 shadow-lg transition-all active:scale-95 flex items-center gap-2 no-print"
             >
-              <Download className="h-4 w-4" /> <span className="hidden sm:inline">Download PDF</span>
+              <Printer className="h-4 w-4" /> <span className="hidden sm:inline">Cetak PDF</span>
             </Button>
 
             {isAdmin && (
