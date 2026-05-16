@@ -424,67 +424,31 @@ async function DashboardContent() {
           {/* 1. Laporan Hari Ini Section */}
           <div className="grid gap-4">
 
-            <Card className="border-slate-800 bg-slate-900/40">
-              <CardHeader className="pb-2">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <CardTitle className="text-lg">
-                      {isSuperAdmin ? "Progres Laporan Unit" : "Status Laporan Hari Ini"}
-                    </CardTitle>
-                    <CardDescription>{formattedToday}</CardDescription>
-                  </div>
-                  {canCreateReports(profile?.role) && (
-                    <div className="flex items-center gap-2">
-                      <Button asChild size="sm" variant="outline" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-950/50">
-                        <Link href="/laporan?tab=draft">
-                          <ClipboardList className="mr-1.5 h-4 w-4" /> Draft
-                        </Link>
-                      </Button>
-                      <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-                        <Link href="/laporan/buat">
-                          <ClipboardList className="mr-1.5 h-4 w-4" /> <span className="hidden sm:inline">Buat </span>Laporan
-                        </Link>
-                      </Button>
+            {!isSuperAdmin && (
+              <Card className="border-slate-800 bg-slate-900/40">
+                <CardHeader className="pb-2">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <CardTitle className="text-lg">Status Laporan Hari Ini</CardTitle>
+                      <CardDescription>{formattedToday}</CardDescription>
                     </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                {isSuperAdmin ? (
-                  /* --- Super Admin: Unit Progress Table --- */
-                  <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-slate-900/50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                        <tr>
-                          <th className="px-4 py-3">Unit</th>
-                          <th className="px-4 py-3 text-center">Shift Pagi</th>
-                          <th className="px-4 py-3 text-center">Shift Malam</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800">
-                        {units.map((u) => {
-                          const pagi = summaries?.find(s => s.unit_id === u.id && s.shift === 'pagi');
-                          const malam = summaries?.find(s => s.unit_id === u.id && s.shift === 'malam');
-                          return (
-                            <tr key={u.id} className="hover:bg-slate-900/50 transition-colors">
-                              <td className="px-4 py-3">
-                                <p className="font-bold text-slate-100">{u.code}</p>
-                                <p className="text-[10px] text-slate-500">{u.name}</p>
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <ShiftStatusLink report={pagi} />
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <ShiftStatusLink report={malam} />
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                    {canCreateReports(profile?.role) && (
+                      <div className="flex items-center gap-2">
+                        <Button asChild size="sm" variant="outline" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-950/50">
+                          <Link href="/laporan?tab=draft">
+                            <ClipboardList className="mr-1.5 h-4 w-4" /> Draft
+                          </Link>
+                        </Button>
+                        <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                          <Link href="/laporan/buat">
+                            <ClipboardList className="mr-1.5 h-4 w-4" /> <span className="hidden sm:inline">Buat </span>Laporan
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  /* --- Regular User: Shift Cards --- */
+                </CardHeader>
+                <CardContent className="grid gap-4">
                   <div className="grid gap-3">
                     {shiftSummaries.map((item) => {
                       const href = item.report?.id
@@ -517,9 +481,9 @@ async function DashboardContent() {
                       );
                     })}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* 2. Review Laporan (Admin Only) */}
             {canReview && pendingReviews.length > 0 && (
@@ -550,56 +514,58 @@ async function DashboardContent() {
             )}
 
             {/* 3. Open Issues Section */}
-            <Card className="border-slate-800 bg-slate-900/40">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div>
-                  <CardTitle className="text-lg">Non-Rutin & Insiden</CardTitle>
-                  <CardDescription>Masalah yang masih memerlukan tindak lanjut.</CardDescription>
-                </div>
-                {canCreateIncidents(profile?.role) && (
-                  <Button asChild variant="outline" size="sm">
-                    <Link href="/insiden/buat">
-                      <Camera className="mr-2 h-4 w-4" /> Laporkan
-                    </Link>
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent>
-                {openIssues?.length ? (
-                  <div className="grid gap-3">
-                    {openIssues.map((issue) => (
-                      <Link
-                        key={issue.id}
-                        href={`/insiden/${issue.id}`}
-                        className="group relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-4 transition-all hover:border-amber-500/50 hover:bg-slate-900"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-bold text-slate-100 group-hover:text-amber-400 transition-colors">{issue.title}</p>
-                            <p className="mt-1 text-xs text-slate-500 flex items-center gap-2">
-                              <span className="font-semibold text-slate-400">{issue.facility_name ?? "Umum"}</span>
-                              {issue.occurred_at && `- ${formatDateTime(issue.occurred_at)}`}
-                            </p>
-                          </div>
-                          <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${issue.status === 'open' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            }`}>
-                            {issue.status}
-                          </span>
-                        </div>
+            {!isSuperAdmin && (
+              <Card className="border-slate-800 bg-slate-900/40">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <div>
+                    <CardTitle className="text-lg">Non-Rutin & Insiden</CardTitle>
+                    <CardDescription>Masalah yang masih memerlukan tindak lanjut.</CardDescription>
+                  </div>
+                  {canCreateIncidents(profile?.role) && (
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/insiden/buat">
+                        <Camera className="mr-2 h-4 w-4" /> Laporkan
                       </Link>
-                    ))}
-                    <Button asChild variant="ghost" className="w-full text-slate-500 hover:text-slate-200">
-                      <Link href="/insiden">Lihat Semua History Non-Rutin</Link>
                     </Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-10 text-center rounded-xl border border-dashed border-slate-800">
-                    <CheckCircle2 className="h-10 w-10 text-emerald-500/20 mb-3" />
-                    <p className="text-sm text-slate-500">Semua aman. Tidak ada insiden terbuka.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {openIssues?.length ? (
+                    <div className="grid gap-3">
+                      {openIssues.map((issue) => (
+                        <Link
+                          key={issue.id}
+                          href={`/insiden/${issue.id}`}
+                          className="group relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-4 transition-all hover:border-amber-500/50 hover:bg-slate-900"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-bold text-slate-100 group-hover:text-amber-400 transition-colors">{issue.title}</p>
+                              <p className="mt-1 text-xs text-slate-500 flex items-center gap-2">
+                                <span className="font-semibold text-slate-400">{issue.facility_name ?? "Umum"}</span>
+                                {issue.occurred_at && `- ${formatDateTime(issue.occurred_at)}`}
+                              </p>
+                            </div>
+                            <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${issue.status === 'open' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              }`}>
+                              {issue.status}
+                            </span>
+                          </div>
+                        </Link>
+                      ))}
+                      <Button asChild variant="ghost" className="w-full text-slate-500 hover:text-slate-200">
+                        <Link href="/insiden">Lihat Semua History Non-Rutin</Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-10 text-center rounded-xl border border-dashed border-slate-800">
+                      <CheckCircle2 className="h-10 w-10 text-emerald-500/20 mb-3" />
+                      <p className="text-sm text-slate-500">Semua aman. Tidak ada insiden terbuka.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 
