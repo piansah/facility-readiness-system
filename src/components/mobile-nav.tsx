@@ -21,7 +21,7 @@ export function MobileNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-lg border-t border-slate-800 shadow-[0_-10px_40px_rgba(0,0,0,0.4)] sm:hidden">
       <div className="relative flex items-center justify-around h-16 px-2 pb-safe-area-inset-bottom">
-        {NAVIGATION_ITEMS.map((item) => {
+        {NAVIGATION_ITEMS.filter(item => ["Beranda", "SCAN QR", "Profil"].includes(item.label)).map((item) => {
           const currentPath = activePath || pathname;
           const isActive = currentPath === item.href || (item.href !== "/dashboard" && currentPath.startsWith(item.href!));
           

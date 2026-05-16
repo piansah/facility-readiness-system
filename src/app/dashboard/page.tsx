@@ -324,22 +324,26 @@ async function DashboardContent() {
                 </>
               )}
 
-              {isAdmin && (
+              {(isAdmin || profile?.role === "petugas") && (
                 <>
                   {!isSuperAdmin && (
                     <>
                       <div className="my-2 border-t border-slate-800" />
-                      <p className="text-sm font-bold uppercase tracking-wider text-white px-1 mb-2">Management Unit</p>
+                      <p className="text-sm font-bold uppercase tracking-wider text-white px-1 mb-2">
+                        {profile?.role === "petugas" ? "Informasi Unit" : "Management Unit"}
+                      </p>
                     </>
                   )}
                   <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/manajemen/pengguna">
-                      <LogOut className="mr-3 h-5 w-5 text-blue-400 rotate-180" /> Kelola Pengguna
+                      <Users className="mr-3 h-5 w-5 text-blue-400" /> 
+                      {profile?.role === "petugas" ? "Daftar Pengguna" : "Kelola Pengguna"}
                     </Link>
                   </Button>
                   <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/manajemen/fasilitas">
-                      <Wrench className="mr-3 h-5 w-5 text-purple-400" /> Kelola Fasilitas
+                      <Server className="mr-3 h-5 w-5 text-purple-400" /> 
+                      {profile?.role === "petugas" ? "Daftar Fasilitas" : "Kelola Fasilitas"}
                     </Link>
                   </Button>
                   {isSuperAdmin && (
@@ -598,22 +602,26 @@ async function DashboardContent() {
                 </>
               )}
 
-              {isAdmin && (
+              {(isAdmin || profile?.role === "petugas") && (
                 <>
                   {!isSuperAdmin && (
                     <>
                       <div className="my-2 border-t border-slate-800" />
-                      <p className="text-sm font-bold uppercase tracking-wider text-white px-1 mb-2">Management Unit</p>
+                      <p className="text-sm font-bold uppercase tracking-wider text-white px-1 mb-2">
+                        {profile?.role === "petugas" ? "Informasi Unit" : "Management Unit"}
+                      </p>
                     </>
                   )}
                   <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/manajemen/pengguna">
-                      <LogOut className="mr-3 h-5 w-5 text-blue-400 rotate-180" /> Kelola Pengguna
+                      <Users className="mr-3 h-5 w-5 text-blue-400" /> 
+                      {profile?.role === "petugas" ? "Daftar Pengguna" : "Kelola Pengguna"}
                     </Link>
                   </Button>
                   <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/manajemen/fasilitas">
-                      <Wrench className="mr-3 h-5 w-5 text-purple-400" /> Kelola Fasilitas
+                      <Server className="mr-3 h-5 w-5 text-purple-400" /> 
+                      {profile?.role === "petugas" ? "Daftar Fasilitas" : "Kelola Fasilitas"}
                     </Link>
                   </Button>
                   {isSuperAdmin && (
