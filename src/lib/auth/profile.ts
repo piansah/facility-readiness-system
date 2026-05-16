@@ -2,31 +2,25 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AppProfile } from "./roles";
 
 export async function getProfile(supabase: SupabaseClient, userId: string) {
-  const { data: userData, error: userError } = await supabase
+  const { data, error } = await supabase
     .from("users")
-    .select("*")
+    .select("*, units(name), units!users_unit_id_fkey(name)")
     .eq("id", userId)
     .single();
 
-  if (userError || !userData) {
-    console.error("GET PROFILE ERROR:", userError);
-    return { profile: null, error: userError };
+  if (error || !data) {
+    console.error("GET PROFILE ERROR:", error);
+    return { profile: null, error };
   }
 
-  let unitName = null;
-  if (userData.unit_id) {
-    const { data: unitData } = await supabase
-      .from("units")
-      .select("name")
-      .eq("id", userData.unit_id)
-      .maybeSingle();
-    unitName = unitData?.name || null;
-  }
+  // Normalisasi: Ambil nama unit dari salah satu relasi yang berhasil
+  const rawUnits = (data as any).units || (data as any)["units!users_unit_id_fkey"];
+  const unitObj = Array.isArray(rawUnits) ? rawUnits[0] : rawUnits;
 
   return { 
-    profile: { 
-      ...userData, 
-      units: unitName ? { name: unitName } : null 
+    profile: {
+      ...data,
+      units: unitObj ? { name: unitObj.name } : null
     } as AppProfile & { units: { name: string } | null }, 
     error: null 
   };

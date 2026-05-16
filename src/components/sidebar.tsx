@@ -71,7 +71,7 @@ export function Sidebar({ unitName }: { unitName: string }) {
 
             <nav className="space-y-1">
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-3">Monitoring & History</p>
-              {NAVIGATION_ITEMS.filter(item => item.href !== "/scan").map((item) => {
+              {NAVIGATION_ITEMS.map((item) => {
                 const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href!));
                 
                 return (

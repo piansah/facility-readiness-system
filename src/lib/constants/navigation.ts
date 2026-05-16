@@ -1,4 +1,4 @@
-import { Home, QrCode, User, Calendar, LayoutList, Users, Shield } from "lucide-react";
+import { Home, QrCode, User, Calendar, LayoutList } from "lucide-react";
 
 export const NAVIGATION_ITEMS = [
   {
@@ -25,15 +25,5 @@ export const NAVIGATION_ITEMS = [
     label: "Profil",
     icon: User,
     href: "/profil",
-  },
-  {
-    label: "Aset & Fasilitas",
-    icon: Shield,
-    href: "/manajemen/fasilitas",
-  },
-  {
-    label: "Daftar Pengguna",
-    icon: Users,
-    href: "/manajemen/pengguna",
   },
 ];

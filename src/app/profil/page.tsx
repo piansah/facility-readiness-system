@@ -33,7 +33,7 @@ async function ProfilContent() {
   const isSuperAdmin = userData?.role === "super_admin";
   const unitName = isSuperAdmin 
     ? "Global / Pusat" 
-    : (userData as any)?.units?.name || (userData as any)?.assigned_unit?.name || (userData as any)?.["units!users_unit_id_fkey"]?.name;
+    : (userData as any)?.units?.name || "Unit Tidak Diketahui";
 
   const formatUnitName = (name?: string) => {
     if (isSuperAdmin) return "Global / Pusat";
