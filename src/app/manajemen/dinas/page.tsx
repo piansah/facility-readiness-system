@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/auth/profile";
 import RosterContent from "@/app/manajemen/dinas/RosterContent";
-import { startOfMonth, endOfMonth, format } from "date-fns";
+import { startOfMonth, endOfMonth, format, subMonths } from "date-fns";
 
 import { Suspense } from "react";
 
@@ -29,7 +29,10 @@ async function DinasContent({ searchParams }: { searchParams: { month?: string }
   
   const selectedMonthStr = (await searchParams).month || format(new Date(), "yyyy-MM");
   const selectedMonth = new Date(selectedMonthStr + "-01");
-  const startDate = format(startOfMonth(selectedMonth), "yyyy-MM-dd");
+  
+  // Widen the fetch range to support PDF export (21st prev month - end of current month)
+  const prevMonth = subMonths(selectedMonth, 1);
+  const startDate = format(new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 21), "yyyy-MM-dd");
   const endDate = format(endOfMonth(selectedMonth), "yyyy-MM-dd");
 
   let userQuery = supabase
