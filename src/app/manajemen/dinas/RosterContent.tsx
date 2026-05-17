@@ -401,7 +401,7 @@ export default function RosterContent({
               <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0 border-slate-800"><Link href={`/manajemen/dinas?month=${format(addMonths(selectedMonth, 1), "yyyy-MM")}`}><ChevronRight className="h-4 w-4" /></Link></Button>
             </div>
           </div>
-          {isAdmin && <div className="text-[10px] font-bold text-slate-500 bg-slate-900/50 px-3 py-1.5 rounded-full border border-slate-800">💡 Tip: Klik dan tarik kursor untuk memblok banyak kolom sekaligus</div>}
+          {isAdmin && <div className="hidden md:block text-[10px] font-bold text-slate-500 bg-slate-900/50 px-3 py-1.5 rounded-full border border-slate-800">💡 Tip: Klik dan tarik kursor untuk memblok banyak kolom sekaligus</div>}
         </div>
 
         <div className="rounded-xl border border-slate-800 bg-slate-950 overflow-x-auto shadow-2xl mb-8 select-none">
