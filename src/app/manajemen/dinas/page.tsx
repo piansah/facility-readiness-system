@@ -27,10 +27,17 @@ async function DinasContent({ searchParams }: { searchParams: { month?: string }
 
   const isSuperAdmin = profile.role === "super_admin";
   
-  const selectedMonthStr = (await searchParams).month || format(new Date(), "yyyy-MM");
-  const selectedMonth = new Date(selectedMonthStr + "-01");
+  let selectedMonthStr = "";
+  try {
+    const rawMonth = (await searchParams).month;
+    selectedMonthStr = Array.isArray(rawMonth) ? rawMonth[0] : rawMonth;
+  } catch (e) {}
   
-  // Widen the fetch range to support PDF export (21st prev month - end of current month)
+  if (!selectedMonthStr || !/^\d{4}-\d{2}$/.test(selectedMonthStr)) {
+    selectedMonthStr = format(new Date(), "yyyy-MM");
+  }
+
+  const selectedMonth = new Date(selectedMonthStr + "-01");
   const prevMonth = subMonths(selectedMonth, 1);
   const startDate = format(new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 21), "yyyy-MM-dd");
   const endDate = format(endOfMonth(selectedMonth), "yyyy-MM-dd");

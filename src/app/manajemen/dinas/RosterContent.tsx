@@ -5,7 +5,7 @@ import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterv
 import { id } from "date-fns/locale";
 import {
   ArrowLeft, ChevronLeft, ChevronRight,
-  Save, Loader2, Settings2, Printer, X, Calendar, FileText
+  Save, Loader2, Settings2, Printer, X, Calendar, FileText, Lock, Unlock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -69,8 +69,15 @@ export default function RosterContent({
   const [tempShifts, setTempShifts] = useState<ShiftConfig[]>(initialShifts);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMobileLocked, setIsMobileLocked] = useState(true);
 
   // Sync state with props when month or data changes
+  useEffect(() => {
+    if (window.innerWidth >= 768) {
+      setIsMobileLocked(false);
+    }
+  }, []);
+
   useEffect(() => {
     setPersonnel(initialPersonnel);
     setLocalShifts(initialShifts);
@@ -105,7 +112,7 @@ export default function RosterContent({
   };
 
   const onMouseDown = (userId: string, dayIdx: number) => {
-    if (!isAdmin) return;
+    if (!isAdmin || isMobileLocked) return;
     setOpenDropdown(null);
     setDragStart({ userId, dayIdx });
     setDragEnd({ userId, dayIdx });
@@ -401,7 +408,21 @@ export default function RosterContent({
               <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0 border-slate-800"><Link href={`/manajemen/dinas?month=${format(addMonths(selectedMonth, 1), "yyyy-MM")}`}><ChevronRight className="h-4 w-4" /></Link></Button>
             </div>
           </div>
-          {isAdmin && <div className="hidden md:block text-[10px] font-bold text-slate-500 bg-slate-900/50 px-3 py-1.5 rounded-full border border-slate-800">💡 Tip: Klik dan tarik kursor untuk memblok banyak kolom sekaligus</div>}
+          {isAdmin && (
+            <div className="flex items-center">
+              <div className="hidden md:block text-[10px] font-bold text-slate-500 bg-slate-900/50 px-3 py-1.5 rounded-full border border-slate-800">
+                Tip: Klik dan tarik kursor untuk memblok banyak kolom sekaligus
+              </div>
+              <Button
+                variant={isMobileLocked ? "outline" : "default"}
+                size="sm"
+                onClick={() => setIsMobileLocked(!isMobileLocked)}
+                className={`md:hidden h-8 px-3 text-[10px] font-bold gap-2 ${isMobileLocked ? "border-slate-800 text-slate-400" : "bg-blue-600 text-white"}`}
+              >
+                {isMobileLocked ? <><Lock className="w-3 h-3" /> Terkunci</> : <><Unlock className="w-3 h-3" /> Edit Terbuka</>}
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="rounded-xl border border-slate-800 bg-slate-950 overflow-x-auto shadow-2xl mb-8 select-none">
