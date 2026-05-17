@@ -56,7 +56,7 @@ export function FacilityHeaderActions({
 
       {/* Choice Modal (Bottom Sheet style on mobile if possible, but centered for now) */}
       <Dialog open={showChoiceModal} onOpenChange={setShowChoiceModal}>
-        <DialogContent position="bottom" className="max-w-sm border-slate-800 bg-slate-900/95 backdrop-blur-xl">
+        <DialogContent className="max-w-sm border-slate-800 bg-slate-900/95 backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle className="text-center">Tambah Baru</DialogTitle>
           </DialogHeader>

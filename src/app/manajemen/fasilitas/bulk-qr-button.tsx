@@ -99,7 +99,7 @@ export function BulkQRButton({ facilities, unitName }: { facilities: Facility[];
           <QRCodeCanvas 
             key={f.id}
             id={`bulk-qr-${f.id}`}
-            value={`${window.location.origin}/fasilitas/${f.id}`}
+            value={`${typeof window !== 'undefined' ? window.location.origin : ''}/fasilitas/${f.id}`}
             size={256}
             level="H"
             includeMargin={true}

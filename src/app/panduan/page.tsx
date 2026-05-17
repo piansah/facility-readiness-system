@@ -43,7 +43,7 @@ async function GuideContent() {
       {/* Header Premium */}
       <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
         <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-4">
-          <Button asChild variant="ghost" size="sm" className="text-slate-400 p-0 w-9 h-9">
+          <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex text-slate-400 p-0 w-9 h-9">
             <Link href="/dashboard">
               <ArrowLeft className="h-5 w-5" />
             </Link>

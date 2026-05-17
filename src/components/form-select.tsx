@@ -19,6 +19,8 @@ type FormSelectProps = {
   options: Option[];
   required?: boolean;
   defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
 };
 
 export function FormSelect({
@@ -27,9 +29,11 @@ export function FormSelect({
   options,
   required,
   defaultValue,
+  value,
+  onValueChange,
 }: FormSelectProps) {
   return (
-    <Select name={name} required={required} defaultValue={defaultValue}>
+    <Select name={name} required={required} defaultValue={defaultValue} value={value} onValueChange={onValueChange}>
       <SelectTrigger>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

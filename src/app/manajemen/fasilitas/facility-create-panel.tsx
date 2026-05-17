@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormSelect } from "@/components/form-select";
 import { createFacility, createFacilityCategory, deleteFacilityCategory, updateFacilityCategory } from "./actions";
 
 const iconOptions = [
@@ -92,39 +93,28 @@ export function FacilityCreatePanel({
         {canChooseUnit ? (
           <div className="grid gap-2">
             <Label htmlFor="unit_id">Unit</Label>
-            <select
-              id="unit_id"
+            <FormSelect
               name="unit_id"
               value={facilityUnitId}
-              onChange={(event) => setFacilityUnitId(event.target.value)}
+              onValueChange={setFacilityUnitId}
+              options={units.map(u => ({ value: u.id, label: `${u.code} - ${u.name}` }))}
               required
-              className="h-11 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500"
-            >
-              {units.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.code} - {unit.name}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         ) : (
           <input type="hidden" name="unit_id" value={facilityUnitId} />
         )}
         <div className="grid gap-2">
           <Label htmlFor="category_id">Kategori</Label>
-          <select
-            id="category_id"
+          <FormSelect
             name="category_id"
+            placeholder="Pilih kategori..."
+            options={facilityCategories.map(c => ({
+              value: c.id,
+              label: c.icon ? `${c.icon} ${c.name}` : c.name
+            }))}
             required
-            className="h-11 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500"
-          >
-            {facilityCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.icon ? `${category.icon} ` : ""}
-                {category.name}
-              </option>
-            ))}
-          </select>
+          />
           {facilityCategories.length === 0 ? (
             <p className="text-xs text-amber-300">Tambahkan kategori untuk unit ini terlebih dahulu.</p>
           ) : null}
@@ -152,20 +142,13 @@ export function FacilityCreatePanel({
           {canChooseUnit ? (
             <div className="grid gap-2">
               <Label htmlFor="category_unit_id">Unit kategori</Label>
-              <select
-                id="category_unit_id"
+              <FormSelect
                 name="category_unit_id"
                 value={categoryUnitId}
-                onChange={(event) => setCategoryUnitId(event.target.value)}
+                onValueChange={setCategoryUnitId}
+                options={units.map(u => ({ value: u.id, label: `${u.code} - ${u.name}` }))}
                 required
-                className="h-11 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-slate-100 outline-none focus:border-emerald-500"
-              >
-                {units.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.code} - {unit.name}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           ) : (
             <input type="hidden" name="category_unit_id" value={categoryUnitId} />
@@ -215,6 +198,7 @@ export function FacilityCreatePanel({
         {/* Category List with ⋯ Menu */}
         <div className="mt-4 grid gap-2">
           <p className="text-sm font-medium text-slate-200">Kategori unit ini</p>
+          <div className="grid gap-2 max-h-[250px] overflow-y-auto pr-1">
           {categories
             .filter((category) => category.unit_id === categoryUnitId)
             .map((category) => (
@@ -284,6 +268,7 @@ export function FacilityCreatePanel({
                 </div>
               </div>
             ))}
+          </div>
         </div>
       </div>
 

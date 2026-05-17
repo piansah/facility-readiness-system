@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, isSameDay } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, isSameDay, isToday } from "date-fns";
 import { id } from "date-fns/locale";
 import {
   ArrowLeft, ChevronLeft, ChevronRight,
@@ -371,7 +371,7 @@ export default function RosterContent({
       <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-40">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4 px-4 py-3 sm:py-4">
           <div className="flex items-center gap-4">
-            <Button asChild variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 sm:inline-flex">
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex h-9 w-9 p-0 text-slate-400">
               <Link href="/dashboard"><ArrowLeft className="h-5 w-5" /></Link>
             </Button>
             <div>
@@ -424,8 +424,8 @@ export default function RosterContent({
               <tr className="border-b border-slate-800">
                 <th className="sticky left-0 z-20 bg-slate-950 p-3 text-left text-[10px] font-bold uppercase text-slate-500 border-r border-slate-800 min-w-[150px]">Personil</th>
                 {daysInMonth.map((d) => (
-                  <th key={d.toString()} className={`p-2 text-center text-[10px] font-bold border-r border-slate-800 min-w-[35px] ${isWeekend(d) ? "bg-red-500/5 text-red-400" : "text-slate-500"}`}>
-                    <div>{format(d, "EE", { locale: id })}</div><div className="text-xs text-slate-300">{format(d, "dd")}</div>
+                  <th key={d.toString()} className={`p-2 text-center text-[10px] font-bold border-r border-slate-800 min-w-[35px] ${isToday(d) ? "bg-blue-500/20 text-blue-400 ring-1 ring-inset ring-blue-500/50" : isWeekend(d) ? "bg-red-500/5 text-red-400" : "text-slate-500"}`}>
+                    <div>{format(d, "EE", { locale: id })}</div><div className={`text-xs ${isToday(d) ? "text-blue-400" : "text-slate-300"}`}>{format(d, "dd")}</div>
                   </th>
                 ))}
               </tr>
@@ -442,8 +442,9 @@ export default function RosterContent({
                       const shift = entry ? [...localShifts, { code: 'APN7', name: 'Admin Jam 7', color_code: '#94a3b8' }, { code: 'APN8', name: 'Admin Jam 8', color_code: '#94a3b8' }].find(s => s.code === entry.shift_code) : null;
                       const active = isInRange(p.id, dIdx);
                       const displayColor = getSafeColor(entry?.shift_code || '', shift?.color_code || null);
+                      const todayBg = isToday(d) ? "bg-blue-500/10 ring-1 ring-inset ring-blue-500/20" : "";
                       return (
-                        <td key={dateStr} data-date={dateStr} data-user={p.id} className={`p-1 text-center border-r border-slate-800 transition-all ${isAdmin ? "cursor-crosshair" : ""} ${active ? "bg-blue-500/20 z-10 relative" : ""}`} onMouseDown={() => onMouseDown(p.id, dIdx)} onMouseEnter={() => onMouseEnter(p.id, dIdx)}>
+                        <td key={dateStr} data-date={dateStr} data-user={p.id} className={`p-1 text-center border-r border-slate-800 transition-all ${isAdmin ? "cursor-crosshair" : ""} ${active ? "bg-blue-500/20 z-10 relative" : todayBg}`} onMouseDown={() => onMouseDown(p.id, dIdx)} onMouseEnter={() => onMouseEnter(p.id, dIdx)}>
                           {entry ? (
                             <div className="h-7 w-full flex items-center justify-center rounded text-[9px] font-bold" style={{ backgroundColor: `${displayColor}20`, color: displayColor, border: `1px solid ${displayColor}40` }}>{entry.shift_code}</div>
                           ) : <div className="h-7 w-full" />}

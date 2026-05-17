@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Mail, Shield, Building2, ChevronRight, BookOpen } from "lucide-react";
+import { LogOut, User, Mail, Shield, Building2, ChevronRight, BookOpen, FileText } from "lucide-react";
 import { getProfile } from "@/lib/auth/profile";
 import { ProfileLogoutButton } from "@/components/ProfileLogoutButton";
 
@@ -115,7 +115,23 @@ async function ProfilContent() {
 
         {/* Menu Section */}
         <div className="mt-8 space-y-3">
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Lainnya</p>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Bantuan & Informasi</p>
+          <Button 
+            asChild
+            variant="outline" 
+            className="w-full h-14 rounded-xl justify-between px-5 border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-slate-200 font-bold active:scale-95 transition-all mb-3"
+          >
+            <Link href="/dokumentasi">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <span>Dokumentasi & SOP</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-slate-600" />
+            </Link>
+          </Button>
+
           <Button 
             asChild
             variant="outline" 
