@@ -69,14 +69,7 @@ export default function RosterContent({
   const [tempShifts, setTempShifts] = useState<ShiftConfig[]>(initialShifts);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isMobileLocked, setIsMobileLocked] = useState(true);
-
-  // Sync state with props when month or data changes
-  useEffect(() => {
-    if (window.innerWidth >= 768) {
-      setIsMobileLocked(false);
-    }
-  }, []);
+  const [isLocked, setIsLocked] = useState(true);
 
   useEffect(() => {
     setPersonnel(initialPersonnel);
@@ -112,7 +105,7 @@ export default function RosterContent({
   };
 
   const onMouseDown = (userId: string, dayIdx: number) => {
-    if (!isAdmin || isMobileLocked) return;
+    if (!isAdmin || isLocked) return;
     setOpenDropdown(null);
     setDragStart({ userId, dayIdx });
     setDragEnd({ userId, dayIdx });
@@ -409,17 +402,17 @@ export default function RosterContent({
             </div>
           </div>
           {isAdmin && (
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
               <div className="hidden md:block text-[10px] font-bold text-slate-500 bg-slate-900/50 px-3 py-1.5 rounded-full border border-slate-800">
                 Tip: Klik dan tarik kursor untuk memblok banyak kolom sekaligus
               </div>
               <Button
-                variant={isMobileLocked ? "outline" : "default"}
+                variant={isLocked ? "outline" : "default"}
                 size="sm"
-                onClick={() => setIsMobileLocked(!isMobileLocked)}
-                className={`md:hidden h-8 px-3 text-[10px] font-bold gap-2 ${isMobileLocked ? "border-slate-800 text-slate-400" : "bg-blue-600 text-white"}`}
+                onClick={() => setIsLocked(!isLocked)}
+                className={`h-8 px-3 text-[10px] font-bold gap-2 transition-all ${isLocked ? "border-slate-800 text-slate-400" : "bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]"}`}
               >
-                {isMobileLocked ? <><Lock className="w-3 h-3" /> Terkunci</> : <><Unlock className="w-3 h-3" /> Edit Terbuka</>}
+                {isLocked ? <><Lock className="w-3 h-3" /> Mode Baca</> : <><Unlock className="w-3 h-3" /> Mode Edit</>}
               </Button>
             </div>
           )}
