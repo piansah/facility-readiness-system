@@ -349,6 +349,12 @@ async function DashboardContent() {
                       {profile?.role === "petugas" ? "Daftar Fasilitas" : "Kelola Fasilitas"}
                     </Link>
                   </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
+                    <Link href="/manajemen/vendor">
+                      <Wrench className="mr-3 h-5 w-5 text-emerald-400" /> 
+                      {profile?.role === "petugas" ? "Daftar Vendor" : "Kelola Vendor"}
+                    </Link>
+                  </Button>
                   {isSuperAdmin && (
                     <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                       <Link href="/manajemen/sistem">
@@ -625,6 +631,12 @@ async function DashboardContent() {
                     <Link href="/manajemen/fasilitas">
                       <Server className="mr-3 h-5 w-5 text-purple-400" /> 
                       {profile?.role === "petugas" ? "Daftar Fasilitas" : "Kelola Fasilitas"}
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
+                    <Link href="/manajemen/vendor">
+                      <Wrench className="mr-3 h-5 w-5 text-emerald-400" /> 
+                      {profile?.role === "petugas" ? "Daftar Vendor" : "Kelola Vendor"}
                     </Link>
                   </Button>
                   {isSuperAdmin && (

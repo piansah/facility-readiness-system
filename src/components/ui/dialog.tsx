@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -36,17 +37,23 @@ const DialogContent = ({
   position?: "center" | "bottom"
 }) => {
   const context = React.useContext(DialogContext);
-  if (!context?.open) return null;
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!context?.open || !mounted) return null;
 
   const isBottom = position === "bottom";
 
-  return (
+  return createPortal(
     <div className={cn(
       "fixed inset-0 z-[100] flex p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200",
       isBottom ? "items-end sm:items-center justify-center" : "items-center justify-center"
     )}>
       <div className={cn(
-        "relative w-full max-w-md bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden animate-in duration-300",
+        "relative w-full max-w-md bg-slate-900 border border-slate-800 shadow-2xl flex flex-col max-h-[90vh] animate-in duration-300",
         isBottom 
           ? "rounded-2xl sm:rounded-xl slide-in-from-bottom-10 sm:zoom-in" 
           : "rounded-xl zoom-in",
@@ -58,9 +65,10 @@ const DialogContent = ({
         >
           <X className="h-4 w-4" />
         </button>
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

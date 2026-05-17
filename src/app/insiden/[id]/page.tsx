@@ -26,6 +26,7 @@ type IncidentDetail = {
   facilities: {
     name: string;
     location_detail: string | null;
+    warranty_until?: string | null;
   } | null;
   reported_by_user: {
     full_name: string;
@@ -70,7 +71,7 @@ export default function IncidentDetailPage({
         .select(`
           *,
           daily_reports (report_date, shift),
-          facilities (name, location_detail),
+          facilities (name, location_detail, warranty_until),
           reported_by_user:users!reported_by (full_name),
           incident_photos (id, storage_path, caption, follow_up_id),
           incident_follow_ups (
@@ -126,7 +127,7 @@ export default function IncidentDetailPage({
           notes,
           checked_at,
           daily_reports (report_date, shift),
-          facilities (name, location_detail),
+          facilities (name, location_detail, warranty_until),
           reported_by_user:users!checked_by (full_name)
         `)
         .eq("id", id)
@@ -217,9 +218,16 @@ export default function IncidentDetailPage({
               </div>
               <div>
                 <p className="text-[10px] uppercase text-slate-500 font-bold tracking-tight">Fasilitas & Lokasi</p>
-                <p className="text-sm text-slate-100 font-medium">
-                  {incident.facilities?.name ?? "Tidak Spesifik"}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm text-slate-100 font-medium">
+                    {incident.facilities?.name ?? "Tidak Spesifik"}
+                  </p>
+                  {incident.facilities?.warranty_until && new Date(incident.facilities.warranty_until.split('T')[0]) >= new Date(new Date().toISOString().split('T')[0]) && (
+                    <span className="rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-extrabold uppercase px-2 py-0.5 border border-emerald-500/20 animate-pulse">
+                      🛡️ Under Warranty
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] text-slate-400 mt-0.5">
                   {incident.facilities?.location_detail ?? "Seluruh Area"}
                 </p>

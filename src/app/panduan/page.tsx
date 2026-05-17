@@ -42,7 +42,7 @@ async function GuideContent() {
     <>
       {/* Header Premium */}
       <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-4">
+        <div className="mx-auto flex w-full max-w-[1400px] items-center gap-4 px-4 md:px-8 py-4">
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex text-slate-400 p-0 w-9 h-9">
             <Link href="/dashboard">
               <ArrowLeft className="h-5 w-5" />
@@ -60,7 +60,7 @@ async function GuideContent() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-xl px-4 py-8">
+      <div className="mx-auto w-full max-w-[1400px] px-4 md:px-8 py-8">
         <section className="mb-10 text-center">
           <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 mb-4 border border-emerald-500/20">
             <Zap className="h-5 w-5" />
@@ -70,7 +70,7 @@ async function GuideContent() {
           </p>
         </section>
 
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {role === 'petugas' && (
             <>
               <GuideCard 
@@ -182,7 +182,7 @@ async function GuideContent() {
 
 function GuideCard({ icon, title, description, steps }: { icon: React.ReactNode, title: string, description: string, steps: string[] }) {
   return (
-    <Card className="border-slate-800 bg-slate-900/40 backdrop-blur-sm shadow-xl">
+    <Card className="border-slate-800 bg-slate-900/40 backdrop-blur-sm shadow-xl flex flex-col h-full">
       <CardHeader className="pb-3">
         <div className="mb-2">{icon}</div>
         <CardTitle className="text-base text-slate-100">{title}</CardTitle>

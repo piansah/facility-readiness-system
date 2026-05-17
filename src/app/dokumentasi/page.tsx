@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ChevronLeft, Search, BookOpen, ImageIcon, AlertTriangle, FileText, Download, X, Plus, Upload, Loader2, Save } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -155,15 +156,22 @@ export default function DokumentasiPage() {
     <div className="min-h-screen bg-slate-950 pb-32">
       {/* Header Premium (Consistent with Panduan) */}
       <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-4">
-          <div>
-            <div className="flex items-center gap-2 text-emerald-500 mb-0.5">
-              <BookOpen className="h-3 w-3" />
-              <span className="text-[9px] font-bold uppercase tracking-widest">Pusat Pengetahuan</span>
+        <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between px-4 md:px-8 py-4">
+          <div className="flex items-center gap-4">
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex text-slate-400 p-0 w-9 h-9">
+              <Link href="/dashboard">
+                <ChevronLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <div>
+              <div className="flex items-center gap-2 text-emerald-500 mb-0.5">
+                <BookOpen className="h-3 w-3" />
+                <span className="text-[9px] font-bold uppercase tracking-widest">Pusat Pengetahuan</span>
+              </div>
+              <h1 className="text-lg font-bold text-slate-100 tracking-tight">
+                Dokumentasi & SOP
+              </h1>
             </div>
-            <h1 className="text-lg font-bold text-slate-100 tracking-tight">
-              Dokumentasi & SOP
-            </h1>
           </div>
           <Button 
             onClick={() => setIsAddModalOpen(true)} 
@@ -175,7 +183,7 @@ export default function DokumentasiPage() {
         </div>
       </header>
 
-      <div className="p-4 max-w-md mx-auto space-y-6">
+      <div className="p-4 md:p-8 w-full max-w-[1400px] mx-auto space-y-6">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
@@ -217,27 +225,29 @@ export default function DokumentasiPage() {
                 <p className="text-sm text-slate-400">Belum ada Manual yang ditambahkan.</p>
               </div>
             ) : (
-              manuals.map((doc) => (
-                <Card
-                  key={doc.id}
-                  className="bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50 transition-all cursor-pointer active:scale-[0.98]"
-                  onClick={() => openPdf(doc)}
-                >
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl shrink-0">
-                      <BookOpen className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold text-slate-200 mb-1 leading-tight">{doc.title}</h3>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span className="bg-slate-800 px-2 py-0.5 rounded text-slate-300">{doc.facility_categories?.name || "Umum"}</span>
-                        <span>•</span>
-                        <span>{formatFileSize(doc.file_size_bytes)}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {manuals.map((doc) => (
+                  <Card
+                    key={doc.id}
+                    className="bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50 transition-all cursor-pointer active:scale-[0.98]"
+                    onClick={() => openPdf(doc)}
+                  >
+                    <CardContent className="p-4 flex items-center gap-4 h-full">
+                      <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl shrink-0">
+                        <BookOpen className="h-6 w-6" />
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-bold text-slate-200 mb-1 leading-tight line-clamp-2">{doc.title}</h3>
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <span className="bg-slate-800 px-2 py-0.5 rounded text-slate-300 truncate max-w-[120px]">{doc.facility_categories?.name || "Umum"}</span>
+                          <span>•</span>
+                          <span>{formatFileSize(doc.file_size_bytes)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </TabsContent>
 
@@ -249,27 +259,29 @@ export default function DokumentasiPage() {
                 <p className="text-sm text-slate-400">Belum ada SOP yang ditambahkan.</p>
               </div>
             ) : (
-              sops.map((doc) => (
-                <Card
-                  key={doc.id}
-                  className="bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50 transition-all cursor-pointer active:scale-[0.98]"
-                  onClick={() => openPdf(doc)}
-                >
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl shrink-0">
-                      <FileText className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold text-slate-200 mb-1 leading-tight">{doc.title}</h3>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span className="bg-slate-800 px-2 py-0.5 rounded text-slate-300">{doc.facility_categories?.name || "Umum"}</span>
-                        <span>•</span>
-                        <span>{formatFileSize(doc.file_size_bytes)}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sops.map((doc) => (
+                  <Card
+                    key={doc.id}
+                    className="bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50 transition-all cursor-pointer active:scale-[0.98]"
+                    onClick={() => openPdf(doc)}
+                  >
+                    <CardContent className="p-4 flex items-center gap-4 h-full">
+                      <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl shrink-0">
+                        <FileText className="h-6 w-6" />
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-bold text-slate-200 mb-1 leading-tight line-clamp-2">{doc.title}</h3>
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <span className="bg-slate-800 px-2 py-0.5 rounded text-slate-300 truncate max-w-[120px]">{doc.facility_categories?.name || "Umum"}</span>
+                          <span>•</span>
+                          <span>{formatFileSize(doc.file_size_bytes)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </TabsContent>
 
@@ -281,23 +293,29 @@ export default function DokumentasiPage() {
                 <p className="text-sm text-slate-400">Belum ada panduan Triage yang ditambahkan.</p>
               </div>
             ) : (
-              troubleshoots.map((ts) => (
-                <Card key={ts.id} className="bg-slate-900 border-slate-800 overflow-hidden">
-                  <div className="p-3 bg-red-500/10 border-b border-slate-800/50 flex items-center gap-3">
-                    <div className="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs font-bold font-mono">
-                      {ts.error_code || "UMUM"}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {troubleshoots.map((ts) => (
+                  <Card key={ts.id} className="bg-slate-900 border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
+                    <div className="p-3.5 bg-red-500/10 border-b border-slate-800/50 flex items-center gap-3">
+                      <div className="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs font-bold font-mono shrink-0">
+                        {ts.error_code || "UMUM"}
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-200 truncate">{ts.title}</h3>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-200">{ts.title}</h3>
-                  </div>
-                  <CardContent className="p-4 bg-slate-900/50">
-                    <p className="text-xs text-slate-400 mb-2">Aset: <span className="text-slate-300">{ts.facility_categories?.name || "Umum"}</span></p>
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Langkah Penanganan:</p>
-                    <div className="text-sm text-slate-300 whitespace-pre-line leading-relaxed">
-                      {ts.content || "Belum ada detail langkah penanganan."}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    <CardContent className="p-4 bg-slate-900/50 flex-1 flex flex-col justify-between">
+                      <div className="space-y-3">
+                        <p className="text-xs text-slate-400">Aset: <span className="text-slate-200 font-bold bg-slate-800 px-2 py-0.5 rounded">{ts.facility_categories?.name || "Umum"}</span></p>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Langkah Penanganan:</p>
+                          <div className="text-sm text-slate-300 whitespace-pre-line leading-relaxed bg-slate-950/40 p-3 rounded-xl border border-slate-850">
+                            {ts.content || "Belum ada detail langkah penanganan."}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </TabsContent>
 
@@ -309,28 +327,32 @@ export default function DokumentasiPage() {
                 <p className="text-sm text-slate-400">Belum ada Standar Visual yang ditambahkan.</p>
               </div>
             ) : (
-              visualStandards.map((vis) => {
-                const imgUrl = vis.file_path ? supabase.storage.from('knowledge_base').getPublicUrl(vis.file_path).data.publicUrl : '';
-                return (
-                  <Card key={vis.id} className="bg-slate-900 border-slate-800 overflow-hidden">
-                    <div className="aspect-video w-full bg-slate-800 relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      {imgUrl ? (
-                        <img src={imgUrl} alt={vis.title} className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-800 text-slate-500"><ImageIcon className="w-10 h-10" /></div>
-                      )}
-                      <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded font-medium">
-                        {vis.facility_categories?.name || "Umum"}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {visualStandards.map((vis) => {
+                  const imgUrl = vis.file_path ? supabase.storage.from('knowledge_base').getPublicUrl(vis.file_path).data.publicUrl : '';
+                  return (
+                    <Card key={vis.id} className="bg-slate-900 border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
+                      <div className="aspect-video w-full bg-slate-850 relative shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {imgUrl ? (
+                          <img src={imgUrl} alt={vis.title} className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-slate-800 text-slate-500"><ImageIcon className="w-10 h-10" /></div>
+                        )}
+                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded font-medium">
+                          {vis.facility_categories?.name || "Umum"}
+                        </div>
                       </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="text-sm font-bold text-slate-200 mb-1">{vis.title}</h3>
-                      <p className="text-xs text-slate-400">{vis.description || "Tidak ada deskripsi."}</p>
-                    </CardContent>
-                  </Card>
-                );
-              })
+                      <CardContent className="p-4 flex-1 flex flex-col justify-between">
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-200 mb-1 leading-snug">{vis.title}</h3>
+                          <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">{vis.description || "Tidak ada deskripsi."}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             )}
           </TabsContent>
         </Tabs>
