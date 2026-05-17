@@ -239,14 +239,16 @@ async function DashboardContent() {
 
   return (
     <>
-      <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div>
-            <h1 className="text-xl font-bold text-slate-100 tracking-tight">Facility <span className="text-emerald-500">Readiness System</span></h1>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500 mt-1">{unitDisplayName}</p>
+      {!isSuperAdmin && (
+        <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
+            <div>
+              <h1 className="text-xl font-bold text-slate-100 tracking-tight">Facility <span className="text-emerald-500">Readiness System</span></h1>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500 mt-1">{unitDisplayName}</p>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <div className="mx-auto grid max-w-6xl lg:grid-cols-12 gap-6 px-4 py-6">
         {/* --- Super Admin Welcome Banner --- */}
