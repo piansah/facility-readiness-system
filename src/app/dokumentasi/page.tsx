@@ -64,6 +64,9 @@ export default function DokumentasiPage() {
 
       if (!userProfile) throw new Error("Profile not loaded");
       if (!userProfile.unit_id) throw new Error("Unit ID not found in profile");
+      if (userProfile.role !== 'admin' && userProfile.role !== 'super_admin') {
+        throw new Error("Anda tidak memiliki izin untuk mengunggah dokumen.");
+      }
 
       let file_path = null;
       let file_size_bytes = null;
@@ -173,13 +176,15 @@ export default function DokumentasiPage() {
               </h1>
             </div>
           </div>
-          <Button 
-            onClick={() => setIsAddModalOpen(true)} 
-            className="bg-emerald-600 hover:bg-emerald-700"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            <span>Tambah</span>
-          </Button>
+          {userProfile && (userProfile.role === 'admin' || userProfile.role === 'super_admin') && (
+            <Button 
+              onClick={() => setIsAddModalOpen(true)} 
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              <span>Tambah</span>
+            </Button>
+          )}
         </div>
       </header>
 
