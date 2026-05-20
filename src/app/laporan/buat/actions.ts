@@ -10,6 +10,7 @@ type StaffSnapshot = {
   id: string;
   name: string;
   role: string;
+  phone?: string | null;
 };
 
 export async function saveDailyReport(formData: FormData) {
@@ -63,20 +64,20 @@ export async function saveDailyReport(formData: FormData) {
   if (selectedStaffIds.length > 0) {
     const { data: staffUsers, error: staffError } = await supabase
       .from("users")
-      .select("id,full_name,role")
+      .select("id,full_name,role,phone")
       .eq("unit_id", unitId)
       .eq("is_active", true)
       .in("id", selectedStaffIds)
-      .returns<{ id: string; full_name: string; role: string }[]>();
+      .returns<{ id: string; full_name: string; role: string; phone?: string | null }[]>();
 
     if (staffError) {
       redirect(`/laporan/buat?error=${encodeURIComponent(staffError.message)}`);
     }
 
-    const staffById = new Map(
+    const staffById = new Map<string, StaffSnapshot>(
       (staffUsers ?? []).map((s) => [
         s.id,
-        { id: s.id, name: s.full_name, role: s.role },
+        { id: s.id, name: s.full_name, role: s.role, phone: s.phone },
       ]),
     );
 

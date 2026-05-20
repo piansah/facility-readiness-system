@@ -15,6 +15,7 @@ type ReportForPdf = {
   next_shift_staff?: StaffSnapshot[];
   users: {
     full_name: string;
+    phone?: string | null;
   } | null;
   units: {
     code: string;
@@ -22,6 +23,7 @@ type ReportForPdf = {
   } | null;
   reviewer?: {
     full_name: string;
+    phone?: string | null;
   } | null;
   facility_status_logs: {
     status: string;
@@ -62,6 +64,7 @@ type StaffSnapshot = {
   id?: string;
   name: string;
   role?: string;
+  phone?: string | null;
 };
 
 type PdfExportProps = {
@@ -98,7 +101,7 @@ export function PdfExport({ report }: PdfExportProps) {
       doc.setFontSize(10);
       doc.text(`Tanggal: ${formatDate(report.report_date)}`, 15, 40);
       doc.text(`Shift: ${report.shift?.toUpperCase()}`, 15, 46);
-      doc.text(`Dibuat oleh: ${report.users?.full_name ?? "-"}`, 15, 52);
+      doc.text(`Dibuat oleh: ${report.users?.full_name ?? "-"}${report.users?.phone ? ` (${report.users.phone})` : ""}`, 15, 52);
       doc.text(`Status: ${report.status?.toUpperCase()}`, pageWidth - 15, 40, { align: "right" });
 
       doc.setFontSize(11);
@@ -122,7 +125,8 @@ export function PdfExport({ report }: PdfExportProps) {
         currentY += 5;
       } else {
         report.current_shift_staff.forEach((staff, i) => {
-          doc.text(`${i + 1}. ${staff.name}`, 18, currentY);
+          const phoneSuffix = staff.phone ? ` (${staff.phone})` : "";
+          doc.text(`${i + 1}. ${staff.name}${phoneSuffix}`, 18, currentY);
           currentY += 5;
         });
       }
@@ -142,7 +146,8 @@ export function PdfExport({ report }: PdfExportProps) {
         currentY += 5;
       } else {
         report.next_shift_staff.forEach((staff, i) => {
-          doc.text(`${i + 1}. ${staff.name}`, 18, currentY);
+          const phoneSuffix = staff.phone ? ` (${staff.phone})` : "";
+          doc.text(`${i + 1}. ${staff.name}${phoneSuffix}`, 18, currentY);
           currentY += 5;
         });
       }
@@ -381,12 +386,22 @@ export function PdfExport({ report }: PdfExportProps) {
       doc.text("Dibuat oleh,", 30, signY);
       doc.setFont("helvetica", "normal");
       doc.text(report.users?.full_name ?? "Petugas", 30, signY + 30);
+      if (report.users?.phone) {
+        doc.setFontSize(8);
+        doc.text(`HP: ${report.users.phone}`, 30, signY + 35);
+        doc.setFontSize(10);
+      }
 
       // Right Side: Reviewer (if exists)
       doc.setFont("helvetica", "bold");
       doc.text("Disetujui oleh,", pageWidth - 70, signY);
       doc.setFont("helvetica", "normal");
       doc.text(report.reviewer?.full_name ?? "Admin / Supervisor", pageWidth - 70, signY + 30);
+      if (report.reviewer?.phone) {
+        doc.setFontSize(8);
+        doc.text(`HP: ${report.reviewer.phone}`, pageWidth - 70, signY + 35);
+        doc.setFontSize(10);
+      }
 
       const filename = makePdfFilename(report);
       doc.save(filename);

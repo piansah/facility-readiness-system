@@ -69,6 +69,7 @@ export async function createUser(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const fullName = String(formData.get("full_name") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim() || null;
   const rawRole = readRole(formData.get("role"));
   const role = validateRoleAssignment(manager.role, rawRole);
   const unitId = manager.role === "super_admin"
@@ -100,6 +101,7 @@ export async function createUser(formData: FormData) {
     email,
     full_name: fullName,
     role,
+    phone,
     unit_id: role === "super_admin" ? null : (unitId || null),
     is_active: true,
   }, { onConflict: 'id' });
@@ -151,6 +153,7 @@ export async function updateUser(formData: FormData) {
   const userId = String(formData.get("user_id") ?? "");
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const fullName = String(formData.get("full_name") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim() || null;
   const rawRole = readRole(formData.get("role"));
   const role = validateRoleAssignment(manager.role, rawRole);
   const unitId = manager.role === "super_admin"
@@ -177,6 +180,7 @@ export async function updateUser(formData: FormData) {
       email,
       full_name: fullName,
       role,
+      phone,
       unit_id: role === "super_admin" ? null : unitId || null,
     })
     .eq("id", userId);

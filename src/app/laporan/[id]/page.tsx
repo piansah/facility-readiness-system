@@ -23,6 +23,7 @@ type ReportDetail = {
   next_shift_staff: StaffSnapshot[];
   users: {
     full_name: string;
+    phone?: string | null;
   } | null;
   units: {
     code: string;
@@ -71,6 +72,7 @@ type StaffSnapshot = {
   id?: string;
   name: string;
   role?: string;
+  phone?: string | null;
 };
 
 type ReviewMetadata = {
@@ -78,6 +80,7 @@ type ReviewMetadata = {
   review_notes: string | null;
   reviewer: {
     full_name: string;
+    phone?: string | null;
   } | null;
 };
 
@@ -117,7 +120,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
       submitted_at,
       current_shift_staff,
       next_shift_staff,
-      users!daily_reports_created_by_fkey (full_name),
+      users!daily_reports_created_by_fkey (full_name, phone),
       units (code, name),
       facility_status_logs (
         id, status, notes,
@@ -159,7 +162,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
     .select(`
       reviewed_at,
       review_notes,
-      reviewer:users!daily_reports_reviewed_by_fkey (full_name)
+      reviewer:users!daily_reports_reviewed_by_fkey (full_name, phone)
     `)
     .eq("id", id)
     .maybeSingle<ReviewMetadata>();
@@ -216,9 +219,42 @@ export default async function ReportDetailPage({ params }: PageProps) {
     };
   });
 
+  const currentStaffIds = ((report.current_shift_staff as StaffSnapshot[] | undefined) ?? [])
+    .map((s) => s.id)
+    .filter((id): id is string => Boolean(id));
+  const nextStaffIds = ((report.next_shift_staff as StaffSnapshot[] | undefined) ?? [])
+    .map((s) => s.id)
+    .filter((id): id is string => Boolean(id));
+  const allStaffIds = Array.from(new Set([...currentStaffIds, ...nextStaffIds]));
+
+  let phoneMap = new Map<string, string | null>();
+  if (allStaffIds.length > 0) {
+    const { data: staffPhones } = await admin
+      .from("users")
+      .select("id, phone")
+      .in("id", allStaffIds);
+    if (staffPhones) {
+      staffPhones.forEach((u) => {
+        phoneMap.set(u.id, u.phone);
+      });
+    }
+  }
+
+  const currentShiftStaffWithPhone = (report.current_shift_staff ?? []).map((staff) => ({
+    ...staff,
+    phone: staff.id ? (phoneMap.get(staff.id) ?? staff.phone ?? null) : (staff.phone ?? null),
+  }));
+
+  const nextShiftStaffWithPhone = (report.next_shift_staff ?? []).map((staff) => ({
+    ...staff,
+    phone: staff.id ? (phoneMap.get(staff.id) ?? staff.phone ?? null) : (staff.phone ?? null),
+  }));
+
   const reportWithFullIncidents = { 
     ...report, 
     ...reviewMetadata, 
+    current_shift_staff: currentShiftStaffWithPhone,
+    next_shift_staff: nextShiftStaffWithPhone,
     incidents: incidentsWithPhotos,
     incident_follow_ups: followUpsWithPhotos 
   };
@@ -347,11 +383,11 @@ export default async function ReportDetailPage({ params }: PageProps) {
           <CardContent className="grid gap-3">
             <StaffList
               title={`Petugas shift ${report.shift}`}
-              staff={report.current_shift_staff ?? []}
+              staff={currentShiftStaffWithPhone}
             />
             <StaffList
               title={`Petugas shift ${report.shift.toLowerCase() === "pagi" ? "malam" : "pagi"}`}
-              staff={report.next_shift_staff ?? []}
+              staff={nextShiftStaffWithPhone}
             />
           </CardContent>
         </Card>
@@ -508,7 +544,10 @@ function StaffList({ title, staff }: { title: string; staff: StaffSnapshot[] }) 
         <ul className="grid gap-1 text-sm text-slate-300">
           {staff.map((person, index) => (
             <li key={`${person.id ?? person.name}-${index}`} className="flex items-center justify-between gap-2 text-xs sm:text-sm">
-              <span>{person.name}</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                <span className="font-medium text-slate-200">{person.name}</span>
+                {person.phone ? <span className="text-[10px] text-slate-500">({person.phone})</span> : null}
+              </div>
               {person.role ? <span className="text-[10px] sm:text-xs uppercase text-slate-500">{person.role}</span> : null}
             </li>
           ))}

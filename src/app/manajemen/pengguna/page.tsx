@@ -17,6 +17,7 @@ type UserWithAccess = {
   role: string;
   is_active: boolean;
   unit_id: string | null;
+  phone: string | null;
   units?: { code: string; name: string };
   super_admin_unit_access?: { unit_id: string }[];
 };
@@ -180,6 +181,11 @@ export default async function UserManagementPage() {
                     <td className="px-6 py-4">
                       <p className="font-bold text-slate-100">{u.full_name}</p>
                       <p className="text-xs text-slate-500">{u.email}</p>
+                      {u.phone ? (
+                        <p className="text-[11px] text-emerald-400/90 font-semibold mt-0.5">📞 {u.phone}</p>
+                      ) : (
+                        <p className="text-[11px] text-slate-600 italic mt-0.5">No. HP tidak terdaftar</p>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${

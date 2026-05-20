@@ -20,6 +20,7 @@ type EditableUser = {
   full_name: string;
   role: string;
   unit_id: string | null;
+  phone: string | null;
   super_admin_unit_access?: { unit_id: string }[];
 };
 
@@ -131,6 +132,11 @@ export function UserFormModal({
             <div className="grid gap-2">
               <Label htmlFor="password">Password Sementara</Label>
               <Input id="password" name="password" type="password" required minLength={6} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="phone">Nomer Telepon</Label>
+              <Input id="phone" name="phone" type="tel" placeholder="0812345678" />
             </div>
 
             <div className="grid gap-2">
@@ -310,6 +316,11 @@ export function UserEditModal({
                 <Label htmlFor={`email_${user.id}`}>Email</Label>
                 <Input id={`email_${user.id}`} name="email" type="email" defaultValue={user.email} required />
               </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor={`phone_${user.id}`}>Nomer Telepon</Label>
+              <Input id={`phone_${user.id}`} name="phone" type="tel" defaultValue={user.phone ?? ""} placeholder="0812345678" />
             </div>
 
             <div className="grid gap-2">

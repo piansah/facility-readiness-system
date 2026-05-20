@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Mail, Shield, Building2, ChevronRight, BookOpen, FileText } from "lucide-react";
+import { LogOut, User, Mail, Shield, Building2, ChevronRight, BookOpen, FileText, Phone } from "lucide-react";
 import { getProfile } from "@/lib/auth/profile";
 import { ProfileLogoutButton } from "@/components/ProfileLogoutButton";
 
@@ -82,6 +82,18 @@ async function ProfilContent() {
                   <div className="flex flex-col">
                     <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Email</span>
                     <span className="text-sm text-slate-200 font-medium">{user.email}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/30 border border-slate-800/30">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">No. Telepon</span>
+                    <span className="text-sm text-slate-200 font-medium">{userData?.phone || "Belum diisi"}</span>
                   </div>
                 </div>
               </div>

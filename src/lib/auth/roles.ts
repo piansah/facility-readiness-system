@@ -7,6 +7,7 @@ export type AppProfile = {
   role: UserRole;
   unit_id: string | null;
   is_active: boolean;
+  phone?: string | null;
 };
 
 /** Hanya Petugas yang membuat laporan harian */
