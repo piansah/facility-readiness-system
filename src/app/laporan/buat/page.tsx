@@ -144,12 +144,31 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
   const nextDate = initialShift === 'pagi' ? initialDate : new Date(new Date(initialDate).getTime() + 86400000).toLocaleDateString('en-CA');
 
   // Filter roster for current and next staff
+  // APN7 and APN8 (Admin shift codes) are always considered part of the morning shift ('pagi')
   const currentStaffIds = rosters
-    ?.filter(r => r.duty_date === initialDate && r.shift_code === currentShiftCode)
+    ?.filter(r => {
+      const matchesDate = r.duty_date === initialDate;
+      if (!matchesDate) return false;
+      
+      if (initialShift === 'pagi') {
+        return r.shift_code === 'APBA' || r.shift_code === 'APN7' || r.shift_code === 'APN8';
+      } else {
+        return r.shift_code === 'APBB';
+      }
+    })
     .map(r => r.user_id) || [];
     
   const nextStaffIds = rosters
-    ?.filter(r => r.duty_date === nextDate && r.shift_code === nextShiftCode)
+    ?.filter(r => {
+      const matchesDate = r.duty_date === nextDate;
+      if (!matchesDate) return false;
+      
+      if (initialShift === 'pagi') {
+        return r.shift_code === 'APBB';
+      } else {
+        return r.shift_code === 'APBA' || r.shift_code === 'APN7' || r.shift_code === 'APN8';
+      }
+    })
     .map(r => r.user_id) || [];
 
   // Fallback to current user if roster is empty
