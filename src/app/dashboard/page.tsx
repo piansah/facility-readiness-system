@@ -468,7 +468,9 @@ async function DashboardContent() {
                     {shiftSummaries.map((item) => {
                       const href = item.report?.id
                         ? `/laporan/${item.report.id}`
-                        : (isAdmin ? "/laporan/belum-ada" : `/laporan/buat?date=${item.date}&shift=${item.shift}`);
+                        : (canCreateReports(profile?.role)
+                            ? `/laporan/buat?date=${item.date}&shift=${item.shift}`
+                            : "/laporan/belum-ada");
 
                       return (
                         <Link

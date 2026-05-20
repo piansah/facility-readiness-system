@@ -118,7 +118,7 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
       .eq("unit_id", profile.unit_id),
     supabase
       .from("duty_rosters")
-      .select("user_id, shift_config_id, duty_date")
+      .select("user_id, shift_code, duty_date")
       .eq("unit_id", profile.unit_id)
       .gte("duty_date", initialDate)
       .lte("duty_date", new Date(new Date(initialDate).getTime() + 86400000).toLocaleDateString('en-CA')) // Include tomorrow for handover
@@ -136,23 +136,20 @@ export default async function CreateReportPage({ searchParams }: CreateReportPag
     ]) ?? [],
   );
 
-  // Mapping shift to config IDs
-  const pagiConfig = shiftConfigs?.find(c => c.code === 'APBA');
-  const malamConfig = shiftConfigs?.find(c => c.code === 'APBB');
-  
-  const currentConfigId = initialShift === 'pagi' ? pagiConfig?.id : malamConfig?.id;
+  // Mapping shift to config codes (APBA for Pagi, APBB for Malam)
+  const currentShiftCode = initialShift === 'pagi' ? 'APBA' : 'APBB';
+  const nextShiftCode = initialShift === 'pagi' ? 'APBB' : 'APBA';
   
   // Logic for next shift: Pagi -> Malam (Today), Malam -> Pagi (Tomorrow)
   const nextDate = initialShift === 'pagi' ? initialDate : new Date(new Date(initialDate).getTime() + 86400000).toLocaleDateString('en-CA');
-  const nextConfigId = initialShift === 'pagi' ? malamConfig?.id : pagiConfig?.id;
 
   // Filter roster for current and next staff
   const currentStaffIds = rosters
-    ?.filter(r => r.duty_date === initialDate && r.shift_config_id === currentConfigId)
+    ?.filter(r => r.duty_date === initialDate && r.shift_code === currentShiftCode)
     .map(r => r.user_id) || [];
     
   const nextStaffIds = rosters
-    ?.filter(r => r.duty_date === nextDate && r.shift_config_id === nextConfigId)
+    ?.filter(r => r.duty_date === nextDate && r.shift_code === nextShiftCode)
     .map(r => r.user_id) || [];
 
   // Fallback to current user if roster is empty
