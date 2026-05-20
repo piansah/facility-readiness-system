@@ -161,7 +161,7 @@ export function PdfExport({ report }: PdfExportProps) {
         index + 1,
         log.facilities?.name ?? "-",
         log.facilities?.location_detail ?? "-",
-        log.status.toUpperCase().replace("_", " "),
+        log.status === "operasi_menurun" ? "MENURUN" : log.status.toUpperCase(),
         log.notes ?? "-",
       ]);
 
@@ -170,14 +170,14 @@ export function PdfExport({ report }: PdfExportProps) {
         head: [["No", "Fasilitas", "Lokasi", "Status", "Catatan"]],
         body: tableData,
         theme: "striped",
-        headStyles: { fillColor: [16, 185, 129] },
+        headStyles: { fillColor: [16, 185, 129], halign: "center" },
         styles: { fontSize: 9 },
         columnStyles: {
-          0: { cellWidth: 10 },    // No
-          1: { cellWidth: 63 },    // Fasilitas (+10%)
-          2: { cellWidth: 36 },    // Lokasi (-5%)
-          3: { cellWidth: 16 },    // Status (-5%)
-          4: { cellWidth: 55 },    // Catatan
+          0: { cellWidth: 8, halign: "center" },     // No
+          1: { cellWidth: 60 },                      // Fasilitas
+          2: { cellWidth: 34 },                      // Lokasi
+          3: { cellWidth: 26, halign: "center" },    // Status
+          4: { cellWidth: 52 },                      // Catatan
         },
       });
 
