@@ -36,6 +36,8 @@ export async function createIncident(formData: FormData) {
   const actionTaken = String(formData.get("action_taken") ?? "").trim();
   const resultStatus = String(formData.get("result_status") ?? "pending");
   const handlerType = String(formData.get("handler_type") ?? "internal");
+  const activityTypeRaw = String(formData.get("activity_type") ?? "unscheduled");
+  const activityType = activityTypeRaw === "scheduled" ? "scheduled" : "unscheduled";
   const photos = formData
     .getAll("photos")
     .filter((value): value is File => value instanceof File && value.size > 0);
@@ -84,6 +86,7 @@ export async function createIncident(formData: FormData) {
       status: resultStatus === "success" ? "resolved" : "open",
       result_status: resultStatus,
       handler_type: handlerType,
+      activity_type: activityType,
     })
     .select("id")
     .single<{ id: string }>();
@@ -138,6 +141,8 @@ export async function updateIncident(formData: FormData) {
   const actionTaken = String(formData.get("action_taken") ?? "").trim();
   const resultStatus = String(formData.get("result_status") ?? "pending");
   const handlerType = String(formData.get("handler_type") ?? "internal");
+  const activityTypeRaw = String(formData.get("activity_type") ?? "unscheduled");
+  const activityType = activityTypeRaw === "scheduled" ? "scheduled" : "unscheduled";
   const incidentDate = String(formData.get("incident_date") ?? "");
   const startTime = String(formData.get("incident_time_only") ?? "");
   const endTime = String(formData.get("resolved_time_only") ?? "");
@@ -156,6 +161,7 @@ export async function updateIncident(formData: FormData) {
       status: resultStatus === "success" ? "resolved" : "open",
       result_status: resultStatus,
       handler_type: handlerType,
+      activity_type: activityType,
       incident_time: incidentTime,
       resolved_at: resolvedAt || null,
       facility_id: facilityId || null,

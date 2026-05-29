@@ -60,6 +60,9 @@ export default async function UserManagementPage() {
   }
 
   const { data: usersData } = await usersQuery;
+
+  // Fetch all units before mapping users so unit fallback never crashes SSR.
+  const allUnits = await getAllUnitsSafe();
   
   // Sort manually to put admins first: super_admin > admin > petugas > viewer
   const rolePriority: Record<string, number> = {
@@ -83,9 +86,6 @@ export default async function UserManagementPage() {
     if (priorityDiff !== 0) return priorityDiff;
     return a.full_name.localeCompare(b.full_name);
   });
-
-  // Fetch All Units safely to bypass RLS for mapping
-  const allUnits = await getAllUnitsSafe();
 
   return (
     <main className="min-h-dvh bg-slate-950 px-4 py-8">

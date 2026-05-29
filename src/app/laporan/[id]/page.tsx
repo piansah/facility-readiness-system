@@ -53,6 +53,7 @@ type ReportDetail = {
     status: string;
     result_status: string | null;
     handler_type: string | null;
+    activity_type: string | null;
     incident_photos: {
       id: string;
       storage_path: string;
@@ -130,7 +131,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
         )
       ),
       incidents (
-        id, title, description, action_taken, incident_time, resolved_at, status, result_status, handler_type,
+        id, title, description, action_taken, incident_time, resolved_at, status, result_status, handler_type, activity_type,
         incident_photos (id, storage_path, caption, follow_up_id)
       )
     `)
@@ -432,8 +433,8 @@ export default async function ReportDetailPage({ params }: PageProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Non-Rutin Terkait</CardTitle>
-            <CardDescription>Kegiatan atau insiden yang terhubung ke laporan ini.</CardDescription>
+            <CardTitle>Kegiatan Terkait</CardTitle>
+            <CardDescription>Preventive terjadwal dan kegiatan tidak terjadwal yang terhubung ke laporan ini.</CardDescription>
           </CardHeader>
           <CardContent>
             {report.incidents.length ? (
@@ -447,6 +448,13 @@ export default async function ReportDetailPage({ params }: PageProps) {
                     <p className="font-medium text-slate-100">{incident.title}</p>
                     <div className="mt-1 text-xs text-slate-400">
                       <div className="flex flex-wrap gap-2 mb-1.5">
+                        <span className={`px-1.5 py-0.5 rounded border ${
+                          incident.activity_type === 'scheduled'
+                            ? 'border-emerald-900/50 bg-emerald-500/10 text-emerald-400'
+                            : 'border-amber-900/50 bg-amber-500/10 text-amber-400'
+                        }`}>
+                          {incident.activity_type === 'scheduled' ? 'Preventive' : 'Non-Rutin'}
+                        </span>
                         <span className={`px-1.5 py-0.5 rounded border ${
                           incident.result_status === 'success' ? 'border-emerald-900/50 bg-emerald-500/10 text-emerald-400' :
                           incident.result_status === 'failed' ? 'border-red-900/50 bg-red-500/10 text-red-400' :
@@ -467,7 +475,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
               </div>
             ) : (
               <p className="rounded-md bg-slate-900 p-4 text-sm text-slate-400">
-                Tidak ada non-rutin pada laporan ini.
+                Tidak ada kegiatan tambahan pada laporan ini.
               </p>
             )}
           </CardContent>
@@ -477,7 +485,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
         {followUpsWithPhotos.length > 0 && (
           <section className="space-y-4">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-              Tindak Lanjut Laporan Non-Rutin
+              Tindak Lanjut Kegiatan
             </h2>
             <div className="grid gap-4">
               {followUpsWithPhotos.map((fu) => (

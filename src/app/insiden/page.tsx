@@ -12,6 +12,7 @@ type IncidentListItem = {
   title: string;
   incident_time: string;
   status: string;
+  activity_type: string | null;
   action_taken: string | null;
   daily_reports: {
     report_date: string;
@@ -52,6 +53,7 @@ export default async function IncidentListPage() {
       title,
       incident_time,
       status,
+      activity_type,
       action_taken,
       daily_reports (
         report_date,
@@ -78,8 +80,8 @@ export default async function IncidentListPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400">History</p>
-            <h1 className="text-xl font-semibold text-slate-100">Laporan Non-Rutin</h1>
-            <p className="mt-1 text-sm text-slate-400">Kegiatan dan insiden yang tercatat untuk unit.</p>
+            <h1 className="text-xl font-semibold text-slate-100">Laporan Kegiatan</h1>
+            <p className="mt-1 text-sm text-slate-400">Preventive terjadwal dan kegiatan tidak terjadwal yang tercatat untuk unit.</p>
           </div>
           {canCreateReports(profile.role) ? (
             <Button asChild>
@@ -111,8 +113,12 @@ export default async function IncidentListPage() {
                         {formatDateTime(incident.incident_time)} - {incident.daily_reports?.shift ?? "-"}
                       </p>
                     </div>
-                    <span className="rounded-md bg-amber-500/15 px-2 py-1 text-xs font-medium text-amber-200">
-                      {incident.status}
+                    <span className={`rounded-md px-2 py-1 text-xs font-medium ${
+                      incident.activity_type === "scheduled"
+                        ? "bg-emerald-500/15 text-emerald-200"
+                        : "bg-amber-500/15 text-amber-200"
+                    }`}>
+                      {activityTypeLabel(incident.activity_type)}
                     </span>
                   </div>
                   <div className="grid gap-1 text-sm text-slate-400 sm:grid-cols-3">
@@ -130,14 +136,18 @@ export default async function IncidentListPage() {
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle>Belum Ada Non-Rutin</CardTitle>
-              <CardDescription>History kegiatan non-rutin akan muncul di sini setelah dibuat.</CardDescription>
+              <CardTitle>Belum Ada Kegiatan</CardTitle>
+              <CardDescription>History kegiatan akan muncul di sini setelah dibuat.</CardDescription>
             </CardHeader>
           </Card>
         )}
       </div>
     </main>
   );
+}
+
+function activityTypeLabel(value?: string | null) {
+  return value === "scheduled" ? "Preventive" : "Non-Rutin";
 }
 
 function formatDateTime(value: string) {

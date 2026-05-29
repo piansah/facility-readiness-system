@@ -17,6 +17,7 @@ type IncidentDetail = {
   status: string;
   result_status: string | null;
   handler_type: string | null;
+  activity_type: string | null;
   created_at: string;
   type?: 'incident' | 'facility';
   daily_reports: {
@@ -177,7 +178,7 @@ export default function IncidentDetailPage({
           <div className="flex-1 flex items-center justify-between gap-4">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 leading-none mb-1">
-                {incident.type === 'facility' ? 'Detail Temuan Fasilitas' : 'Detail Laporan Non-Rutin'}
+                {incident.type === 'facility' ? 'Detail Temuan Fasilitas' : activityTypeTitle(incident.activity_type)}
               </p>
               <div className="flex flex-col gap-2 mt-1">
                 <h1 className="text-lg sm:text-xl font-semibold text-slate-100 leading-tight line-clamp-1">{incident.title}</h1>
@@ -377,6 +378,9 @@ export default function IncidentDetailPage({
       </div>
     </main>
   );
+}
+function activityTypeTitle(value?: string | null) {
+  return value === "scheduled" ? "Detail Kegiatan Preventive" : "Detail Kegiatan Tidak Terjadwal";
 }
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("id-ID", {

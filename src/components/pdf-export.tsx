@@ -42,6 +42,7 @@ type ReportForPdf = {
     status: string;
     result_status: string | null;
     handler_type: string | null;
+    activity_type?: string | null;
     photos?: {
       signedUrl: string | null;
       caption: string | null;
@@ -181,22 +182,16 @@ export function PdfExport({ report }: PdfExportProps) {
         },
       });
 
-      // Selalu mulai Laporan Non-Rutin di halaman baru agar rapi
-      doc.addPage();
-      currentY = 20;
+      const renderIncidentItems = async (items: ReportForPdf["incidents"], emptyText: string) => {
+        if (items.length === 0) {
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          doc.text(emptyText, 15, currentY + 5);
+          currentY += 15;
+          return;
+        }
 
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("2. Laporan Non-Rutin / Insiden", 15, currentY);
-      doc.setFont("helvetica", "normal");
-      currentY += 10;
-
-      if (report.incidents.length === 0) {
-        doc.setFontSize(10);
-        doc.text("Tidak ada laporan non-rutin.", 15, currentY + 5);
-        currentY += 15;
-      } else {
-        for (const incident of report.incidents) {
+        for (const incident of items) {
           if (currentY > 250) {
             doc.addPage();
             currentY = 20;
@@ -240,28 +235,22 @@ export function PdfExport({ report }: PdfExportProps) {
             try {
               const image = await fetchImageData(photo.signedUrl);
               const isPortrait = image.height > image.width;
-              
-              // Tentukan lebar target
-              // Portrait: ~55mm (muat 3 per baris), Landscape: 100mm (1 per baris)
               let targetWidth = isPortrait ? 55 : 100;
               let imgWidth = targetWidth;
               let imgHeight = (image.height * imgWidth) / image.width;
-
-              // Batasi tinggi max agar tidak makan satu halaman sendiri
               const maxHeight = 80;
+
               if (imgHeight > maxHeight) {
                 imgHeight = maxHeight;
                 imgWidth = (image.width * imgHeight) / image.height;
               }
 
-              // Cek apakah harus ganti baris (untuk portrait) atau memang landscape
               if (!isPortrait || (photoX + imgWidth > pageWidth - 15)) {
                 currentY += maxRowHeight + (maxRowHeight > 0 ? 5 : 0);
                 photoX = 20;
                 maxRowHeight = 0;
               }
 
-              // Cek apakah harus ganti halaman
               if (currentY + imgHeight > 270) {
                 doc.addPage();
                 currentY = 20;
@@ -287,7 +276,37 @@ export function PdfExport({ report }: PdfExportProps) {
 
           currentY += maxRowHeight + (maxRowHeight > 0 ? 10 : 5);
         }
+      };
+
+      const scheduledIncidents = report.incidents.filter((incident) => incident.activity_type === "scheduled");
+      const unscheduledIncidents = report.incidents.filter((incident) => incident.activity_type !== "scheduled");
+
+      // Selalu mulai bagian kegiatan di halaman baru agar rapi
+      doc.addPage();
+      currentY = 20;
+
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("2. Kegiatan Preventive Terjadwal", 15, currentY);
+      doc.setFont("helvetica", "normal");
+      currentY += 10;
+
+      await renderIncidentItems(scheduledIncidents, "Tidak ada kegiatan preventive terjadwal.");
+
+      if (currentY > 250) {
+        doc.addPage();
+        currentY = 20;
+      } else {
+        currentY += 8;
       }
+
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("3. Kegiatan Tidak Terjadwal / Non-Rutin", 15, currentY);
+      doc.setFont("helvetica", "normal");
+      currentY += 10;
+
+      await renderIncidentItems(unscheduledIncidents, "Tidak ada kegiatan tidak terjadwal.");
 
       if (report.incident_follow_ups && report.incident_follow_ups.length > 0) {
         if (currentY > 260) {
@@ -298,7 +317,7 @@ export function PdfExport({ report }: PdfExportProps) {
         }
 
         doc.setFontSize(12);
-        doc.text("3. Tindak Lanjut Laporan Non-Rutin", 15, currentY);
+        doc.text("4. Tindak Lanjut Kegiatan", 15, currentY);
         currentY += 5;
 
         for (const fu of report.incident_follow_ups) {
