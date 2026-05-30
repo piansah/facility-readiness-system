@@ -1,18 +1,16 @@
 import React, { Suspense } from "react";
 export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { CheckCircle2, Wrench, AlertTriangle, LogOut, BarChart3, ClipboardList, Clock3, Camera, Server, Calendar, Users, BookOpen, User } from "lucide-react";
+import { CheckCircle2, Wrench, AlertTriangle, BarChart3, ClipboardList, Clock3, Camera, Server, Users } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { logout } from "@/app/login/actions";
 import { getProfile } from "@/lib/auth/profile";
-import { canCreateReports, canCreateIncidents, canReviewReports, canAccessManagement, roleLabel } from "@/lib/auth/roles";
+import { canCreateReports, canCreateIncidents, canReviewReports, canAccessManagement } from "@/lib/auth/roles";
 import { RefreshOnDateChange } from "@/components/dashboard/refresh-on-date-change";
 import { AddUnitDialog } from "./AddUnitDialog";
 import { EditUnitDialog } from "./EditUnitDialog";
-import { QRScanner } from "@/components/qr-scanner";
 
 type ReportSummary = {
   id?: string;
@@ -73,9 +71,10 @@ async function DashboardContent() {
   const isAdmin = canAccessManagement(profile?.role); // true untuk super_admin dan admin
   const canReview = canReviewReports(profile?.role);  // true hanya untuk admin
   const isSuperAdmin = profile?.role === "super_admin";
+  const profileWithUnit = profile as typeof profile & { units?: { name?: string | null } };
   const unitDisplayName = isSuperAdmin 
     ? "Administrator Pusat" 
-    : (profile as any)?.units?.name || "Unit Tidak Diketahui";
+    : profileWithUnit?.units?.name || "Unit Tidak Diketahui";
 
   // Jendela Operasional: Tentukan tanggal dan shift yang relevan
   const now = new Date();
@@ -231,12 +230,6 @@ async function DashboardContent() {
     return { ...cfg, report, isOverdue };
   });
 
-  const dashboardSubTitle = isSuperAdmin
-    ? "Monitoring Overview Seluruh Unit"
-    : profile?.role === "admin"
-      ? `Management Dashboard`
-      : `Operational Dashboard`;
-
   return (
     <>
       {!isSuperAdmin && (
@@ -253,7 +246,7 @@ async function DashboardContent() {
       <div className="mx-auto grid max-w-6xl lg:grid-cols-12 gap-6 px-4 py-6">
         {/* --- Super Admin Welcome Banner --- */}
         {isSuperAdmin && (
-          <section className="lg:col-span-12 relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-8 shadow-2xl">
+          <section className="lg:col-span-12 relative overflow-hidden rounded-3xl border border-slate-800 bg-linear-to-br from-slate-900 to-slate-950 p-8 shadow-2xl">
             <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-[80px]" />
             <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-blue-500/10 blur-[80px]" />
 
@@ -316,7 +309,7 @@ async function DashboardContent() {
                   </Button>
                   <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/insiden">
-                      <Camera className="mr-3 h-5 w-5 text-amber-400" /> History Non-Rutin
+                      <Camera className="mr-3 h-5 w-5 text-amber-400" /> History Aktivitas & Insiden
                     </Link>
                   </Button>
                   <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
@@ -535,7 +528,7 @@ async function DashboardContent() {
               <Card className="border-slate-800 bg-slate-900/40">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div>
-                    <CardTitle className="text-lg">Non-Rutin & Insiden</CardTitle>
+                    <CardTitle className="text-lg">Aktivitas & Insiden</CardTitle>
                     <CardDescription>Masalah yang masih memerlukan tindak lanjut.</CardDescription>
                   </div>
                   {canCreateIncidents(profile?.role) && (
@@ -571,7 +564,7 @@ async function DashboardContent() {
                         </Link>
                       ))}
                       <Button asChild variant="ghost" className="w-full text-slate-500 hover:text-slate-200">
-                        <Link href="/insiden">Lihat Semua History Non-Rutin</Link>
+                        <Link href="/insiden">Lihat Semua Aktivitas & Insiden</Link>
                       </Button>
                     </div>
                   ) : (
@@ -602,7 +595,7 @@ async function DashboardContent() {
                   </Button>
                   <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
                     <Link href="/insiden">
-                      <Camera className="mr-3 h-5 w-5 text-amber-400" /> History Non-Rutin
+                      <Camera className="mr-3 h-5 w-5 text-amber-400" /> History Aktivitas & Insiden
                     </Link>
                   </Button>
                   <Button asChild variant="outline" className="justify-start border-slate-800 bg-slate-950 hover:bg-slate-900 h-11 px-3 text-white">
@@ -659,22 +652,6 @@ async function DashboardContent() {
 
       </div>
     </>
-  );
-}
-
-function ShiftStatusLink({ report }: { report?: ReportSummary }) {
-  if (report) {
-    return (
-      <Link href={`/laporan/${report.id}`} className="inline-flex">
-        <ShiftBadge status={report.status} />
-      </Link>
-    );
-  }
-
-  return (
-    <div className="opacity-40">
-      <ShiftBadge status="none" />
-    </div>
   );
 }
 

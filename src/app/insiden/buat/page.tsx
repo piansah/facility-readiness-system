@@ -78,7 +78,7 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
           </Button>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Kegiatan Teknisi</p>
-            <h1 className="text-xl font-semibold text-slate-100">Buat Laporan Kegiatan</h1>
+            <h1 className="text-xl font-semibold text-slate-100">Buat Aktivitas & Insiden</h1>
             <p className="mt-1 text-sm text-slate-400">
               {profile.full_name} - {roleLabel(profile.role)}
             </p>
@@ -113,8 +113,8 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
                   <input type="radio" name="activity_type" value="scheduled" className="sr-only" />
                 </label>
                 <label className="flex cursor-pointer flex-col gap-1 rounded-md border border-slate-700 bg-slate-900/50 p-3 text-sm font-medium text-slate-300 transition-all hover:bg-slate-900 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-500/10 has-[:checked]:text-amber-300">
-                  <span>Tidak Terjadwal / Non-Rutin</span>
-                  <span className="text-xs font-normal text-slate-500">Kegiatan tambahan, gangguan, atau insiden lapangan.</span>
+                  <span>Aktivitas / Insiden</span>
+                  <span className="text-xs font-normal text-slate-500">Aktivitas tambahan, gangguan, atau insiden lapangan.</span>
                   <input type="radio" name="activity_type" value="unscheduled" className="sr-only" defaultChecked />
                 </label>
               </div>
@@ -224,7 +224,7 @@ export default async function CreateIncidentPage({ searchParams }: PageProps) {
 
         <SubmitButton pendingText="Menyimpan..." size="lg">
           <SendHorizonal className="h-4 w-4" aria-hidden="true" />
-          Simpan Laporan Kegiatan
+          Simpan Aktivitas & Insiden
         </SubmitButton>
         </form>
       </div>

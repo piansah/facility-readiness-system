@@ -90,7 +90,7 @@ export default function EditIncidentPage({ params, searchParams }: PageProps) {
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 leading-none">Edit Laporan</p>
-              <h1 style={{ fontFamily: "'Poppins', sans-serif" }} className="text-lg font-bold text-slate-100 tracking-tight mt-0.5 leading-none">Edit Kegiatan</h1>
+              <h1 style={{ fontFamily: "'Poppins', sans-serif" }} className="text-lg font-bold text-slate-100 tracking-tight mt-0.5 leading-none">Edit Aktivitas & Insiden</h1>
             </div>
           </div>
         </div>
@@ -123,8 +123,8 @@ export default function EditIncidentPage({ params, searchParams }: PageProps) {
                     <input type="radio" name="activity_type" value="scheduled" className="sr-only" defaultChecked={incident.activity_type === "scheduled"} />
                   </label>
                   <label className="flex cursor-pointer flex-col gap-1 rounded-md border border-slate-700 bg-slate-900/50 p-3 text-sm font-medium text-slate-300 transition-all hover:bg-slate-900 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-500/10 has-[:checked]:text-amber-300">
-                    <span>Tidak Terjadwal / Non-Rutin</span>
-                    <span className="text-xs font-normal text-slate-500">Kegiatan tambahan, gangguan, atau insiden lapangan.</span>
+                    <span>Aktivitas / Insiden</span>
+                    <span className="text-xs font-normal text-slate-500">Aktivitas tambahan, gangguan, atau insiden lapangan.</span>
                     <input type="radio" name="activity_type" value="unscheduled" className="sr-only" defaultChecked={incident.activity_type !== "scheduled"} />
                   </label>
                 </div>

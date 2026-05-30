@@ -433,8 +433,8 @@ export default async function ReportDetailPage({ params }: PageProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Kegiatan Terkait</CardTitle>
-            <CardDescription>Preventive terjadwal dan kegiatan tidak terjadwal yang terhubung ke laporan ini.</CardDescription>
+            <CardTitle>Aktivitas & Insiden Terkait</CardTitle>
+            <CardDescription>Preventive terjadwal, aktivitas lapangan, dan insiden yang terhubung ke laporan ini.</CardDescription>
           </CardHeader>
           <CardContent>
             {report.incidents.length ? (
@@ -453,7 +453,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
                             ? 'border-emerald-900/50 bg-emerald-500/10 text-emerald-400'
                             : 'border-amber-900/50 bg-amber-500/10 text-amber-400'
                         }`}>
-                          {incident.activity_type === 'scheduled' ? 'Preventive' : 'Non-Rutin'}
+                          {incident.activity_type === 'scheduled' ? 'Preventive' : 'Aktivitas/Insiden'}
                         </span>
                         <span className={`px-1.5 py-0.5 rounded border ${
                           incident.result_status === 'success' ? 'border-emerald-900/50 bg-emerald-500/10 text-emerald-400' :
@@ -475,7 +475,7 @@ export default async function ReportDetailPage({ params }: PageProps) {
               </div>
             ) : (
               <p className="rounded-md bg-slate-900 p-4 text-sm text-slate-400">
-                Tidak ada kegiatan tambahan pada laporan ini.
+                Tidak ada aktivitas atau insiden pada laporan ini.
               </p>
             )}
           </CardContent>

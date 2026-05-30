@@ -160,14 +160,14 @@ export default async function FacilityHistoryPage({ params }: PageProps) {
         {/* --- Action --- */}
         <Button asChild className="w-full bg-amber-600 hover:bg-amber-700 h-12 text-base font-bold shadow-lg shadow-amber-900/20">
           <Link href={`/insiden/buat?facility_id=${facility.id}`}>
-            <Camera className="mr-2 h-5 w-5" /> Laporkan Kerusakan / Non-Rutin
+            <Camera className="mr-2 h-5 w-5" /> Laporkan Aktivitas / Insiden
           </Link>
         </Button>
 
         {/* --- History --- */}
         <section className="space-y-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 px-1 flex items-center gap-2">
-            <History className="h-3 w-3" /> Riwayat Kejadian (Non-Rutin)
+            <History className="h-3 w-3" /> Riwayat Aktivitas & Insiden
           </h2>
           {incidents && incidents.length > 0 ? (
             <div className="grid gap-3">

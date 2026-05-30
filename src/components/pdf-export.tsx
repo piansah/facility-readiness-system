@@ -302,11 +302,11 @@ export function PdfExport({ report }: PdfExportProps) {
 
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
-      doc.text("3. Kegiatan Tidak Terjadwal / Non-Rutin", 15, currentY);
+      doc.text("3. Aktivitas & Insiden", 15, currentY);
       doc.setFont("helvetica", "normal");
       currentY += 10;
 
-      await renderIncidentItems(unscheduledIncidents, "Tidak ada kegiatan tidak terjadwal.");
+      await renderIncidentItems(unscheduledIncidents, "Tidak ada aktivitas atau insiden.");
 
       if (report.incident_follow_ups && report.incident_follow_ups.length > 0) {
         if (currentY > 260) {

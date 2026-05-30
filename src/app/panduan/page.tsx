@@ -86,11 +86,11 @@ async function GuideContent() {
               />
               <GuideCard 
                 icon={<AlertCircle className="h-6 w-6 text-amber-400" />}
-                title="Laporan Kegiatan"
-                description="Melaporkan preventive terjadwal atau kegiatan di luar jadwal."
+                title="Aktivitas & Insiden"
+                description="Melaporkan preventive terjadwal, aktivitas lapangan, atau insiden."
                 steps={[
-                  "Klik tombol '+' atau 'Buat Laporan Kegiatan' di Dashboard.",
-                  "Pilih jenis kegiatan: terjadwal/preventive atau tidak terjadwal/non-rutin.",
+                  "Klik tombol '+' atau 'Buat Aktivitas & Insiden' di Dashboard.",
+                  "Pilih jenis: terjadwal/preventive atau aktivitas/insiden.",
                   "Isi judul, deskripsi, dan upload foto dokumentasi.",
                   "Pilih fasilitas terkait jika ada."
                 ]}

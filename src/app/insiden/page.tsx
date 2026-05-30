@@ -80,8 +80,8 @@ export default async function IncidentListPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400">History</p>
-            <h1 className="text-xl font-semibold text-slate-100">Laporan Kegiatan</h1>
-            <p className="mt-1 text-sm text-slate-400">Preventive terjadwal dan kegiatan tidak terjadwal yang tercatat untuk unit.</p>
+            <h1 className="text-xl font-semibold text-slate-100">Aktivitas & Insiden</h1>
+            <p className="mt-1 text-sm text-slate-400">Preventive terjadwal, aktivitas lapangan, dan insiden yang tercatat untuk unit.</p>
           </div>
           {canCreateReports(profile.role) ? (
             <Button asChild>
@@ -136,8 +136,8 @@ export default async function IncidentListPage() {
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle>Belum Ada Kegiatan</CardTitle>
-              <CardDescription>History kegiatan akan muncul di sini setelah dibuat.</CardDescription>
+              <CardTitle>Belum Ada Aktivitas & Insiden</CardTitle>
+              <CardDescription>History aktivitas dan insiden akan muncul di sini setelah dibuat.</CardDescription>
             </CardHeader>
           </Card>
         )}
@@ -147,7 +147,7 @@ export default async function IncidentListPage() {
 }
 
 function activityTypeLabel(value?: string | null) {
-  return value === "scheduled" ? "Preventive" : "Non-Rutin";
+  return value === "scheduled" ? "Preventive" : "Aktivitas/Insiden";
 }
 
 function formatDateTime(value: string) {

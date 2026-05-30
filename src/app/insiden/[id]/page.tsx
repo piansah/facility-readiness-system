@@ -380,7 +380,7 @@ export default function IncidentDetailPage({
   );
 }
 function activityTypeTitle(value?: string | null) {
-  return value === "scheduled" ? "Detail Kegiatan Preventive" : "Detail Kegiatan Tidak Terjadwal";
+  return value === "scheduled" ? "Detail Kegiatan Preventive" : "Detail Aktivitas & Insiden";
 }
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("id-ID", {
