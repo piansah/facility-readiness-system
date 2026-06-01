@@ -1,39 +1,80 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { 
-  format, addMonths, subMonths, startOfMonth, endOfMonth, 
-  startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays, 
-  parseISO, isToday
+import {
+  addDays,
+  addMonths,
+  endOfMonth,
+  endOfWeek,
+  format,
+  getDaysInMonth,
+  isSameDay,
+  isSameMonth,
+  isToday,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
 } from "date-fns";
 import { id } from "date-fns/locale";
-import { 
-  ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, 
-  ArrowLeft, Clock, CheckCircle2, AlertCircle, Wrench, Info
-} from "lucide-react";
+import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, ClipboardList, Layers3, Plus, Printer, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/text-area";
-import { createSchedule, updateScheduleStatus, deleteSchedule } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
-import { Trash2, Printer } from "lucide-react";
-import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { createPoint, createPmSchedule, createSection, deletePmSchedule, updatePmScheduleStatus } from "./actions";
+import { toast } from "sonner";
+
+type Section = {
+  id: string;
+  unit_id: string;
+  name: string;
+  color: string;
+  sort_order: number;
+};
+
+type Point = {
+  id: string;
+  unit_id: string;
+  section_id: string;
+  code: string;
+  name: string;
+  location_detail: string | null;
+  frequency: string;
+  facility_id: string | null;
+  sort_order: number;
+};
 
 type Schedule = {
   id: string;
-  title: string;
-  description: string | null;
-  planned_date: string;
-  status: 'planned' | 'ongoing' | 'completed' | 'missed';
   unit_id: string;
-  facility_id: string | null;
-  facilities?: { name: string; location_detail: string | null } | null;
+  section_id: string;
+  point_id: string;
+  assigned_user_id: string | null;
+  scheduled_date: string;
+  shift: string | null;
+  status: "planned" | "ongoing" | "completed" | "missed";
+  notes: string | null;
+  pm_sections: { name: string; color: string } | null;
+  pm_points: { code: string; name: string; location_detail: string | null } | null;
+  users: { full_name: string } | null;
+};
+
+type Staff = {
+  id: string;
+  full_name: string;
+  role: string;
+};
+
+type UnitOption = {
+  id: string;
+  code: string;
+  name: string;
 };
 
 type Facility = {
@@ -44,533 +85,697 @@ type Facility = {
 
 type Props = {
   initialSchedules: Schedule[];
+  sections: Section[];
+  points: Point[];
+  staff: Staff[];
   facilities: Facility[];
-  userUnitId: string | null;
+  units: UnitOption[];
+  defaultUnitId: string;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
 };
 
-export default function CalendarContent({ initialSchedules, facilities, userUnitId, isAdmin }: Props) {
+type Tab = "calendar" | "matrix" | "master";
+
+export default function CalendarContent({
+  initialSchedules,
+  sections,
+  points,
+  staff,
+  facilities,
+  units,
+  defaultUnitId,
+  isAdmin,
+  isSuperAdmin,
+}: Props) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedUnitId, setSelectedUnitId] = useState(defaultUnitId);
+  const [selectedPointId, setSelectedPointId] = useState(points.find((point) => point.unit_id === defaultUnitId)?.id ?? "");
+  const [activeTab, setActiveTab] = useState<Tab>("matrix");
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [isSectionOpen, setIsSectionOpen] = useState(false);
+  const [isPointOpen, setIsPointOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeletePending, setIsDeletePending] = useState(false);
 
-  // Render Header
-  const renderHeader = () => (
-    <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:py-4">
-        <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 hover:bg-slate-800 hidden sm:inline-flex">
-            <Link href="/dashboard">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-lg font-bold text-slate-100 tracking-tight leading-tight">Jadwal Preventive</h1>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">Planned Preventive Maintenance</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-           {isAdmin && (
-             <Button 
-               size="sm" 
-               onClick={() => setIsAddOpen(true)}
-               className="h-9 bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-900/20 transition-all active:scale-95"
-             >
-               <Plus className="h-4 w-4 mr-2" /> <span className="hidden xs:inline">Jadwal Baru</span>
-             </Button>
-           )}
-        </div>
-      </div>
-    </header>
+  const unit = units.find((item) => item.id === selectedUnitId) ?? units[0];
+  const unitSections = sections.filter((section) => section.unit_id === selectedUnitId);
+  const unitPoints = points.filter((point) => point.unit_id === selectedUnitId);
+  const unitSchedules = initialSchedules.filter((schedule) => schedule.unit_id === selectedUnitId);
+  const unitStaff = staff;
+  const selectedPoint = unitPoints.find((point) => point.id === selectedPointId);
+  const daysInMonth = getDaysInMonth(currentMonth);
+  const monthKey = format(currentMonth, "yyyy-MM");
+
+  const monthSchedules = useMemo(
+    () => unitSchedules.filter((schedule) => schedule.scheduled_date.startsWith(monthKey)),
+    [monthKey, unitSchedules],
   );
 
-  // Render Calendar Navigation
-  const renderNav = () => (
-    <div className="flex items-center justify-between px-4 mb-6">
-      <h2 className="text-xl font-bold text-slate-100 capitalize">
-        {format(currentMonth, "MMMM yyyy", { locale: id })}
-      </h2>
-      <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="border-slate-800 bg-slate-900 w-9 h-9 p-0">
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())} className="border-slate-800 bg-slate-900">
-          Hari Ini
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="border-slate-800 bg-slate-900 w-9 h-9 p-0">
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
+  function openAddSchedule(date: Date) {
+    setSelectedDate(date);
+    setSelectedPointId(unitPoints[0]?.id ?? "");
+    if (isAdmin) setIsScheduleOpen(true);
+  }
 
-  // Render Days of Week
-  const renderDays = () => {
-    const days = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-    return (
-      <div className="grid grid-cols-7 mb-2 border-b border-slate-800 pb-2">
-        {days.map((day, i) => (
-          <div key={i} className="text-center text-xs font-bold uppercase tracking-widest text-slate-500">
-            {day}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Render Calendar Cells
-  const renderCells = () => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
-
-    const rows = [];
-    let days = [];
-    let day = startDate;
-    let formattedDate = "";
-
-    while (day <= endDate) {
-      for (let i = 0; i < 7; i++) {
-        formattedDate = format(day, "d");
-        const cloneDay = day;
-        const daySchedules = initialSchedules.filter(s => isSameDay(parseISO(s.planned_date), cloneDay));
-        
-        days.push(
-          <div
-            key={day.toString()}
-            className={`min-h-[100px] border border-slate-800/50 p-1 transition-colors hover:bg-slate-900/50 cursor-pointer ${
-              !isSameMonth(day, monthStart) ? "bg-slate-950/30 text-slate-700" : "text-slate-200"
-            } ${isToday(day) ? "bg-emerald-500/5" : ""}`}
-            onClick={() => {
-               setSelectedDate(cloneDay);
-               if(isAdmin) setIsAddOpen(true);
-            }}
-          >
-            <div className="flex justify-between items-start mb-1">
-               <span className={`text-xs font-medium h-6 w-6 flex items-center justify-center rounded-full ${
-                 isToday(day) ? "bg-emerald-500 text-slate-950 font-bold" : ""
-               }`}>
-                 {formattedDate}
-               </span>
-            </div>
-            <div className="flex flex-col gap-1 overflow-hidden">
-               {daySchedules.map(s => (
-                 <div 
-                   key={s.id} 
-                   onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedSchedule(s);
-                      setIsDetailOpen(true);
-                   }}
-                   className={`text-[9px] px-1.5 py-0.5 rounded border truncate cursor-pointer transition-all hover:brightness-125 hover:scale-[1.02] active:scale-95 ${
-                     s.status === 'completed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                     s.status === 'missed' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                     s.status === 'ongoing' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
-                     'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                   }`}
-                   title={s.title}
-                 >
-                   {s.title}
-                 </div>
-               ))}
-            </div>
-          </div>
-        );
-        day = addDays(day, 1);
-      }
-      rows.push(
-        <div className="grid grid-cols-7" key={day.toString()}>
-          {days}
-        </div>
-      );
-      days = [];
-    }
-    return <div className="rounded-xl border border-slate-800 bg-slate-950 overflow-hidden shadow-2xl">{rows}</div>;
-  };
+  function changeUnit(unitId: string) {
+    setSelectedUnitId(unitId);
+    setSelectedPointId(points.find((point) => point.unit_id === unitId)?.id ?? "");
+  }
 
   return (
     <>
-      {isAdmin && (
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogContent className="!max-w-[600px] bg-slate-950 border-slate-800 text-slate-100 shadow-2xl sm:rounded-2xl overflow-hidden p-0 z-[9999]">
-            <div className="p-6 border-b border-slate-800 bg-slate-900/30">
-              <DialogHeader>
-                <DialogTitle>
-                   <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20">
-                        <CalendarIcon className="h-5 w-5 text-amber-500" />
-                      </div>
-                      <div className="text-left">
-                        <h2 className="text-xl font-bold text-slate-100 tracking-tight">Buat Jadwal Maintenance</h2>
-                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest mt-0.5">Preventive Task Planning</p>
-                      </div>
-                   </div>
-                </DialogTitle>
-              </DialogHeader>
-            </div>
-            <form 
-              key={selectedDate.toISOString()}
-              action={async (fd) => {
-                 await createSchedule(fd);
-                 setIsAddOpen(false);
-              }} 
-              className="p-6 grid gap-6"
-            >
-              <input type="hidden" name="unit_id" value={userUnitId || ""} />
-              
-              <div className="grid gap-2">
-                <Label htmlFor="title" className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Kegiatan / Task Utama</Label>
-                <Input id="title" name="title" placeholder="Misal: Service AC Berkala atau Pengecekan Panel" className="h-11 bg-slate-900/50 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/10 transition-all" required />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                 <div className="grid gap-2">
-                   <Label htmlFor="facility_id" className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Fasilitas Unit</Label>
-                   <select name="facility_id" className="w-full h-11 rounded-md border border-slate-800 bg-slate-900/50 px-3 text-sm outline-none focus:border-amber-500/50 focus:ring-amber-500/10 transition-all text-slate-300">
-                     <option value="">Semua Fasilitas / Umum</option>
-                     {facilities.map(f => (
-                       <option key={f.id} value={f.id}>{f.name}</option>
-                     ))}
-                   </select>
-                 </div>
-                 <div className="grid gap-2">
-                   <Label htmlFor="planned_date" className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Tanggal Eksekusi</Label>
-                   <Input id="planned_date" name="planned_date" type="date" defaultValue={format(selectedDate, 'yyyy-MM-dd')} className="w-full h-11 bg-slate-900/50 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/10 transition-all" required />
-                 </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="description" className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Detail Pekerjaan (Scope of Work)</Label>
-                <Textarea id="description" name="description" placeholder="Jelaskan detail yang perlu diperhatikan..." className="bg-slate-900/50 border-slate-800 focus:border-amber-500/50 focus:ring-amber-500/10 transition-all min-h-[100px]" />
-              </div>
-
-              <div className="pt-2">
-                 <SubmitButton pendingText="Menyimpan..." className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-12 shadow-lg shadow-emerald-900/20 active:scale-[0.98] transition-all">
-                   Simpan Jadwal Maintenance
-                 </SubmitButton>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <header className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="mx-auto max-w-7xl flex items-center justify-between gap-4 px-4 py-3 sm:py-4">
-          <div className="flex items-center gap-4">
-            <Button asChild variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 hover:bg-slate-800 hidden sm:inline-flex">
+      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md no-print">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Button asChild variant="ghost" size="sm" className="hidden h-9 w-9 p-0 text-slate-400 sm:inline-flex">
               <Link href="/dashboard">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>
             <div>
-              <h1 className="text-lg font-bold text-slate-100 tracking-tight leading-tight">Jadwal Preventive</h1>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500 mt-0.5">Planned Preventive Maintenance</p>
+              <h1 className="text-lg font-bold text-slate-100">Jadwal Preventive Maintenance</h1>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">
+                {unit?.code ?? "-"} - {format(currentMonth, "MMMM yyyy", { locale: id })}
+              </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
-             <Button 
-               variant="outline" 
-               size="sm" 
-               onClick={() => window.print()}
-               className="h-10 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 shadow-lg transition-all active:scale-95 flex items-center gap-2 no-print"
-             >
-               <Printer className="h-4 w-4" /> <span className="hidden sm:inline">Export PDF</span>
-             </Button>
-             {isAdmin && (
-               <Button 
-                 size="sm" 
-                 onClick={() => setIsAddOpen(true)}
-                 className="h-10 bg-slate-900 hover:bg-slate-800 border border-amber-500/20 text-amber-500 hover:text-amber-400 font-bold px-4 shadow-lg transition-all active:scale-95 flex items-center gap-2 no-print"
-               >
-                 <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Tambah Jadwal</span>
-               </Button>
-             )}
+            <Button variant="outline" size="sm" onClick={() => window.print()} className="border-slate-800 bg-slate-900">
+              <Printer className="h-4 w-4" />
+              <span className="hidden sm:inline">Cetak PDF</span>
+            </Button>
+            {isAdmin ? (
+              <Button size="sm" onClick={() => openAddSchedule(selectedDate)} className="bg-amber-600 hover:bg-amber-500">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Jadwal</span>
+              </Button>
+            ) : null}
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-8">
-        {/* Print Only Header */}
-        <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-4">
-           <h1 className="text-2xl font-black uppercase">Laporan Jadwal Maintenance Preventive</h1>
-           <p className="text-sm font-bold text-slate-600">Periode: {format(currentMonth, "MMMM yyyy", { locale: id })}</p>
-           <p className="text-[10px] text-slate-400 mt-1">Dicetak pada: {format(new Date(), "dd/MM/yyyy HH:mm")}</p>
-        </div>
 
-        {/* Modal Detail & Update Status */}
-      {selectedSchedule && (
-        <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-          <DialogContent className="!max-w-[500px] bg-slate-950 border-slate-800 text-slate-100 shadow-2xl sm:rounded-2xl overflow-hidden p-0 z-[9999]">
-             <div className="p-6 border-b border-slate-800 bg-slate-900/30">
-                <div className="flex items-center gap-3">
-                   <div className={`h-10 w-10 flex items-center justify-center rounded-xl bg-slate-900 border border-slate-800`}>
-                     <Wrench className="h-5 w-5 text-amber-500" />
-                   </div>
-                   <div>
-                      <h2 className="text-lg font-bold text-slate-100 tracking-tight">{selectedSchedule.title}</h2>
-                      <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest mt-0.5">Jadwal Maintenance</p>
-                   </div>
-                </div>
-             </div>
-             
-             <div className="p-6 space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tanggal</p>
-                      <p className="text-sm text-slate-200 flex items-center gap-2">
-                         <CalendarIcon className="h-4 w-4 text-slate-400" />
-                         {format(parseISO(selectedSchedule.planned_date), "dd MMMM yyyy", { locale: id })}
-                      </p>
-                   </div>
-                   <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fasilitas</p>
-                      <p className="text-sm text-slate-200 flex items-center gap-2">
-                         <Info className="h-4 w-4 text-slate-400" />
-                         {selectedSchedule.facilities?.name || "Umum"}
-                      </p>
-                   </div>
-                </div>
+      <main className="mx-auto grid max-w-7xl gap-5 px-4 py-5">
+        <section className="grid gap-3 rounded-lg border border-slate-800 bg-slate-900/40 p-3 no-print">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              {(["matrix", "calendar", "master"] as Tab[]).map((tab) => (
+                <Button
+                  key={tab}
+                  type="button"
+                  variant={activeTab === tab ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveTab(tab)}
+                  className={activeTab === tab ? "bg-emerald-600 hover:bg-emerald-500" : "border-slate-800 bg-slate-950"}
+                >
+                  {tab === "matrix" ? "Tabel Bulanan" : tab === "calendar" ? "Kalender" : "Master PM"}
+                </Button>
+              ))}
+            </div>
 
-                <div className="space-y-1">
-                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Catatan Pekerjaan</p>
-                   <p className="text-sm text-slate-300 bg-slate-900/50 p-3 rounded-lg border border-slate-800 italic">
-                      {selectedSchedule.description || "Tidak ada catatan detail."}
-                   </p>
-                </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {isSuperAdmin ? (
+                <select
+                  value={selectedUnitId}
+                  onChange={(event) => changeUnit(event.target.value)}
+                  className="h-9 rounded-md border border-slate-800 bg-slate-950 px-3 text-sm text-slate-100"
+                >
+                  {units.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.code} - {item.name}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+              <Button variant="outline" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="border-slate-800 bg-slate-950">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())} className="border-slate-800 bg-slate-950">
+                Bulan Ini
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="border-slate-800 bg-slate-950">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </section>
 
-                {isAdmin && (
-                  <div className="space-y-4 pt-2 border-t border-slate-800/50">
-                     <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pilih Status Baru</p>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => setIsDeleteConfirmOpen(true)}
-                          className="text-red-500 hover:text-red-400 hover:bg-red-500/10 h-7 px-2 text-[10px] font-bold uppercase tracking-tight gap-1"
-                        >
-                           <Trash2 className="h-3 w-3" /> Hapus Jadwal
-                        </Button>
-                     </div>
-                     <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { val: 'planned', label: 'Direncanakan', color: 'amber' },
-                          { val: 'ongoing', label: 'Progres', color: 'blue' },
-                          { val: 'completed', label: 'Selesai', color: 'emerald' },
-                          { val: 'missed', label: 'Terlewat', color: 'red' }
-                        ].map((s) => (
-                          <Button
-                            key={s.val}
-                            variant="outline"
-                            size="sm"
-                            onClick={async () => {
-                              await updateScheduleStatus(selectedSchedule.id, s.val);
-                              setIsDetailOpen(false);
-                            }}
-                            className={`border-slate-800 transition-all ${
-                              selectedSchedule.status === s.val 
-                              ? `bg-${s.color}-500/10 border-${s.color}-500/40 text-${s.color}-400` 
-                              : `hover:bg-slate-900`
-                            }`}
-                          >
-                            <div className={`h-2 w-2 rounded-full mr-2 bg-${s.color}-500`} />
-                            {s.label}
-                          </Button>
-                        ))}
-                     </div>
-                  </div>
-                )}
-             </div>
-          </DialogContent>
-        </Dialog>
-      )}
+        <PrintHeader unit={unit} currentMonth={currentMonth} />
 
-        {renderNav()}
-        <div className="grid gap-6 lg:grid-cols-12">
-           <div className="lg:col-span-8">
-              {renderDays()}
-              {renderCells()}
-           </div>
+        {activeTab === "matrix" ? (
+          <MonthlyMatrix
+            daysInMonth={daysInMonth}
+            monthKey={monthKey}
+            schedules={monthSchedules}
+            staff={unitStaff}
+            onSelect={setSelectedSchedule}
+          />
+        ) : null}
 
-           {/* Side Info / Legend */}
-           <div className="lg:col-span-4 space-y-6">
-              <Card className="border-slate-800 bg-slate-900/40">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Info className="h-4 w-4 text-blue-400" /> Keterangan Status
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-3">
-                   <div className="flex items-center gap-3 text-xs text-slate-400">
-                      <div className="h-3 w-3 rounded bg-amber-500" />
-                      <span>Planned (Direncanakan)</span>
-                   </div>
-                   <div className="flex items-center gap-3 text-xs text-slate-400">
-                      <div className="h-3 w-3 rounded bg-blue-500" />
-                      <span>Ongoing (Progres)</span>
-                   </div>
-                   <div className="flex items-center gap-3 text-xs text-slate-400">
-                      <div className="h-3 w-3 rounded bg-emerald-500" />
-                      <span>Completed (Selesai)</span>
-                   </div>
-                   <div className="flex items-center gap-3 text-xs text-slate-400">
-                      <div className="h-3 w-3 rounded bg-red-500" />
-                      <span>Missed (Terlewat)</span>
-                   </div>
-                </CardContent>
-              </Card>
+        {activeTab === "calendar" ? (
+          <CalendarGrid
+            currentMonth={currentMonth}
+            schedules={unitSchedules}
+            onDayClick={openAddSchedule}
+            onSelectSchedule={setSelectedSchedule}
+          />
+        ) : null}
 
-              <Card className="border-slate-800 bg-slate-900/40">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Wrench className="h-4 w-4 text-amber-400" /> Kegiatan Terdekat
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                   <div className="divide-y divide-slate-800">
-                      {initialSchedules
-                        .filter(s => parseISO(s.planned_date) >= new Date())
-                        .slice(0, 5)
-                        .map(s => (
-                        <div 
-                          key={s.id} 
-                          onClick={() => {
-                             setSelectedSchedule(s);
-                             setIsDetailOpen(true);
-                          }}
-                          className="p-4 hover:bg-slate-800/20 transition-colors cursor-pointer group"
-                        >
-                           <div className="flex justify-between items-start mb-1">
-                              <p className="text-sm font-bold text-slate-100 group-hover:text-amber-400 transition-colors">{s.title}</p>
-                              <Badge variant="outline" className={`text-[9px] uppercase border-slate-700 ${
-                                s.status === 'completed' ? 'text-emerald-400 border-emerald-500/20' :
-                                s.status === 'ongoing' ? 'text-blue-400 border-blue-500/20' :
-                                s.status === 'missed' ? 'text-red-400 border-red-500/20' :
-                                'text-amber-400 border-amber-500/20'
-                              }`}>{s.status}</Badge>
-                           </div>
-                           <p className="text-[10px] text-slate-500 flex items-center gap-1">
-                              <CalendarIcon className="h-3 w-3" /> {format(parseISO(s.planned_date), "dd MMM yyyy", { locale: id })}
-                           </p>
-                           {s.facilities && (
-                             <p className="text-[10px] text-emerald-500 mt-1 flex items-center gap-1">
-                               <Info className="h-3 w-3" /> {s.facilities.name}
-                             </p>
-                           )}
-                        </div>
-                      ))}
-                      {initialSchedules.length === 0 && (
-                        <div className="p-8 text-center text-slate-500 text-sm">
-                           Tidak ada jadwal mendatang.
-                        </div>
-                      )}
-                   </div>
-                </CardContent>
-              </Card>
-           </div>
-        </div>
+        {activeTab === "master" ? (
+          <MasterPanel
+            unitId={selectedUnitId}
+            sections={unitSections}
+            points={unitPoints}
+            facilities={facilities}
+            isAdmin={isAdmin}
+            onAddSection={() => setIsSectionOpen(true)}
+            onAddPoint={() => setIsPointOpen(true)}
+          />
+        ) : null}
+
+        <Legend sections={unitSections} points={unitPoints} />
       </main>
 
-      {/* Custom Confirm Dialog */}
-      {selectedSchedule && (
+      <ScheduleDialog
+        open={isScheduleOpen}
+        onOpenChange={setIsScheduleOpen}
+        unitId={selectedUnitId}
+        selectedDate={selectedDate}
+        sections={unitSections}
+        points={unitPoints}
+        staff={unitStaff}
+        selectedPointId={selectedPointId}
+        selectedSectionId={selectedPoint?.section_id ?? ""}
+        setSelectedPointId={setSelectedPointId}
+      />
+
+      <SectionDialog open={isSectionOpen} onOpenChange={setIsSectionOpen} unitId={selectedUnitId} />
+      <PointDialog
+        open={isPointOpen}
+        onOpenChange={setIsPointOpen}
+        unitId={selectedUnitId}
+        sections={unitSections}
+        facilities={facilities}
+      />
+
+      {selectedSchedule ? (
+        <Dialog open={Boolean(selectedSchedule)} onOpenChange={(open) => !open && setSelectedSchedule(null)}>
+          <DialogContent className="border-slate-800 bg-slate-950 text-slate-100">
+            <DialogHeader>
+              <DialogTitle>{selectedSchedule.pm_points?.code} - {selectedSchedule.pm_points?.name}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-3 text-sm text-slate-300">
+              <p>Tanggal: {format(parseISO(selectedSchedule.scheduled_date), "dd MMMM yyyy", { locale: id })}</p>
+              <p>Bagian: {selectedSchedule.pm_sections?.name ?? "-"}</p>
+              <p>Petugas: {selectedSchedule.users?.full_name ?? "Belum ditentukan"}</p>
+              <p>Shift: {selectedSchedule.shift ?? "-"}</p>
+              {selectedSchedule.notes ? <p>Catatan: {selectedSchedule.notes}</p> : null}
+              {isAdmin ? (
+                <div className="grid grid-cols-2 gap-2 border-t border-slate-800 pt-3">
+                  {["planned", "ongoing", "completed", "missed"].map((status) => (
+                    <Button
+                      key={status}
+                      variant="outline"
+                      size="sm"
+                      className="border-slate-800 bg-slate-900"
+                      onClick={async () => {
+                        await updatePmScheduleStatus(selectedSchedule.id, status);
+                        setSelectedSchedule(null);
+                      }}
+                    >
+                      {statusLabel(status)}
+                    </Button>
+                  ))}
+                  <Button variant="destructive" size="sm" className="col-span-2" onClick={() => setIsDeleteOpen(true)}>
+                    <Trash2 className="h-4 w-4" />
+                    Hapus Jadwal
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : null}
+
+      {selectedSchedule ? (
         <ConfirmDialog
-          isOpen={isDeleteConfirmOpen}
-          onClose={() => setIsDeleteConfirmOpen(false)}
+          isOpen={isDeleteOpen}
+          onClose={() => setIsDeleteOpen(false)}
           onConfirm={async () => {
             setIsDeletePending(true);
             try {
-              await deleteSchedule(selectedSchedule.id);
-              setIsDeleteConfirmOpen(false);
-              setIsDetailOpen(false);
+              await deletePmSchedule(selectedSchedule.id);
+              setIsDeleteOpen(false);
+              setSelectedSchedule(null);
               toast.success("Jadwal berhasil dihapus");
-            } catch (error) {
+            } catch {
               toast.error("Gagal menghapus jadwal");
             } finally {
               setIsDeletePending(false);
             }
           }}
-          title="Hapus Jadwal Maintenance"
-          description={`Apakah Anda yakin ingin menghapus jadwal "${selectedSchedule.title}"? Tindakan ini tidak dapat dibatalkan.`}
-          confirmText="Hapus Sekarang"
+          title="Hapus Jadwal PM"
+          description={`Hapus jadwal ${selectedSchedule.pm_points?.code ?? ""} pada ${selectedSchedule.scheduled_date}?`}
+          confirmText="Hapus"
           variant="destructive"
           isPending={isDeletePending}
         />
-      )}
+      ) : null}
     </>
   );
 }
 
-// Global Print Styles
-const printStyles = `
-  @media print {
-    @page { size: landscape; margin: 10mm; }
-    
-    /* Hide Everything except the main content */
-    header, .no-print, button, .lg\\:col-span-4, .sm\\:inline, .lucide {
-      display: none !important;
-    }
+function PrintHeader({ unit, currentMonth }: { unit?: UnitOption; currentMonth: Date }) {
+  return (
+    <div className="hidden print:block text-center">
+      <h1 className="text-sm font-black uppercase">Jadwal Preventive Maintenance Unit {unit?.name ?? "-"}</h1>
+      <p className="text-xs font-bold uppercase">Bandara Internasional Jawa Barat</p>
+      <p className="text-xs font-bold uppercase">{format(currentMonth, "MMMM yyyy", { locale: id })}</p>
+    </div>
+  );
+}
 
-    body {
-      background: white !important;
-      color: black !important;
-      padding: 0 !important;
-      margin: 0 !important;
-    }
+function MonthlyMatrix({
+  daysInMonth,
+  monthKey,
+  schedules,
+  staff,
+  onSelect,
+}: {
+  daysInMonth: number;
+  monthKey: string;
+  schedules: Schedule[];
+  staff: Staff[];
+  onSelect: (schedule: Schedule) => void;
+}) {
+  const rows = staff.length ? staff : [{ id: "__empty__", full_name: "Belum ada petugas", role: "" }];
 
-    main {
-      max-width: 100% !important;
-      width: 100% !important;
-      padding: 0 !important;
-    }
+  return (
+    <Card className="overflow-hidden border-slate-800 bg-slate-900/40 print:border-black print:bg-white">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[1100px] border-collapse text-xs print:text-[8px]">
+          <thead>
+            <tr className="bg-emerald-900/40 print:bg-lime-200">
+              <th className="w-12 border border-slate-800 px-2 py-2 print:border-black">No</th>
+              <th className="w-52 border border-slate-800 px-2 py-2 text-left print:border-black">Nama</th>
+              {Array.from({ length: daysInMonth }, (_, index) => {
+                const date = `${monthKey}-${String(index + 1).padStart(2, "0")}`;
+                return (
+                  <th key={date} className="w-9 border border-slate-800 px-1 py-2 text-center print:border-black">
+                    <span className="block">{format(parseISO(date), "EEE", { locale: id }).slice(0, 2).toUpperCase()}</span>
+                    <span className="block">{index + 1}</span>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((person, index) => (
+              <tr key={person.id} className="odd:bg-slate-950/30 print:bg-white">
+                <td className="border border-slate-800 px-2 py-2 text-center print:border-black">{index + 1}</td>
+                <td className="border border-slate-800 px-2 py-2 font-semibold text-slate-100 print:border-black print:text-black">
+                  {person.full_name}
+                </td>
+                {Array.from({ length: daysInMonth }, (_, dayIndex) => {
+                  const date = `${monthKey}-${String(dayIndex + 1).padStart(2, "0")}`;
+                  const cellSchedules = schedules.filter(
+                    (schedule) => schedule.scheduled_date === date && schedule.assigned_user_id === person.id,
+                  );
+                  return (
+                    <td key={date} className="border border-slate-800 p-1 align-top print:border-black">
+                      <div className="grid gap-1">
+                        {cellSchedules.map((schedule) => (
+                          <button
+                            key={schedule.id}
+                            type="button"
+                            onClick={() => onSelect(schedule)}
+                            className={`${sectionTone(schedule.pm_sections?.color)} rounded px-1 py-0.5 text-center text-[10px] font-black print:border print:border-black print:bg-white print:text-black`}
+                            title={schedule.pm_points?.name ?? ""}
+                          >
+                            {schedule.pm_points?.code ?? "-"}
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
 
-    /* Expand Calendar to Full Width */
-    .lg\\:col-span-8 {
-      grid-column: span 12 / span 12 !important;
-      width: 100% !important;
-    }
+function CalendarGrid({
+  currentMonth,
+  schedules,
+  onDayClick,
+  onSelectSchedule,
+}: {
+  currentMonth: Date;
+  schedules: Schedule[];
+  onDayClick: (date: Date) => void;
+  onSelectSchedule: (schedule: Schedule) => void;
+}) {
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(monthStart);
+  const startDate = startOfWeek(monthStart);
+  const endDate = endOfWeek(monthEnd);
+  const rows = [];
+  let days = [];
+  let day = startDate;
 
-    /* Force White backgrounds on containers */
-    .bg-slate-950, .bg-slate-900, .bg-slate-900\\/40, .bg-slate-950\\/50 {
-      background: white !important;
-      border-color: #334155 !important;
-      color: black !important;
+  while (day <= endDate) {
+    for (let index = 0; index < 7; index += 1) {
+      const cloneDay = day;
+      const daySchedules = schedules.filter((schedule) => isSameDay(parseISO(schedule.scheduled_date), cloneDay));
+      days.push(
+        <button
+          key={day.toString()}
+          type="button"
+          onClick={() => onDayClick(cloneDay)}
+          className={`min-h-28 border border-slate-800/70 p-2 text-left transition hover:bg-slate-900 ${
+            !isSameMonth(day, monthStart) ? "bg-slate-950/30 text-slate-700" : "text-slate-200"
+          } ${isToday(day) ? "bg-emerald-500/5" : ""}`}
+        >
+          <span className={`mb-2 flex h-6 w-6 items-center justify-center rounded-full text-xs ${isToday(day) ? "bg-emerald-500 font-bold text-slate-950" : ""}`}>
+            {format(day, "d")}
+          </span>
+          <span className="grid gap-1">
+            {daySchedules.map((schedule) => (
+              <span
+                key={schedule.id}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onSelectSchedule(schedule);
+                }}
+                className={`${sectionTone(schedule.pm_sections?.color)} truncate rounded px-1.5 py-0.5 text-[10px] font-semibold`}
+              >
+                {schedule.pm_points?.code} {schedule.users?.full_name ?? ""}
+              </span>
+            ))}
+          </span>
+        </button>,
+      );
+      day = addDays(day, 1);
     }
-
-    .border-slate-800, .border-slate-800\\/50 {
-      border-color: #cbd5e1 !important;
-    }
-
-    .text-slate-100, .text-slate-200, .text-slate-400, .text-slate-500 {
-      color: black !important;
-    }
-
-    /* Schedule Items in Print */
-    .bg-emerald-500\\/10, .bg-red-500\\/10, .bg-blue-500\\/10, .bg-amber-500\\/10 {
-       background: #f8fafc !important;
-       border: 1px solid #94a3b8 !important;
-       color: black !important;
-       font-weight: bold !important;
-       opacity: 1 !important;
-    }
-
-    /* Today highlight in print */
-    .bg-emerald-500\\/5 {
-       background: #f1f5f9 !important;
-    }
-
-    .shadow-2xl, .shadow-lg {
-      shadow: none !important;
-    }
+    rows.push(
+      <div className="grid grid-cols-7" key={day.toString()}>
+        {days}
+      </div>,
+    );
+    days = [];
   }
-`;
 
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style');
-  style.appendChild(document.createTextNode(printStyles));
-  document.head.appendChild(style);
+  return (
+    <Card className="overflow-hidden border-slate-800 bg-slate-950">
+      <div className="grid grid-cols-7 border-b border-slate-800 bg-slate-900 text-center text-xs font-bold uppercase text-slate-500">
+        {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((dayName) => (
+          <div key={dayName} className="p-2">{dayName}</div>
+        ))}
+      </div>
+      {rows}
+    </Card>
+  );
+}
+
+function MasterPanel({
+  unitId,
+  sections,
+  points,
+  facilities,
+  isAdmin,
+  onAddSection,
+  onAddPoint,
+}: {
+  unitId: string;
+  sections: Section[];
+  points: Point[];
+  facilities: Facility[];
+  isAdmin: boolean;
+  onAddSection: () => void;
+  onAddPoint: () => void;
+}) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2 no-print">
+      <Card className="border-slate-800 bg-slate-900/40">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base">Bagian PM</CardTitle>
+            <CardDescription>Section dinamis per unit.</CardDescription>
+          </div>
+          {isAdmin ? <Button size="sm" onClick={onAddSection}><Plus className="h-4 w-4" /> Bagian</Button> : null}
+        </CardHeader>
+        <CardContent className="grid gap-2">
+          {sections.map((section) => (
+            <div key={section.id} className="flex items-center justify-between rounded-md border border-slate-800 bg-slate-950 p-3">
+              <span className="font-semibold text-slate-100">{section.name}</span>
+              <span className={`${sectionTone(section.color)} rounded px-2 py-1 text-xs font-bold`}>{section.color}</span>
+            </div>
+          ))}
+          {!sections.length ? <p className="text-sm text-slate-500">Belum ada bagian PM untuk unit ini.</p> : null}
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-800 bg-slate-900/40">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base">Kode / Titik PM</CardTitle>
+            <CardDescription>{points.length} titik terdaftar.</CardDescription>
+          </div>
+          {isAdmin ? <Button size="sm" onClick={onAddPoint} disabled={!sections.length}><Plus className="h-4 w-4" /> Titik</Button> : null}
+        </CardHeader>
+        <CardContent className="max-h-[460px] overflow-auto">
+          <div className="grid gap-2">
+            {points.map((point) => {
+              const section = sections.find((item) => item.id === point.section_id);
+              const facility = facilities.find((item) => item.id === point.facility_id);
+              return (
+                <div key={point.id} className="rounded-md border border-slate-800 bg-slate-950 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-bold text-slate-100">{point.code} - {point.name}</p>
+                    <span className={`${sectionTone(section?.color)} rounded px-2 py-1 text-[10px] font-bold`}>{section?.name ?? "-"}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{point.location_detail || facility?.location_detail || "Tanpa lokasi detail"}</p>
+                </div>
+              );
+            })}
+            {!points.length ? <p className="text-sm text-slate-500">Belum ada kode/titik PM.</p> : null}
+          </div>
+          <input type="hidden" value={unitId} readOnly />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function Legend({ sections, points }: { sections: Section[]; points: Point[] }) {
+  return (
+    <section className="grid gap-3 print:grid-cols-3">
+      {sections.map((section) => {
+        const sectionPoints = points.filter((point) => point.section_id === section.id);
+        return (
+          <Card key={section.id} className="border-slate-800 bg-slate-900/40 print:border-black print:bg-white">
+            <CardHeader className="py-3">
+              <CardTitle className="flex items-center gap-2 text-sm print:text-black">
+                <Layers3 className="h-4 w-4 no-print" />
+                {section.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-1 text-xs">
+              {sectionPoints.map((point) => (
+                <div key={point.id} className="grid grid-cols-[64px_1fr] gap-2 rounded border border-slate-800 px-2 py-1 print:border-black">
+                  <span className="font-black text-slate-100 print:text-black">{point.code}</span>
+                  <span className="text-slate-400 print:text-black">{point.name}</span>
+                </div>
+              ))}
+              {!sectionPoints.length ? <p className="text-slate-500">Belum ada titik.</p> : null}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </section>
+  );
+}
+
+function ScheduleDialog({
+  open,
+  onOpenChange,
+  unitId,
+  selectedDate,
+  sections,
+  points,
+  staff,
+  selectedPointId,
+  selectedSectionId,
+  setSelectedPointId,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  unitId: string;
+  selectedDate: Date;
+  sections: Section[];
+  points: Point[];
+  staff: Staff[];
+  selectedPointId: string;
+  selectedSectionId: string;
+  setSelectedPointId: (id: string) => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="border-slate-800 bg-slate-950 text-slate-100">
+        <DialogHeader>
+          <DialogTitle>Buat Jadwal PM</DialogTitle>
+        </DialogHeader>
+        <form action={async (formData) => { await createPmSchedule(formData); onOpenChange(false); }} className="grid gap-4">
+          <input type="hidden" name="unit_id" value={unitId} />
+          <input type="hidden" name="section_id" value={selectedSectionId} />
+          <div className="grid gap-2">
+            <Label>Titik PM</Label>
+            <select name="point_id" value={selectedPointId} onChange={(event) => setSelectedPointId(event.target.value)} required className="h-11 rounded-md border border-slate-800 bg-slate-900 px-3 text-sm">
+              {sections.length === 0 ? <option value="">Buat bagian PM dulu</option> : null}
+              {points.map((point) => (
+                <option key={point.id} value={point.id}>{point.code} - {point.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-2">
+              <Label>Tanggal</Label>
+              <Input name="scheduled_date" type="date" defaultValue={format(selectedDate, "yyyy-MM-dd")} required />
+            </div>
+            <div className="grid gap-2">
+              <Label>Shift</Label>
+              <select name="shift" className="h-11 rounded-md border border-slate-800 bg-slate-900 px-3 text-sm">
+                <option value="">Tidak spesifik</option>
+                <option value="pagi">Pagi</option>
+                <option value="malam">Malam</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label>Petugas</Label>
+            <select name="assigned_user_id" className="h-11 rounded-md border border-slate-800 bg-slate-900 px-3 text-sm">
+              <option value="">Belum ditentukan</option>
+              {staff.map((person) => (
+                <option key={person.id} value={person.id}>{person.full_name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label>Catatan</Label>
+            <Textarea name="notes" placeholder="Opsional" />
+          </div>
+          <SubmitButton pendingText="Menyimpan..." disabled={!points.length}>Simpan Jadwal</SubmitButton>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SectionDialog({ open, onOpenChange, unitId }: { open: boolean; onOpenChange: (open: boolean) => void; unitId: string }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="border-slate-800 bg-slate-950 text-slate-100">
+        <DialogHeader><DialogTitle>Tambah Bagian PM</DialogTitle></DialogHeader>
+        <form action={async (formData) => { await createSection(formData); onOpenChange(false); }} className="grid gap-4">
+          <input type="hidden" name="unit_id" value={unitId} />
+          <div className="grid gap-2"><Label>Nama Bagian</Label><Input name="name" placeholder="Contoh: SCP" required /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-2">
+              <Label>Warna</Label>
+              <select name="color" className="h-11 rounded-md border border-slate-800 bg-slate-900 px-3 text-sm">
+                <option value="emerald">Hijau</option>
+                <option value="amber">Kuning</option>
+                <option value="blue">Biru</option>
+                <option value="rose">Merah</option>
+                <option value="purple">Ungu</option>
+              </select>
+            </div>
+            <div className="grid gap-2"><Label>Urutan</Label><Input name="sort_order" type="number" defaultValue="0" /></div>
+          </div>
+          <SubmitButton pendingText="Menyimpan...">Simpan Bagian</SubmitButton>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PointDialog({
+  open,
+  onOpenChange,
+  unitId,
+  sections,
+  facilities,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  unitId: string;
+  sections: Section[];
+  facilities: Facility[];
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="border-slate-800 bg-slate-950 text-slate-100">
+        <DialogHeader><DialogTitle>Tambah Kode / Titik PM</DialogTitle></DialogHeader>
+        <form action={async (formData) => { await createPoint(formData); onOpenChange(false); }} className="grid gap-4">
+          <input type="hidden" name="unit_id" value={unitId} />
+          <div className="grid gap-2">
+            <Label>Bagian</Label>
+            <select name="section_id" required className="h-11 rounded-md border border-slate-800 bg-slate-900 px-3 text-sm">
+              {sections.map((section) => <option key={section.id} value={section.id}>{section.name}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-2"><Label>Kode</Label><Input name="code" placeholder="A / 1.1.1 / FD 1.1.1" required /></div>
+            <div className="grid gap-2">
+              <Label>Frekuensi</Label>
+              <select name="frequency" className="h-11 rounded-md border border-slate-800 bg-slate-900 px-3 text-sm">
+                <option value="daily">Harian</option>
+                <option value="weekly">Mingguan</option>
+                <option value="monthly">Bulanan</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid gap-2"><Label>Nama Titik</Label><Input name="name" placeholder="Contoh: SCP Inter Line 1" required /></div>
+          <div className="grid gap-2"><Label>Lokasi Detail</Label><Textarea name="location_detail" placeholder="Opsional" /></div>
+          <div className="grid gap-2">
+            <Label>Relasi Fasilitas</Label>
+            <select name="facility_id" className="h-11 rounded-md border border-slate-800 bg-slate-900 px-3 text-sm">
+              <option value="">Tidak spesifik</option>
+              {facilities.map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}
+            </select>
+          </div>
+          <div className="grid gap-2"><Label>Urutan</Label><Input name="sort_order" type="number" defaultValue="0" /></div>
+          <SubmitButton pendingText="Menyimpan...">Simpan Titik PM</SubmitButton>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function statusLabel(status: string) {
+  const labels: Record<string, string> = {
+    planned: "Direncanakan",
+    ongoing: "Progres",
+    completed: "Selesai",
+    missed: "Terlewat",
+  };
+  return labels[status] ?? status;
+}
+
+function sectionTone(color?: string | null) {
+  const tones: Record<string, string> = {
+    emerald: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+    amber: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+    blue: "border-blue-500/30 bg-blue-500/10 text-blue-300",
+    rose: "border-rose-500/30 bg-rose-500/10 text-rose-300",
+    purple: "border-purple-500/30 bg-purple-500/10 text-purple-300",
+  };
+  return tones[color ?? "amber"] ?? tones.amber;
 }

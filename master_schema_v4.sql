@@ -114,6 +114,53 @@ CREATE INDEX IF NOT EXISTS idx_facilities_unit_id ON public.facilities(unit_id);
 CREATE INDEX IF NOT EXISTS idx_facilities_category_id ON public.facilities(category_id);
 
 -- ============================================================
+-- 5B. DYNAMIC PREVENTIVE MAINTENANCE SCHEDULES
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.pm_sections (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  unit_id     UUID NOT NULL REFERENCES public.units(id) ON DELETE CASCADE,
+  name        VARCHAR(100) NOT NULL,
+  color       VARCHAR(30) NOT NULL DEFAULT 'amber',
+  sort_order  INT NOT NULL DEFAULT 0,
+  is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (unit_id, name)
+);
+CREATE INDEX IF NOT EXISTS idx_pm_sections_unit ON public.pm_sections(unit_id, sort_order);
+
+CREATE TABLE IF NOT EXISTS public.pm_points (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  section_id      UUID NOT NULL REFERENCES public.pm_sections(id) ON DELETE CASCADE,
+  unit_id         UUID NOT NULL REFERENCES public.units(id) ON DELETE CASCADE,
+  code            VARCHAR(50) NOT NULL,
+  name            VARCHAR(150) NOT NULL,
+  location_detail TEXT,
+  frequency       VARCHAR(30) NOT NULL DEFAULT 'monthly',
+  facility_id     UUID REFERENCES public.facilities(id) ON DELETE SET NULL,
+  sort_order      INT NOT NULL DEFAULT 0,
+  is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (unit_id, code)
+);
+CREATE INDEX IF NOT EXISTS idx_pm_points_unit_section ON public.pm_points(unit_id, section_id, sort_order);
+
+CREATE TABLE IF NOT EXISTS public.pm_schedules (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  unit_id          UUID NOT NULL REFERENCES public.units(id) ON DELETE CASCADE,
+  section_id       UUID NOT NULL REFERENCES public.pm_sections(id) ON DELETE CASCADE,
+  point_id         UUID NOT NULL REFERENCES public.pm_points(id) ON DELETE CASCADE,
+  assigned_user_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  scheduled_date   DATE NOT NULL,
+  shift            public.shift_type,
+  status           VARCHAR(30) NOT NULL DEFAULT 'planned',
+  notes            TEXT,
+  created_by       UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_pm_schedules_unit_date ON public.pm_schedules(unit_id, scheduled_date);
+CREATE INDEX IF NOT EXISTS idx_pm_schedules_assigned_user ON public.pm_schedules(assigned_user_id);
+
+-- ============================================================
 -- 6. DAILY REPORTS (Includes fields from 006, 011, 014)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.daily_reports (
@@ -407,6 +454,9 @@ ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.super_admin_unit_access ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.facility_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.facilities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pm_sections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pm_points ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pm_schedules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.daily_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.duty_roster ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.facility_status_logs ENABLE ROW LEVEL SECURITY;
