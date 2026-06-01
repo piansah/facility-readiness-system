@@ -23,7 +23,7 @@ create table if not exists public.pm_points (
   sort_order int not null default 0,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
-  unique (unit_id, code)
+  unique (unit_id, section_id, code)
 );
 
 create table if not exists public.pm_schedules (

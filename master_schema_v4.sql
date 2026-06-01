@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS public.pm_points (
   sort_order      INT NOT NULL DEFAULT 0,
   is_active       BOOLEAN NOT NULL DEFAULT TRUE,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (unit_id, code)
+  UNIQUE (unit_id, section_id, code)
 );
 CREATE INDEX IF NOT EXISTS idx_pm_points_unit_section ON public.pm_points(unit_id, section_id, sort_order);
 

@@ -151,7 +151,7 @@ join (
     ('Data Lokasi FD / UPS', 'FD 2.4.2', 'Perkantoran PT. BIJB LT 2', 'Lantai 2 - 3 kVA - 1 UPS ON', 'monthly', 200)
 ) as data(section_name, code, name, location_detail, frequency, sort_order)
   on data.section_name = sections.name
-on conflict (unit_id, code)
+on conflict (unit_id, section_id, code)
 do update set
   section_id = excluded.section_id,
   name = excluded.name,
