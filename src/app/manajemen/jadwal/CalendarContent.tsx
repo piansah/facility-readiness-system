@@ -254,7 +254,7 @@ export default function CalendarContent({
         body,
         theme: "grid",
         headStyles: {
-          fillColor: [22, 163, 74],  // emerald-600
+          fillColor: [245, 158, 11],  // amber-500
           textColor: [255, 255, 255],
           fontStyle: "bold",
           halign: "center",
@@ -274,22 +274,22 @@ export default function CalendarContent({
             dayNumbers.map((_, i) => [i + 2, { cellWidth: dayColWidth, halign: "center" }])
           ),
         },
-        // Merge section name cells (rowSpan simulation via empty string + same row)
+        // Weekend: full red on date HEADER only, body cells stay plain
         didDrawCell: (data) => {
-          // Highlight weekend columns (Sat=col index 7, Sun=col index 1, relative to month)
           if (data.column.index >= 2) {
-            const dayNum = data.column.index - 1; // 1-indexed day
+            const dayNum = data.column.index - 1;
             const dateVal = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), dayNum);
-            const dow = dateVal.getDay(); // 0=Sun, 6=Sat
+            const dow = dateVal.getDay();
             if (dow === 0 || dow === 6) {
-              doc.setFillColor(254, 226, 226); // red-100
-              doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, "F");
-              // Redraw text on top
-              if (data.cell.text.length > 0) {
-                doc.setFontSize(6.5);
-                doc.setTextColor(data.row.index === -1 ? 255 : 185, data.row.index === -1 ? 255 : 28, data.row.index === -1 ? 255 : 28);
-                doc.text(data.cell.text, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2 + 1, { align: "center" });
-                doc.setTextColor(0, 0, 0);
+              if (data.section === "head") {
+                doc.setFillColor(239, 68, 68); // red-500 full
+                doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, "F");
+                if (data.cell.text.length > 0) {
+                  doc.setFontSize(7);
+                  doc.setTextColor(255, 255, 255);
+                  doc.text(data.cell.text, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2 + 1, { align: "center" });
+                  doc.setTextColor(0, 0, 0);
+                }
               }
             }
           }
@@ -297,70 +297,83 @@ export default function CalendarContent({
         margin: { left: leftMargin, right: rightMargin },
       });
 
-      // ── SECTION TABLES (Keterangan per Bagian PM) ──────────────────────────────
+      // ── KETERANGAN TABLES (Side by Side) ────────────────────────────────────────
       const afterTableY = (doc as any).lastAutoTable?.finalY ?? 160;
       let currentY = afterTableY + 6;
 
-      // Helper: Tailwind color name → [r, g, b]
+      // PDF color mapping: emerald→amber, amber→white (plain)
       const COLOR_RGB: Record<string, [number, number, number]> = {
-        emerald: [16, 185, 129],   // emerald-500
-        amber:   [245, 158, 11],   // amber-500
-        blue:    [59, 130, 246],    // blue-500
-        rose:    [244, 63, 94],     // rose-500
-        purple:  [168, 85, 247],    // purple-500
+        emerald: [245, 158, 11],   // mapped to amber
+        amber:   [255, 255, 255],  // mapped to white/plain
+        blue:    [59, 130, 246],
+        rose:    [244, 63, 94],
+        purple:  [168, 85, 247],
       };
       function sectionColorRgb(color: string | null | undefined): [number, number, number] {
         return COLOR_RGB[color ?? "amber"] ?? COLOR_RGB.amber;
       }
 
-      for (const section of unitSections) {
-        const pointsInSection = unitPoints.filter(p => p.section_id === section.id);
-        if (!pointsInSection.length) continue;
+      const sectionList = unitSections.filter(s => unitPoints.some(p => p.section_id === s.id));
+      if (sectionList.length > 0) {
+        if (currentY > pageHeight - 50) { doc.addPage(); currentY = 15; }
 
-        // Check page space — add new page if needed
-        if (currentY > pageHeight - 40) {
-          doc.addPage();
-          currentY = 15;
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.text("Keterangan:", leftMargin, currentY);
+        currentY += 4;
+
+        const tableGap = 3;
+        const cols = Math.min(sectionList.length, 3) || 1;
+        const tableW = (contentWidth - (cols - 1) * tableGap) / cols;
+
+        // Render in groups of 3 side-by-side
+        for (let i = 0; i < sectionList.length; i += 3) {
+          const group = sectionList.slice(i, i + 3);
+          const rowStartY = currentY;
+          let maxFinalY = currentY;
+
+          group.forEach((section, idx) => {
+            const startX = leftMargin + idx * (tableW + tableGap);
+            const sectionRgb = sectionColorRgb(section.color);
+            const isWhite = sectionRgb[0] === 255 && sectionRgb[1] === 255 && sectionRgb[2] === 255;
+            const pts = unitPoints.filter(p => p.section_id === section.id);
+
+            autoTableLib(doc, {
+              startY: rowStartY,
+              head: [[{ content: section.name, colSpan: 3 }]],
+              body: pts.map((p, j) => [String(j + 1), p.code, p.name]),
+              tableWidth: tableW,
+              theme: "grid",
+              headStyles: {
+                fillColor: sectionRgb,
+                textColor: isWhite ? [0, 0, 0] : [255, 255, 255],
+                fontStyle: "bold",
+                halign: "left",
+                fontSize: 7,
+                cellPadding: 1.5,
+                lineColor: [0, 0, 0],
+                lineWidth: 0.2,
+              },
+              styles: {
+                fontSize: 6,
+                cellPadding: 1,
+                valign: "middle",
+                lineColor: [0, 0, 0],
+                lineWidth: 0.1,
+              },
+              columnStyles: {
+                0: { cellWidth: 7, halign: "center" },
+                1: { cellWidth: tableW * 0.3, fontStyle: "bold" },
+              },
+              margin: { left: startX },
+            });
+
+            const tblFinalY = (doc as any).lastAutoTable?.finalY ?? currentY;
+            if (tblFinalY > maxFinalY) maxFinalY = tblFinalY;
+          });
+
+          currentY = maxFinalY + 4;
         }
-
-        // Section color
-        const sectionRgb = sectionColorRgb(section.color);
-
-        // Table: Kode | Nama | Lokasi
-        const secHead = [[section.name, "", ""]];
-        const secBody = pointsInSection.map(p => [
-          p.code,
-          p.name,
-          p.location_detail ?? "-",
-        ]);
-
-        autoTableLib(doc, {
-          startY: currentY,
-          head: secHead,
-          body: secBody,
-          theme: "grid",
-          headStyles: {
-            fillColor: sectionRgb,
-            textColor: [255, 255, 255],
-            fontStyle: "bold",
-            halign: "left",
-            fontSize: 8,
-            cellPadding: 2,
-          },
-          styles: {
-            fontSize: 7,
-            cellPadding: 1.5,
-            valign: "middle",
-          },
-          columnStyles: {
-            0: { cellWidth: 30, fontStyle: "bold" },
-            1: { cellWidth: 80 },
-            2: { cellWidth: 60 },
-          },
-          margin: { left: leftMargin, right: rightMargin },
-        });
-
-        currentY = ((doc as any).lastAutoTable?.finalY ?? currentY) + 4;
       }
 
       // ── TANDA TANGAN ────────────────────────────────────────────────────────────
