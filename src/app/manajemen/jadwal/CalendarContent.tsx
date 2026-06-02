@@ -218,13 +218,26 @@ export default function CalendarContent({
       const SHIFT_LABELS: Record<string, string> = { pagi: "APBA", malam: "APBB" };
       const DEFAULT_SHIFTS = ["pagi", "malam"];
 
+      // Color map for body rows in the matrix based on section colors
+      const MATRIX_BODY_COLORS: Record<string, { bg: [number, number, number]; text: [number, number, number]; shiftText: [number, number, number] }> = {
+        emerald: { bg: [209, 250, 229], text: [6, 78, 59], shiftText: [16, 185, 129] },   // green tone
+        amber:   { bg: [254, 243, 199], text: [120, 53, 4], shiftText: [245, 158, 11] },   // amber tone
+        blue:    { bg: [219, 234, 254], text: [30, 58, 138], shiftText: [59, 130, 246] },  // blue tone
+        rose:    { bg: [254, 226, 226], text: [153, 27, 27], shiftText: [244, 63, 94] },   // rose tone
+        purple:  { bg: [243, 232, 255], text: [88, 28, 135], shiftText: [168, 85, 247] }, // purple tone
+      };
+
+      const rowSectionColors: { bg: [number, number, number]; text: [number, number, number]; shiftText: [number, number, number]; colorName: string }[] = [];
+
       for (const section of unitSections) {
         const sectionSchedules = monthSchedules.filter((s) => s.section_id === section.id);
 
-        // Collect shifts that appear + default shifts
         const shiftSet = new Set<string>(DEFAULT_SHIFTS);
         sectionSchedules.forEach((s) => { if (s.shift) shiftSet.add(s.shift); });
         const shiftList = [...shiftSet];
+
+        const sColor = section.color ?? "amber";
+        const themeColors = MATRIX_BODY_COLORS[sColor] ?? MATRIX_BODY_COLORS.amber;
 
         shiftList.forEach((shift, shiftIdx) => {
           const shiftCode = SHIFT_LABELS[shift] ?? shift.toUpperCase();
@@ -241,6 +254,13 @@ export default function CalendarContent({
           } else {
             body.push(["", shiftCode, ...cells]);
           }
+          
+          rowSectionColors.push({
+            bg: themeColors.bg,
+            text: themeColors.text,
+            shiftText: themeColors.shiftText,
+            colorName: sColor
+          });
         });
       }
 
@@ -254,18 +274,22 @@ export default function CalendarContent({
         body,
         theme: "grid",
         headStyles: {
-          fillColor: [245, 158, 11],  // amber-500
+          fillColor: [101, 163, 13],  // Hijau / Olive seperti di printout (lime-600)
           textColor: [255, 255, 255],
           fontStyle: "bold",
           halign: "center",
           fontSize: 7,
           cellPadding: 1.5,
+          lineColor: [0, 0, 0],
+          lineWidth: 0.2,
         },
         styles: {
           fontSize: 6.5,
           cellPadding: 1.5,
           overflow: "hidden",
           valign: "middle",
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1,
         },
         columnStyles: {
           0: { cellWidth: 35, fontStyle: "bold" },
@@ -274,15 +298,15 @@ export default function CalendarContent({
             dayNumbers.map((_, i) => [i + 2, { cellWidth: dayColWidth, halign: "center" }])
           ),
         },
-        // Weekend: full red on date HEADER only, body cells stay plain
         didDrawCell: (data) => {
+          // 1. Weekend highlight on DATE HEADERS
           if (data.column.index >= 2) {
             const dayNum = data.column.index - 1;
             const dateVal = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), dayNum);
             const dow = dateVal.getDay();
             if (dow === 0 || dow === 6) {
               if (data.section === "head") {
-                doc.setFillColor(239, 68, 68); // red-500 full
+                doc.setFillColor(220, 38, 38); // Merah Terang
                 doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, "F");
                 if (data.cell.text.length > 0) {
                   doc.setFontSize(7);
@@ -291,6 +315,38 @@ export default function CalendarContent({
                   doc.setTextColor(0, 0, 0);
                 }
               }
+            }
+          }
+
+          // 2. Custom background and colors for rows in body
+          if (data.section === "body") {
+            const rowColorInfo = rowSectionColors[data.row.index];
+            if (rowColorInfo) {
+              // Jika colorName adalah 'amber' (sesuai req: "amber jadi putih polos tanpa warna full kolom warnanya"), biarkan polos putih
+              if (rowColorInfo.colorName !== "amber") {
+                doc.setFillColor(rowColorInfo.bg[0], rowColorInfo.bg[1], rowColorInfo.bg[2]);
+                doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, "F");
+              }
+
+              // Set warna teks
+              doc.setFontSize(6.5);
+              if (data.column.index === 1) {
+                // Kolom SHIFT (APBA/APBB) agar berwarna kontras
+                doc.setTextColor(rowColorInfo.shiftText[0], rowColorInfo.shiftText[1], rowColorInfo.shiftText[2]);
+                doc.setFont("helvetica", "bold");
+              } else {
+                doc.setTextColor(rowColorInfo.text[0], rowColorInfo.text[1], rowColorInfo.text[2]);
+              }
+
+              // Tulis ulang teks sel di atas background custom
+              if (data.cell.text.length > 0) {
+                const alignOpt = data.column.index >= 1 ? { align: "center" as const } : { align: "left" as const };
+                const textX = data.column.index >= 1 ? data.cell.x + data.cell.width / 2 : data.cell.x + 2;
+                doc.text(data.cell.text, textX, data.cell.y + data.cell.height / 2 + 1, alignOpt);
+              }
+              // Reset default text color
+              doc.setTextColor(0, 0, 0);
+              doc.setFont("helvetica", "normal");
             }
           }
         },
