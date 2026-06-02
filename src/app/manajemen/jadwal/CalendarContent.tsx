@@ -301,20 +301,16 @@ export default function CalendarContent({
       const afterTableY = (doc as any).lastAutoTable?.finalY ?? 160;
       let currentY = afterTableY + 6;
 
-      // Helper: hex color → [r, g, b]
-      function hexToRgb(hex: string): [number, number, number] {
-        const clean = hex.replace(/^#/, "");
-        if (clean.length === 3) {
-          const r = parseInt(clean[0] + clean[0], 16);
-          const g = parseInt(clean[1] + clean[1], 16);
-          const b = parseInt(clean[2] + clean[2], 16);
-          return [r, g, b];
-        }
-        return [
-          parseInt(clean.substring(0, 2), 16),
-          parseInt(clean.substring(2, 4), 16),
-          parseInt(clean.substring(4, 6), 16),
-        ];
+      // Helper: Tailwind color name → [r, g, b]
+      const COLOR_RGB: Record<string, [number, number, number]> = {
+        emerald: [16, 185, 129],   // emerald-500
+        amber:   [245, 158, 11],   // amber-500
+        blue:    [59, 130, 246],    // blue-500
+        rose:    [244, 63, 94],     // rose-500
+        purple:  [168, 85, 247],    // purple-500
+      };
+      function sectionColorRgb(color: string | null | undefined): [number, number, number] {
+        return COLOR_RGB[color ?? "amber"] ?? COLOR_RGB.amber;
       }
 
       for (const section of unitSections) {
@@ -328,7 +324,7 @@ export default function CalendarContent({
         }
 
         // Section color
-        const sectionRgb = hexToRgb(section.color || "#4a5568");
+        const sectionRgb = sectionColorRgb(section.color);
 
         // Table: Kode | Nama | Lokasi
         const secHead = [[section.name, "", ""]];
