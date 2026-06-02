@@ -297,47 +297,74 @@ export default function CalendarContent({
         margin: { left: leftMargin, right: rightMargin },
       });
 
-      // ── LEGENDA KODE PM ──────────────────────────────────────────────────────────
+      // ── SECTION TABLES (Keterangan per Bagian PM) ──────────────────────────────
       const afterTableY = (doc as any).lastAutoTable?.finalY ?? 160;
-      let legendY = afterTableY + 6;
+      let currentY = afterTableY + 6;
 
-      if (legendY > pageHeight - 50) {
-        doc.addPage();
-        legendY = 15;
+      // Helper: hex color → [r, g, b]
+      function hexToRgb(hex: string): [number, number, number] {
+        const clean = hex.replace(/^#/, "");
+        if (clean.length === 3) {
+          const r = parseInt(clean[0] + clean[0], 16);
+          const g = parseInt(clean[1] + clean[1], 16);
+          const b = parseInt(clean[2] + clean[2], 16);
+          return [r, g, b];
+        }
+        return [
+          parseInt(clean.substring(0, 2), 16),
+          parseInt(clean.substring(2, 4), 16),
+          parseInt(clean.substring(4, 6), 16),
+        ];
       }
 
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "bold");
-      doc.text("Keterangan Kode PM:", leftMargin, legendY);
-      doc.setFont("helvetica", "normal");
-      legendY += 4;
-
-      let legendX = leftMargin;
-      const legendColW = contentWidth / 3;
-      let legendCol = 0;
-
       for (const section of unitSections) {
-        const sectionPoints = unitPoints.filter((p) => p.section_id === section.id);
-        if (!sectionPoints.length) continue;
+        const pointsInSection = unitPoints.filter(p => p.section_id === section.id);
+        if (!pointsInSection.length) continue;
 
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(7.5);
-        doc.text(section.name, legendX, legendY);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(7);
-        legendY += 4;
-
-        for (const point of sectionPoints) {
-          if (legendY > pageHeight - 45) {
-            legendCol++;
-            if (legendCol >= 3) { doc.addPage(); legendCol = 0; legendY = 15; }
-            legendX = leftMargin + legendCol * legendColW;
-            legendY = afterTableY + 10;
-          }
-          doc.text(`${point.code}  :  ${point.name}${point.location_detail ? ` (${point.location_detail})` : ""}`, legendX + 2, legendY);
-          legendY += 3.5;
+        // Check page space — add new page if needed
+        if (currentY > pageHeight - 40) {
+          doc.addPage();
+          currentY = 15;
         }
-        legendY += 2;
+
+        // Section color
+        const sectionRgb = hexToRgb(section.color || "#4a5568");
+
+        // Table: Kode | Nama | Lokasi
+        const secHead = [[section.name, "", ""]];
+        const secBody = pointsInSection.map(p => [
+          p.code,
+          p.name,
+          p.location_detail ?? "-",
+        ]);
+
+        autoTableLib(doc, {
+          startY: currentY,
+          head: secHead,
+          body: secBody,
+          theme: "grid",
+          headStyles: {
+            fillColor: sectionRgb,
+            textColor: [255, 255, 255],
+            fontStyle: "bold",
+            halign: "left",
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          styles: {
+            fontSize: 7,
+            cellPadding: 1.5,
+            valign: "middle",
+          },
+          columnStyles: {
+            0: { cellWidth: 30, fontStyle: "bold" },
+            1: { cellWidth: 80 },
+            2: { cellWidth: 60 },
+          },
+          margin: { left: leftMargin, right: rightMargin },
+        });
+
+        currentY = ((doc as any).lastAutoTable?.finalY ?? currentY) + 4;
       }
 
       // ── TANDA TANGAN ────────────────────────────────────────────────────────────
