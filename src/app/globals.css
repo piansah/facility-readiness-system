@@ -55,3 +55,149 @@ textarea {
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 8mm;
+  }
+
+  body, 
+  html, 
+  main, 
+  section, 
+  article, 
+  div, 
+  table, 
+  tr, 
+  td, 
+  th {
+    background-color: white !important;
+    background-image: none !important;
+    color: black !important;
+    border-color: black !important;
+    box-shadow: none !important;
+  }
+
+  /* Hide all interactive navigation/sidebar/dialog controls */
+  aside,
+  header,
+  nav,
+  button,
+  .no-print,
+  [data-sidebar],
+  .sidebar-trigger,
+  [class*="sidebar"],
+  [class*="Sidebar"],
+  [class*="header"],
+  [class*="Header"],
+  [class*="trigger"],
+  [class*="Trigger"],
+  [role="dialog"],
+  .dialog {
+    display: none !important;
+  }
+
+  /* Enforce exact colors for table cells and legends */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Main printed titles */
+  h1, h2, h3, h4, h5, h6, p, span, td, th {
+    color: black !important;
+    text-shadow: none !important;
+  }
+
+  /* Matrix table formatting */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border: 2px solid black !important;
+    margin-top: 10px !important;
+    margin-bottom: 15px !important;
+  }
+
+  th, td {
+    border: 1px solid black !important;
+    padding: 4px !important;
+    color: black !important;
+    font-size: 8px !important;
+    text-align: center !important;
+  }
+
+  th {
+    font-weight: bold !important;
+    background-color: #84cc16 !important; /* solid lime-500 for headers */
+  }
+
+  /* Section name column and Shift Code column */
+  td:first-child,
+  th:first-child {
+    text-align: left !important;
+    font-weight: bold !important;
+  }
+
+  /* Preserving exact tones in print mode */
+  .bg-emerald-500\/10,
+  .bg-emerald-500,
+  .bg-emerald-600,
+  [class*="bg-emerald-"] {
+    background-color: #10b981 !important; /* emerald */
+    color: white !important;
+    font-weight: black !important;
+  }
+
+  .bg-amber-500\/10,
+  .bg-amber-500,
+  .bg-amber-600,
+  [class*="bg-amber-"] {
+    background-color: #f59e0b !important; /* amber */
+    color: black !important;
+    font-weight: black !important;
+  }
+
+  .bg-blue-500\/10,
+  .bg-blue-500,
+  .bg-blue-600,
+  [class*="bg-blue-"] {
+    background-color: #3b82f6 !important; /* blue */
+    color: white !important;
+    font-weight: black !important;
+  }
+
+  .bg-rose-500\/10,
+  .bg-rose-500,
+  .bg-rose-600,
+  [class*="bg-rose-"] {
+    background-color: #ef4444 !important; /* rose */
+    color: white !important;
+    font-weight: black !important;
+  }
+
+  .bg-purple-500\/10,
+  .bg-purple-500,
+  .bg-purple-600,
+  [class*="bg-purple-"] {
+    background-color: #a855f7 !important; /* purple */
+    color: white !important;
+    font-weight: black !important;
+  }
+
+  /* Legend section layout for 3 columns side-by-side */
+  .print\:grid-cols-3 {
+    display: grid !important;
+    grid-template-cols: repeat(3, minmax(0, 1fr)) !important;
+    gap: 15px !important;
+    margin-top: 15px !important;
+    width: 100% !important;
+  }
+
+  .print\:grid-cols-3 .card {
+    border: 1px solid black !important;
+    border-radius: 4px !important;
+    padding: 8px !important;
+  }
+}
+

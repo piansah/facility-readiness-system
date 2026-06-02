@@ -12,8 +12,7 @@ insert_sections as (
     values
       ('SCP', 'emerald', 10),
       ('Kamera CCTV & Fasilitas', 'amber', 20),
-      ('Network & Kawasan', 'rose', 30),
-      ('Data Lokasi FD / UPS', 'blue', 40)
+      ('Network & Kawasan', 'rose', 30)
   ) as data(name, color, sort_order)
   on conflict (unit_id, name)
   do update set
@@ -28,7 +27,7 @@ sections as (
   select s.id, s.unit_id, s.name
   from public.pm_sections s
   join elban on elban.id = s.unit_id
-  where s.name in ('SCP', 'Kamera CCTV & Fasilitas', 'Network & Kawasan', 'Data Lokasi FD / UPS')
+  where s.name in ('SCP', 'Kamera CCTV & Fasilitas', 'Network & Kawasan')
 )
 insert into public.pm_points (
   unit_id,
@@ -97,26 +96,26 @@ join (
     ('Kamera CCTV & Fasilitas', '30', 'Dalam PKP-PK', null, 'monthly', 300),
 
     -- Network & Kawasan
-    ('Network & Kawasan', '1', '1.1.1', null, 'monthly', 10),
-    ('Network & Kawasan', '2', '1.1.2', null, 'monthly', 20),
-    ('Network & Kawasan', '3', '1.3.3', null, 'monthly', 30),
-    ('Network & Kawasan', '4', 'Transit Inter', null, 'monthly', 40),
-    ('Network & Kawasan', '5', '1.4.2', null, 'monthly', 50),
-    ('Network & Kawasan', '6', '1.2.2', null, 'monthly', 60),
-    ('Network & Kawasan', '7', '1.4.1', null, 'monthly', 70),
-    ('Network & Kawasan', '8', '1.2.1', null, 'monthly', 80),
-    ('Network & Kawasan', '9', '1.4.3', null, 'monthly', 90),
-    ('Network & Kawasan', '10', '1.3.2', null, 'monthly', 100),
-    ('Network & Kawasan', '11', '1.3.1', null, 'monthly', 110),
-    ('Network & Kawasan', '12', '2.1.1', null, 'monthly', 120),
-    ('Network & Kawasan', '13', '2.2.1', null, 'monthly', 130),
-    ('Network & Kawasan', '14', '2.1.2', null, 'monthly', 140),
-    ('Network & Kawasan', '15', '2.2.2', null, 'monthly', 150),
-    ('Network & Kawasan', '16', '2.4.1', null, 'monthly', 160),
-    ('Network & Kawasan', '17', '2.3.1', null, 'monthly', 170),
-    ('Network & Kawasan', '18', '2.4.2', null, 'monthly', 180),
-    ('Network & Kawasan', '19', 'Server', null, 'monthly', 190),
-    ('Network & Kawasan', '20', 'MMR', null, 'monthly', 200),
+    ('Network & Kawasan', '1', 'FD 1.1.1', 'Kantor BIJB Lantai 1 - 3 kVA - 1 UPS ON', 'monthly', 10),
+    ('Network & Kawasan', '2', 'FD 1.1.2', 'Sebelah ruang sipil - 3 kVA - 1 UPS OFF', 'monthly', 20),
+    ('Network & Kawasan', '3', 'FD 1.1.3', 'Baggage claim domestik masuk dari luar - 3 kVA - 1 UPS OFF', 'monthly', 30),
+    ('Network & Kawasan', '4', 'FD IMIGRASI1-1', 'Transit Inter - 3 kVA - 1 UPS OFF, 1 UPS ON', 'monthly', 40),
+    ('Network & Kawasan', '5', 'FD 1.4.2', 'Lift tengah Area Baggage Claim Domestic - 3 kVA - 1 UPS ON', 'monthly', 50),
+    ('Network & Kawasan', '6', 'FD 1.2.2', 'Baggage Claim internasional sebelah conveyor 1 - 3 kVA - 1 UPS OFF', 'monthly', 60),
+    ('Network & Kawasan', '7', 'FD 1.4.1', 'Samping Area UMKM - 3 kVA - 1 UPS ON', 'monthly', 70),
+    ('Network & Kawasan', '8', 'FD 1.2.1', 'Rencana Ruang VIP lantai 1 area internasional - 3 kVA - 1 UPS ON', 'monthly', 80),
+    ('Network & Kawasan', '9', 'FD 1.4.3', 'Samping Lift Curbside Lantai 1 Zone Domestik - 3 kVA - 1 UPS OFF', 'monthly', 90),
+    ('Network & Kawasan', '10', 'FD 1.3.2', 'Samping Lift Curbside Lantai 1 Zone Internasional - 3 kVA - 1 UPS OFF', 'monthly', 100),
+    ('Network & Kawasan', '11', 'FD 1.3.1', 'Depan toilet kedatangan internasional - 3 kVA - 1 UPS ON', 'monthly', 110),
+    ('Network & Kawasan', '12', 'FD 2.1.1', 'Depan Garbarata 3 - 3 kVA - 1 UPS ON', 'monthly', 120),
+    ('Network & Kawasan', '13', 'FD 2.2.1', 'Depan Garbarata 2 - 3 kVA - 1 UPS OFF', 'monthly', 130),
+    ('Network & Kawasan', '14', 'FD 2.1.2', 'Depan Brownis Amanda - 3 kVA - 1 UPS ON', 'monthly', 140),
+    ('Network & Kawasan', '15', 'FD 2.2.2', 'Samping Lorong Musholla BL Intr - 3 kVA - 2 UPS OFF', 'monthly', 150),
+    ('Network & Kawasan', '16', 'FD 2.4.1', 'Lift Tengah - 3 kVA - 2 UPS OFF', 'monthly', 160),
+    ('Network & Kawasan', '17', 'FD 2.3.1', 'Perkantoran Airline Lantai 2 - 3 kVA - 1 UPS OFF', 'monthly', 170),
+    ('Network & Kawasan', '18', 'FD 2.4.2', 'Perkantoran PT. BIJB LT 2 - 3 kVA - 1 UPS ON', 'monthly', 180),
+    ('Network & Kawasan', '19', 'FD SERVER', 'Ruang Server - 3 kVA - 1 UPS ON', 'monthly', 190),
+    ('Network & Kawasan', '20', 'FD IMIGRASI2', 'Kantor Imigrasi LT 2 - 3 kVA', 'monthly', 200),
     ('Network & Kawasan', '21', 'SS1', null, 'monthly', 210),
     ('Network & Kawasan', '22', 'SS2', null, 'monthly', 220),
     ('Network & Kawasan', '23', 'SS3', null, 'monthly', 230),
@@ -126,29 +125,7 @@ join (
     ('Network & Kawasan', '27', 'SS9 & Meteo', null, 'monthly', 270),
     ('Network & Kawasan', '28', 'Kargo', null, 'monthly', 280),
     ('Network & Kawasan', '29', 'MPH', null, 'monthly', 290),
-    ('Network & Kawasan', '30', 'PKP-PK', null, 'monthly', 300),
-
-    -- Data Lokasi FD / UPS
-    ('Data Lokasi FD / UPS', 'FD 1.1.1', 'Kantor BIJB Lantai 1', 'Lantai 1 - 3 kVA - 1 UPS ON', 'monthly', 10),
-    ('Data Lokasi FD / UPS', 'FD 1.1.2', 'Sebelah ruang sipil', 'Lantai 1 - 3 kVA - 1 UPS OFF', 'monthly', 20),
-    ('Data Lokasi FD / UPS', 'FD 1.1.3', 'Baggage claim domestik masuk dari luar', 'Lantai 1 - 3 kVA - 1 UPS OFF', 'monthly', 30),
-    ('Data Lokasi FD / UPS', 'FD 1.2.1', 'Rencana Ruang VIP lantai 1 area internasional', 'Lantai 1 - 3 kVA - 1 UPS ON', 'monthly', 40),
-    ('Data Lokasi FD / UPS', 'FD 1.2.2', 'Baggage Claim internasional sebelah conveyor 1', 'Lantai 1 - 3 kVA - 1 UPS OFF', 'monthly', 50),
-    ('Data Lokasi FD / UPS', 'FD 1.3.1', 'Depan toilet kedatangan internasional', 'Lantai 1 - 3 kVA - 1 UPS ON', 'monthly', 60),
-    ('Data Lokasi FD / UPS', 'FD 1.3.2', 'Samping Lift Curbside Lantai 1 Zone Internasional', 'Lantai 1 - 3 kVA - 1 UPS OFF', 'monthly', 70),
-    ('Data Lokasi FD / UPS', 'FD 1.4.1', 'Samping Area UMKM', 'Lantai 1 - 3 kVA - 1 UPS ON', 'monthly', 80),
-    ('Data Lokasi FD / UPS', 'FD 1.4.2', 'Lift tengah Area Baggage Claim Domestic', 'Lantai 1 - 3 kVA - 1 UPS ON', 'monthly', 90),
-    ('Data Lokasi FD / UPS', 'FD 1.4.3', 'Samping Lift Curbside Lantai 1 Zone Domestik', 'Lantai 1 - 3 kVA - 1 UPS OFF', 'monthly', 100),
-    ('Data Lokasi FD / UPS', 'FD IMIGRASI1-1', 'Transit Inter', 'Lantai 1 - 3 kVA - 1 UPS OFF, 1 UPS ON', 'monthly', 110),
-    ('Data Lokasi FD / UPS', 'FD 2.1.1', 'Depan Garbarata 3', 'Lantai 2 - 3 kVA - 1 UPS ON', 'monthly', 120),
-    ('Data Lokasi FD / UPS', 'FD 2.1.2', 'Depan Brownis Amanda', 'Lantai 2 - 3 kVA - 1 UPS ON', 'monthly', 130),
-    ('Data Lokasi FD / UPS', 'FD 2.2.1', 'Depan Garbarata 2', 'Lantai 2 - 3 kVA - 1 UPS OFF', 'monthly', 140),
-    ('Data Lokasi FD / UPS', 'FD 2.2.2', 'Samping Lorong Musholla BL Intr', 'Lantai 2 - 3 kVA - 2 UPS OFF', 'monthly', 150),
-    ('Data Lokasi FD / UPS', 'FD SERVER', 'Ruang Server', 'Lantai 2 - 3 kVA - 1 UPS ON', 'monthly', 160),
-    ('Data Lokasi FD / UPS', 'FD IMIGRASI2', 'Kantor Imigrasi LT 2', 'Lantai 2 - 3 kVA', 'monthly', 170),
-    ('Data Lokasi FD / UPS', 'FD 2.3.1', 'Perkantoran Airline Lantai 2', 'Lantai 2 - 3 kVA - 1 UPS OFF', 'monthly', 180),
-    ('Data Lokasi FD / UPS', 'FD 2.4.1', 'Lift Tengah', 'Lantai 2 - 3 kVA - 2 UPS OFF', 'monthly', 190),
-    ('Data Lokasi FD / UPS', 'FD 2.4.2', 'Perkantoran PT. BIJB LT 2', 'Lantai 2 - 3 kVA - 1 UPS ON', 'monthly', 200)
+    ('Network & Kawasan', '30', 'PKP-PK', null, 'monthly', 300)
 ) as data(section_name, code, name, location_detail, frequency, sort_order)
   on data.section_name = sections.name
 on conflict (unit_id, section_id, code)

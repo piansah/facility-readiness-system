@@ -124,7 +124,7 @@ select
   resolved.point_id,
   resolved.assigned_user_id,
   resolved.scheduled_date,
-  null,
+  'pagi',
   'planned',
   'Seed jadwal PM Mei 2026 dari jadwal manual.',
   null
