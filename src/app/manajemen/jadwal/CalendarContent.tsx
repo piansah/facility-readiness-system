@@ -230,7 +230,7 @@ export default function CalendarContent({
             daysInMonth={daysInMonth}
             monthKey={monthKey}
             schedules={monthSchedules}
-            staff={unitStaff}
+            sections={unitSections}
             onSelect={setSelectedSchedule}
           />
         ) : null}
@@ -362,16 +362,38 @@ function MonthlyMatrix({
   daysInMonth,
   monthKey,
   schedules,
-  staff,
+  sections,
   onSelect,
 }: {
   daysInMonth: number;
   monthKey: string;
   schedules: Schedule[];
-  staff: Staff[];
+  sections: Section[];
   onSelect: (schedule: Schedule) => void;
 }) {
-  const rows = staff.length ? staff : [{ id: "__empty__", full_name: "Belum ada petugas", role: "" }];
+  const groupedRows = sections.map((section) => {
+    const sectionSchedules = schedules.filter((schedule) => schedule.section_id === section.id);
+    const staffRows = Array.from(
+      new Map(
+        sectionSchedules.map((schedule) => [
+          schedule.assigned_user_id ?? "__unassigned__",
+          {
+            id: schedule.assigned_user_id ?? "__unassigned__",
+            name: schedule.users?.full_name ?? "Belum ditentukan",
+          },
+        ]),
+      ).values(),
+    );
+
+    return {
+      section,
+      rows: staffRows.length ? staffRows : [{ id: `__empty__-${section.id}`, name: "" }],
+    };
+  });
+
+  const displayGroups = groupedRows.length
+    ? groupedRows
+    : [{ section: { id: "__empty__", name: "Belum ada bagian PM", color: "amber", unit_id: "", sort_order: 0 }, rows: [{ id: "__empty__", name: "" }] }];
 
   return (
     <Card className="overflow-hidden border-slate-800 bg-slate-900/40 print:border-black print:bg-white">
@@ -379,7 +401,7 @@ function MonthlyMatrix({
         <table className="w-full min-w-[1100px] border-collapse text-xs print:text-[8px]">
           <thead>
             <tr className="bg-emerald-900/40 print:bg-lime-200">
-              <th className="w-12 border border-slate-800 px-2 py-2 print:border-black">No</th>
+              <th className="w-44 border border-slate-800 px-2 py-2 text-left print:border-black">PM</th>
               <th className="w-52 border border-slate-800 px-2 py-2 text-left print:border-black">Nama</th>
               {Array.from({ length: daysInMonth }, (_, index) => {
                 const date = `${monthKey}-${String(index + 1).padStart(2, "0")}`;
@@ -393,37 +415,51 @@ function MonthlyMatrix({
             </tr>
           </thead>
           <tbody>
-            {rows.map((person, index) => (
-              <tr key={person.id} className="odd:bg-slate-950/30 print:bg-white">
-                <td className="border border-slate-800 px-2 py-2 text-center print:border-black">{index + 1}</td>
-                <td className="border border-slate-800 px-2 py-2 font-semibold text-slate-100 print:border-black print:text-black">
-                  {person.full_name}
-                </td>
-                {Array.from({ length: daysInMonth }, (_, dayIndex) => {
-                  const date = `${monthKey}-${String(dayIndex + 1).padStart(2, "0")}`;
-                  const cellSchedules = schedules.filter(
-                    (schedule) => schedule.scheduled_date === date && schedule.assigned_user_id === person.id,
-                  );
-                  return (
-                    <td key={date} className="border border-slate-800 p-1 align-top print:border-black">
-                      <div className="grid gap-1">
-                        {cellSchedules.map((schedule) => (
-                          <button
-                            key={schedule.id}
-                            type="button"
-                            onClick={() => onSelect(schedule)}
-                            className={`${sectionTone(schedule.pm_sections?.color)} rounded px-1 py-0.5 text-center text-[10px] font-black print:border print:border-black print:bg-white print:text-black`}
-                            title={schedule.pm_points?.name ?? ""}
-                          >
-                            {schedule.pm_points?.code ?? "-"}
-                          </button>
-                        ))}
-                      </div>
+            {displayGroups.map((group) =>
+              group.rows.map((person, personIndex) => {
+                return (
+                  <tr key={`${group.section.id}-${person.id}`} className="odd:bg-slate-950/30 print:bg-white">
+                    {personIndex === 0 ? (
+                      <td
+                        rowSpan={group.rows.length}
+                        className="border border-slate-800 px-2 py-2 align-middle font-bold uppercase text-slate-100 print:border-black print:text-black"
+                      >
+                        {group.section.name}
+                      </td>
+                    ) : null}
+                    <td className="border border-slate-800 px-2 py-2 font-semibold text-slate-100 print:border-black print:text-black">
+                      {person.name}
                     </td>
-                  );
-                })}
-              </tr>
-            ))}
+                    {Array.from({ length: daysInMonth }, (_, dayIndex) => {
+                      const date = `${monthKey}-${String(dayIndex + 1).padStart(2, "0")}`;
+                      const cellSchedules = schedules.filter(
+                        (schedule) =>
+                          schedule.section_id === group.section.id &&
+                          schedule.scheduled_date === date &&
+                          (schedule.assigned_user_id ?? "__unassigned__") === person.id,
+                      );
+                      return (
+                        <td key={date} className="border border-slate-800 p-1 align-top print:border-black">
+                          <div className="grid gap-1">
+                            {cellSchedules.map((schedule) => (
+                              <button
+                                key={schedule.id}
+                                type="button"
+                                onClick={() => onSelect(schedule)}
+                                className={`${sectionTone(schedule.pm_sections?.color ?? group.section.color)} rounded px-1 py-0.5 text-center text-[10px] font-black print:border print:border-black print:bg-white print:text-black`}
+                                title={schedule.pm_points?.name ?? ""}
+                              >
+                                {schedule.pm_points?.code ?? "-"}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              }),
+            )}
           </tbody>
         </table>
       </div>
